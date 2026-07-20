@@ -70,6 +70,6 @@ describe('validateAgenticApplication edge cases', () => {
 
     expect(result.success).toBe(true);
     expect(result.data?.metadata.name).toBe('fixture-app');
-    expect(result.data?.spec.models.primary.model).toBe('gpt-5');
+    expect(result.data?.spec.models.primary?.model).toBe('gpt-5');
   });
 });

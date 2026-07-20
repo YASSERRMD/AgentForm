@@ -35,9 +35,10 @@ describe('generateJsonSchema', () => {
     expect(schema.required).toEqual(
       expect.arrayContaining(['apiVersion', 'kind', 'metadata', 'spec']),
     );
-    expect(schema.properties.apiVersion.const ?? schema.properties.apiVersion.enum?.[0]).toBe(
-      API_VERSION,
-    );
+
+    const apiVersionProperty = schema.properties.apiVersion;
+    expect(apiVersionProperty).toBeDefined();
+    expect(apiVersionProperty?.const ?? apiVersionProperty?.enum?.[0]).toBe(API_VERSION);
   });
 
   it('stays in parity with the Zod schema: tool discriminated union carries all nine types', () => {

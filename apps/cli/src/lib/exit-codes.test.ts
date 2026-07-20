@@ -38,6 +38,26 @@ describe('exitCodeForDiagnostics', () => {
     ];
     expect(exitCodeForDiagnostics(diagnostics)).toBe(EXIT_CODES.SOURCE_PARSING_FAILURE);
   });
+
+  it('returns POLICY_FAILURE for a built-in policy ID error (e.g. AF003)', () => {
+    expect(exitCodeForDiagnostics([{ code: 'AF003', severity: 'error' }])).toBe(
+      EXIT_CODES.POLICY_FAILURE,
+    );
+  });
+
+  it('returns POLICY_FAILURE for an AGF4xxx (policy engine override) error', () => {
+    expect(exitCodeForDiagnostics([{ code: 'AGF4001', severity: 'error' }])).toBe(
+      EXIT_CODES.POLICY_FAILURE,
+    );
+  });
+
+  it('prefers semantic failure over policy failure when both are present', () => {
+    const diagnostics = [
+      { code: 'AF003', severity: 'error' },
+      { code: 'AGF3001', severity: 'error' },
+    ];
+    expect(exitCodeForDiagnostics(diagnostics)).toBe(EXIT_CODES.SEMANTIC_VALIDATION_FAILURE);
+  });
 });
 
 describe('resolveCommanderExitCode', () => {

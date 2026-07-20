@@ -81,6 +81,7 @@ describe('SqliteStateBackend', () => {
       address: 'agent.intake',
       kind: 'agent' as const,
       contentHash: 'hash-1',
+      identityHash: 'identity-1',
       dependsOn: ['model.primary', 'tool.registry'],
       lastAppliedAt: '2026-01-01T00:00:00.000Z',
     };
@@ -96,6 +97,7 @@ describe('SqliteStateBackend', () => {
       address: 'workflow.main',
       kind: 'workflow',
       contentHash: 'h',
+      identityHash: 'h',
       dependsOn: [],
       lastAppliedAt: '2026-01-01T00:00:00.000Z',
     });
@@ -103,6 +105,7 @@ describe('SqliteStateBackend', () => {
       address: 'agent.intake',
       kind: 'agent',
       contentHash: 'h',
+      identityHash: 'h',
       dependsOn: [],
       lastAppliedAt: '2026-01-01T00:00:00.000Z',
     });
@@ -118,6 +121,7 @@ describe('SqliteStateBackend', () => {
       address: 'agent.intake',
       kind: 'agent',
       contentHash: 'h',
+      identityHash: 'h',
       dependsOn: [],
       lastAppliedAt: '2026-01-01T00:00:00.000Z',
     });

@@ -50,6 +50,7 @@ interface ResourceStateRow {
   address: string;
   kind: string;
   content_hash: string;
+  identity_hash: string;
   depends_on: string;
   last_applied_at: string;
 }
@@ -82,6 +83,7 @@ function rowToResourceState(row: ResourceStateRow): ResourceState {
     address: row.address,
     kind: row.kind as ResourceState['kind'],
     contentHash: row.content_hash,
+    identityHash: row.identity_hash,
     dependsOn: fromJsonColumn(row.depends_on, []),
     lastAppliedAt: row.last_applied_at,
   };
@@ -211,11 +213,12 @@ export class SqliteStateBackend implements StateBackend {
   async putResourceState(state: ResourceState): Promise<void> {
     this.database
       .prepare(
-        `INSERT INTO resource_states (address, kind, content_hash, depends_on, last_applied_at)
-         VALUES (?, ?, ?, ?, ?)
+        `INSERT INTO resource_states (address, kind, content_hash, identity_hash, depends_on, last_applied_at)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(address) DO UPDATE SET
            kind = excluded.kind,
            content_hash = excluded.content_hash,
+           identity_hash = excluded.identity_hash,
            depends_on = excluded.depends_on,
            last_applied_at = excluded.last_applied_at`,
       )
@@ -223,6 +226,7 @@ export class SqliteStateBackend implements StateBackend {
         state.address,
         state.kind,
         state.contentHash,
+        state.identityHash,
         toJsonColumn(state.dependsOn),
         state.lastAppliedAt,
       );

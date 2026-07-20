@@ -11,6 +11,17 @@ export interface ResourceState {
   readonly address: string;
   readonly kind: ResourceKind;
   readonly contentHash: string;
+  /**
+   * A hash over just the resource's *identity-defining* fields (e.g. a
+   * tool's `type` discriminant, a model's `provider`) — a small,
+   * kind-specific fingerprint, not a secret-risk surface. When this
+   * differs from the desired resource's own identity hash but
+   * `contentHash` also differs, the planner (`@agentform/planner`) knows
+   * the resource's fundamental identity changed and classifies the
+   * operation as `REPLACE` rather than `UPDATE`, without ever needing the
+   * previous resource's actual field values.
+   */
+  readonly identityHash: string;
   /** Other resource addresses this one depends on (e.g. an agent depends on its model and tools) — the planner's dependency-order input. */
   readonly dependsOn: readonly string[];
   readonly lastAppliedAt: string;

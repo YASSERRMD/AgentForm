@@ -36,6 +36,7 @@ export const MIGRATIONS: readonly Migration[] = [
           address TEXT PRIMARY KEY,
           kind TEXT NOT NULL,
           content_hash TEXT NOT NULL,
+          identity_hash TEXT NOT NULL,
           depends_on TEXT NOT NULL,
           last_applied_at TEXT NOT NULL
         );

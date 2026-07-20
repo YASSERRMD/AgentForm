@@ -166,7 +166,15 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
 
-  packages/plugin-sdk: {}
+  packages/plugin-sdk:
+    dependencies:
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/policy:
     dependencies:

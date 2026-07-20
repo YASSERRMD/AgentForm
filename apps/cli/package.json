@@ -25,6 +25,7 @@
     "@agentform/diagnostics": "workspace:*",
     "@agentform/ir": "workspace:*",
     "@agentform/parser": "workspace:*",
+    "@agentform/policy": "workspace:*",
     "@agentform/schema": "workspace:*",
     "commander": "^15.0.0",
     "pino": "^10.3.1",

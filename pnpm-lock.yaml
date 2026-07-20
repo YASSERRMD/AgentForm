@@ -62,6 +62,9 @@ importers:
       '@agentform/parser':
         specifier: workspace:*
         version: link:../../packages/parser
+      '@agentform/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
       '@agentform/schema':
         specifier: workspace:*
         version: link:../../packages/schema

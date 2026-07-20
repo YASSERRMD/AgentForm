@@ -8,6 +8,11 @@ import { af007ModelsRequireExplicitProvider } from './af007-models-require-expli
 import { af008ProductionRequiresEvaluationGates } from './af008-production-requires-evaluation-gates.js';
 import { af009SensitiveDataRequiresResidency } from './af009-sensitive-data-requires-residency.js';
 import { af010PromptRecordingDisabledForRestrictedData } from './af010-prompt-recording-disabled-for-restricted-data.js';
+import { af011DestructiveToolsRequireIdempotencyStrategy } from './af011-destructive-tools-require-idempotency-strategy.js';
+import { af012NetworkDestinationsMustBeAllowlisted } from './af012-network-destinations-must-be-allowlisted.js';
+import { af013ProductionModelAliasesMustBePinned } from './af013-production-model-aliases-must-be-pinned.js';
+import { af014StateMustNotContainSecrets } from './af014-state-must-not-contain-secrets.js';
+import { af015GeneratedCodeMustBeReproducible } from './af015-generated-code-must-be-reproducible.js';
 import type { PolicyDefinition } from '../types.js';
 
 export {
@@ -21,9 +26,14 @@ export {
   af008ProductionRequiresEvaluationGates,
   af009SensitiveDataRequiresResidency,
   af010PromptRecordingDisabledForRestrictedData,
+  af011DestructiveToolsRequireIdempotencyStrategy,
+  af012NetworkDestinationsMustBeAllowlisted,
+  af013ProductionModelAliasesMustBePinned,
+  af014StateMustNotContainSecrets,
+  af015GeneratedCodeMustBeReproducible,
 };
 
-/** Every built-in policy (AF001-AF015), in ID order. Grows as later tasks in this phase add AF011-AF015. */
+/** Every built-in policy, AF001-AF015, in ID order. */
 export const BUILTIN_POLICIES: readonly PolicyDefinition[] = [
   af001NoInlineSecrets,
   af002NoUnrestrictedShellTools,
@@ -35,4 +45,9 @@ export const BUILTIN_POLICIES: readonly PolicyDefinition[] = [
   af008ProductionRequiresEvaluationGates,
   af009SensitiveDataRequiresResidency,
   af010PromptRecordingDisabledForRestrictedData,
+  af011DestructiveToolsRequireIdempotencyStrategy,
+  af012NetworkDestinationsMustBeAllowlisted,
+  af013ProductionModelAliasesMustBePinned,
+  af014StateMustNotContainSecrets,
+  af015GeneratedCodeMustBeReproducible,
 ];

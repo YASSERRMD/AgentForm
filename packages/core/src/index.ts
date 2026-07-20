@@ -3,8 +3,10 @@ export {
   reachableNodes,
   sinkNodes,
   findCycle,
+  topologicalSort,
   type DirectedGraph,
   type DirectedEdge,
+  type TopologicalSortResult,
 } from './graph.js';
 
 export const PACKAGE_NAME = '@agentform/core';

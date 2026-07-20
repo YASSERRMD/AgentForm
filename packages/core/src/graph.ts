@@ -93,3 +93,51 @@ export function findCycle<NodeId extends string>(
 
   return graph.nodes.has(start) ? visit(start) : undefined;
 }
+
+export interface TopologicalSortResult<NodeId extends string = string> {
+  /** Every node that could be placed, in an order where each edge's `from` appears before its `to`. */
+  readonly order: readonly NodeId[];
+  /** Nodes that could not be placed because they participate in a cycle. Empty for an acyclic graph. A caller that requires a strict order (e.g. the planner ordering resource creation by dependency) should treat a non-empty `cyclic` as an error. */
+  readonly cyclic: readonly NodeId[];
+}
+
+/**
+ * Kahn's algorithm: repeatedly takes a node with no remaining unplaced
+ * dependency (in-degree zero) and places it, until none remain. Reading an
+ * edge `{ from: dependency, to: dependent }` — as this package's other
+ * graph consumers do — `order` is a valid "create in this order" sequence
+ * (every dependency before its dependents); its reverse is a valid
+ * "delete/tear down in this order" sequence. Deterministic for a given
+ * `DirectedGraph`: ties break in `graph.nodes`'s own iteration order.
+ */
+export function topologicalSort<NodeId extends string>(
+  graph: DirectedGraph<NodeId>,
+): TopologicalSortResult<NodeId> {
+  const inDegree = new Map<NodeId, number>();
+  for (const node of graph.nodes) {
+    inDegree.set(node, 0);
+  }
+  for (const edge of graph.edges) {
+    inDegree.set(edge.to, (inDegree.get(edge.to) ?? 0) + 1);
+  }
+
+  const adjacencyList = adjacency(graph);
+  const queue: NodeId[] = [...graph.nodes].filter((node) => inDegree.get(node) === 0);
+  const order: NodeId[] = [];
+
+  while (queue.length > 0) {
+    const node = queue.shift() as NodeId;
+    order.push(node);
+    for (const next of adjacencyList.get(node) ?? []) {
+      const remaining = (inDegree.get(next) ?? 0) - 1;
+      inDegree.set(next, remaining);
+      if (remaining === 0) {
+        queue.push(next);
+      }
+    }
+  }
+
+  const placed = new Set(order);
+  const cyclic = [...graph.nodes].filter((node) => !placed.has(node));
+  return { order, cyclic };
+}

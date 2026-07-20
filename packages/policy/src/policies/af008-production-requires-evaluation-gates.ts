@@ -10,7 +10,8 @@ import type { PolicyDefinition, PolicyFinding } from '../types.js';
 export const af008ProductionRequiresEvaluationGates: PolicyDefinition = {
   id: 'AF008',
   name: 'production-requires-evaluation-gates',
-  description: 'Reject a production runtime environment with no evaluation datasets and thresholds.',
+  description:
+    'Reject a production runtime environment with no evaluation datasets and thresholds.',
   defaultSeverity: 'error',
   mandatory: true,
   check: (context) => {

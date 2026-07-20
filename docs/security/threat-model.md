@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Agentform is a control plane for agentic AI systems: a specification language, a compiler, and a policy engine that sit between a human author and whatever framework/runtime actually executes an agent. That position gives it two distinct attack surfaces — the *documents* it parses and validates (which may be authored by someone untrusted, or composed from imported projects) and the *systems it will eventually drive* (frameworks, tools, deployment targets, state). This document tracks both, following §19 of the build specification.
+Agentform is a control plane for agentic AI systems: a specification language, a compiler, and a policy engine that sit between a human author and whatever framework/runtime actually executes an agent. That position gives it two distinct attack surfaces — the _documents_ it parses and validates (which may be authored by someone untrusted, or composed from imported projects) and the _systems it will eventually drive_ (frameworks, tools, deployment targets, state). This document tracks both, following §19 of the build specification.
 
 Status labels used below:
 
@@ -10,7 +10,7 @@ Status labels used below:
 - **Partially mitigated** — a real control exists but doesn't cover the full threat (usually because the runtime half of Agentform doesn't exist yet).
 - **Planned** — no control exists yet because the subsystem it would protect doesn't exist yet; a placeholder is registered where one makes sense so it can't be silently disabled later.
 
-As of Phase 6, Agentform validates, compiles to an IR, and evaluates policy against specifications. It does not yet execute agents, apply state, or generate framework code — several threats below are structurally about *runtime* behavior Agentform doesn't have yet. Those are marked Planned rather than overclaimed as mitigated.
+As of Phase 6, Agentform validates, compiles to an IR, and evaluates policy against specifications. It does not yet execute agents, apply state, or generate framework code — several threats below are structurally about _runtime_ behavior Agentform doesn't have yet. Those are marked Planned rather than overclaimed as mitigated.
 
 ## Threats and mitigations
 
@@ -20,7 +20,7 @@ A hostile YAML/JSON document crafted to exploit the parser, the schema validator
 
 ### Prompt injection
 
-Text inside an agent's instructions, a tool's description, or interpolated content that's designed to manipulate the model at run time. **Planned** (structural mitigations only): Agentform validates and compiles specifications; it does not run a model against a prompt itself, so it cannot detect injected intent at parse time — that's inherently a runtime/model-level concern, not a static-analysis one. What today's policy engine *does* do is bound the blast radius of a successful injection: [`AF004`](../../packages/policy/src/policies/af004-critical-actions-require-human-approval.ts) requires human approval before a destructive tool runs regardless of what convinced the agent to call it, and [`AF003`](../../packages/policy/src/policies/af003-write-tools-require-explicit-permission.ts)/[`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts) keep an agent's tool surface narrow. Runtime-level defenses (input/output filtering, guardrails) are adapter/runtime scope, starting Phase 8.
+Text inside an agent's instructions, a tool's description, or interpolated content that's designed to manipulate the model at run time. **Planned** (structural mitigations only): Agentform validates and compiles specifications; it does not run a model against a prompt itself, so it cannot detect injected intent at parse time — that's inherently a runtime/model-level concern, not a static-analysis one. What today's policy engine _does_ do is bound the blast radius of a successful injection: [`AF004`](../../packages/policy/src/policies/af004-critical-actions-require-human-approval.ts) requires human approval before a destructive tool runs regardless of what convinced the agent to call it, and [`AF003`](../../packages/policy/src/policies/af003-write-tools-require-explicit-permission.ts)/[`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts) keep an agent's tool surface narrow. Runtime-level defenses (input/output filtering, guardrails) are adapter/runtime scope, starting Phase 8.
 
 ### Tool injection
 
@@ -28,7 +28,7 @@ A malicious or spoofed tool definition entering the resolved document, e.g. via 
 
 ### Compromised plugins
 
-`customPlugin` exists as a tool *type* in the schema (§6.4), but there is no plugin loading or execution mechanism yet — `@agentform/plugin-sdk` has no runtime implementation as of Phase 6. **Planned**: §19's "plugin trust policy" is meaningful once plugins can actually be loaded and run; until then there is nothing to compromise.
+`customPlugin` exists as a tool _type_ in the schema (§6.4), but there is no plugin loading or execution mechanism yet — `@agentform/plugin-sdk` has no runtime implementation as of Phase 6. **Planned**: §19's "plugin trust policy" is meaningful once plugins can actually be loaded and run; until then there is nothing to compromise.
 
 ### Secret leakage
 
@@ -36,7 +36,7 @@ A real credential appearing in a document, a diagnostic message, a log line, or 
 
 ### State tampering
 
-Unauthorized modification of Agentform's persisted current-state record. **Planned**: no state engine exists until Phase 7. [`AF014`](../../packages/policy/src/policies/af014-state-must-not-contain-secrets.ts) is registered now, as mandatory, specifically so an organization's override config committed *today* can't later disable it the moment state does exist.
+Unauthorized modification of Agentform's persisted current-state record. **Planned**: no state engine exists until Phase 7. [`AF014`](../../packages/policy/src/policies/af014-state-must-not-contain-secrets.ts) is registered now, as mandatory, specifically so an organization's override config committed _today_ can't later disable it the moment state does exist.
 
 ### Plan tampering
 
@@ -56,11 +56,11 @@ A reference that tries to resolve outside the project root. **Mitigated**: every
 
 ### Unsafe file references
 
-The general case of the above: any reference mechanism that could read something it shouldn't. **Mitigated** by the same sandbox — `file`/`schemaRef`/`$ref` are the *only* reference mechanisms, all local-path-only, all sandboxed identically.
+The general case of the above: any reference mechanism that could read something it shouldn't. **Mitigated** by the same sandbox — `file`/`schemaRef`/`$ref` are the _only_ reference mechanisms, all local-path-only, all sandboxed identically.
 
 ### Arbitrary code execution
 
-Something in a document causing Agentform's own process to execute attacker-controlled code. **Mitigated** for Agentform itself: no `eval`, `Function()`, or dynamic `import()` anywhere in this codebase (see ADR-0004); YAML parsing never executes custom tags. **Out of scope by design**: whether a *generated* `function`/`customPlugin` tool itself wraps shell execution is an application-author decision Agentform can flag ([`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts)) but not prevent outright — and there is no Agentform runtime executing tools yet regardless.
+Something in a document causing Agentform's own process to execute attacker-controlled code. **Mitigated** for Agentform itself: no `eval`, `Function()`, or dynamic `import()` anywhere in this codebase (see ADR-0004); YAML parsing never executes custom tags. **Out of scope by design**: whether a _generated_ `function`/`customPlugin` tool itself wraps shell execution is an application-author decision Agentform can flag ([`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts)) but not prevent outright — and there is no Agentform runtime executing tools yet regardless.
 
 ### SSRF through HTTP tools
 
@@ -76,7 +76,7 @@ A tool that can run arbitrary shell commands with no declared constraints. **Mit
 
 ### Poisoned imported projects
 
-A project composed via `$ref`/auto-discovery from an untrusted source smuggling in a malicious resource. **Partially mitigated**: an imported file is bound by exactly the same project-root sandbox and the same policy pack (`AF001`–`AF015`) as hand-authored content — it can't escape the sandbox, and if it inlines a secret, an unrestricted shell tool, or an unpermissioned write tool, the same policies catch it at validation time. What's *not* yet supported is a separate trust tier for imported vs. authored content (e.g. "apply stricter policy severity to anything pulled in from outside this repository") — everything is validated equally today.
+A project composed via `$ref`/auto-discovery from an untrusted source smuggling in a malicious resource. **Partially mitigated**: an imported file is bound by exactly the same project-root sandbox and the same policy pack (`AF001`–`AF015`) as hand-authored content — it can't escape the sandbox, and if it inlines a secret, an unrestricted shell tool, or an unpermissioned write tool, the same policies catch it at validation time. What's _not_ yet supported is a separate trust tier for imported vs. authored content (e.g. "apply stricter policy severity to anything pulled in from outside this repository") — everything is validated equally today.
 
 ### Unsafe YAML behavior
 
@@ -92,31 +92,31 @@ A workflow graph cycle with no bound on iteration count. **Mitigated**: `@agentf
 
 ### Cost exhaustion
 
-A run that spends far more (in token or dollar cost) than intended. **Partially mitigated**: the schema supports per-agent `limits.maxCostUsd`/`limits.maxSteps` and per-model `rateLimits`/`costMetadata`, and the structural size caps (`AGF3016`–`AGF3018`) bound the worst-case shape of a single workflow. There is no run-time cost *enforcement* yet — nothing executes an agent yet, so nothing can overspend yet — that's the evaluation engine's cost assertions (§17, Phase 10) and the apply/runtime work (Phase 11).
+A run that spends far more (in token or dollar cost) than intended. **Partially mitigated**: the schema supports per-agent `limits.maxCostUsd`/`limits.maxSteps` and per-model `rateLimits`/`costMetadata`, and the structural size caps (`AGF3016`–`AGF3018`) bound the worst-case shape of a single workflow. There is no run-time cost _enforcement_ yet — nothing executes an agent yet, so nothing can overspend yet — that's the evaluation engine's cost assertions (§17, Phase 10) and the apply/runtime work (Phase 11).
 
 ### Tool-call amplification
 
-A structure that causes a small input to trigger an unbounded or exponential number of tool calls (unbounded retries, unbounded fan-out). **Partially mitigated**: `retry.maxAttempts` and `limits.maxSteps` are schema-supported per agent; workflow node/edge caps bound structural fan-out; loop nodes require `maxIterations`. As with cost exhaustion, *counting and stopping* excessive calls at run time needs a runtime that doesn't exist yet.
+A structure that causes a small input to trigger an unbounded or exponential number of tool calls (unbounded retries, unbounded fan-out). **Partially mitigated**: `retry.maxAttempts` and `limits.maxSteps` are schema-supported per agent; workflow node/edge caps bound structural fan-out; loop nodes require `maxIterations`. As with cost exhaustion, _counting and stopping_ excessive calls at run time needs a runtime that doesn't exist yet.
 
 ## Defense-in-depth summary
 
-| Protection | Where | Status |
-| --- | --- | --- |
-| Reference cycle detection | `@agentform/parser` (`AGF1003`) | Mitigated |
-| Maximum reference depth | `@agentform/parser` (`AGF1004`) | Mitigated |
-| File access confined to project root | `@agentform/core` safe-path, used throughout the parser | Mitigated |
-| Safe path normalization | `@agentform/core` (`resolvePathWithinRoot`/`resolvePathRelativeToFile`) | Mitigated |
-| Maximum source file size | `@agentform/parser` (`AGF1010`) | Mitigated |
-| Maximum workflow nodes | `@agentform/ir` (`AGF3016`) | Mitigated |
-| Maximum graph edges | `@agentform/ir` (`AGF3017`) | Mitigated |
-| Maximum expression complexity (length proxy) | `@agentform/ir` (`AGF3018`) | Mitigated |
-| Network allowlisting | `@agentform/policy` `AF012` | Partially mitigated (declaration only, no request-time enforcement) |
-| Plugin trust policy | — | Planned (Phase 8+, once plugins load) |
-| Content hashing | `@agentform/ir` (`computeContentHash`) | Mitigated |
-| State integrity checks | — | Planned (Phase 7) |
-| Plan integrity checks | — | Planned (Phase 7) |
-| Redacted logs/diagnostics | `@agentform/policy` (`redactSecretValue`, `AF001`, `AF010`) | Mitigated |
-| Safe YAML parsing | `@agentform/parser` (`yaml` package) | Mitigated |
+| Protection                                   | Where                                                                   | Status                                                              |
+| -------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Reference cycle detection                    | `@agentform/parser` (`AGF1003`)                                         | Mitigated                                                           |
+| Maximum reference depth                      | `@agentform/parser` (`AGF1004`)                                         | Mitigated                                                           |
+| File access confined to project root         | `@agentform/core` safe-path, used throughout the parser                 | Mitigated                                                           |
+| Safe path normalization                      | `@agentform/core` (`resolvePathWithinRoot`/`resolvePathRelativeToFile`) | Mitigated                                                           |
+| Maximum source file size                     | `@agentform/parser` (`AGF1010`)                                         | Mitigated                                                           |
+| Maximum workflow nodes                       | `@agentform/ir` (`AGF3016`)                                             | Mitigated                                                           |
+| Maximum graph edges                          | `@agentform/ir` (`AGF3017`)                                             | Mitigated                                                           |
+| Maximum expression complexity (length proxy) | `@agentform/ir` (`AGF3018`)                                             | Mitigated                                                           |
+| Network allowlisting                         | `@agentform/policy` `AF012`                                             | Partially mitigated (declaration only, no request-time enforcement) |
+| Plugin trust policy                          | —                                                                       | Planned (Phase 8+, once plugins load)                               |
+| Content hashing                              | `@agentform/ir` (`computeContentHash`)                                  | Mitigated                                                           |
+| State integrity checks                       | —                                                                       | Planned (Phase 7)                                                   |
+| Plan integrity checks                        | —                                                                       | Planned (Phase 7)                                                   |
+| Redacted logs/diagnostics                    | `@agentform/policy` (`redactSecretValue`, `AF001`, `AF010`)             | Mitigated                                                           |
+| Safe YAML parsing                            | `@agentform/parser` (`yaml` package)                                    | Mitigated                                                           |
 
 ## Verifying these protections
 

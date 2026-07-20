@@ -30,7 +30,8 @@ export const af012NetworkDestinationsMustBeAllowlisted: PolicyDefinition = {
       findings.push({
         message: `Tool "${toolId}" (type "${tool.type}") declares no networkDestination.`,
         resourceAddress: `spec.tools.${toolId}`,
-        remediation: 'Set networkDestination to the specific host(s) this tool is allowed to reach.',
+        remediation:
+          'Set networkDestination to the specific host(s) this tool is allowed to reach.',
       });
     }
     return findings;

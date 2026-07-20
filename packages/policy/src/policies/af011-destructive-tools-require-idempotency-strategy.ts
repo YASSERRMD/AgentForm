@@ -25,7 +25,8 @@ export const af011DestructiveToolsRequireIdempotencyStrategy: PolicyDefinition =
       findings.push({
         message: `Tool "${toolId}" has sideEffect "destructive" but declares no idempotencyStrategy.`,
         resourceAddress: `spec.tools.${toolId}`,
-        remediation: 'Set idempotencyStrategy to describe how a retried call avoids double-applying the effect.',
+        remediation:
+          'Set idempotencyStrategy to describe how a retried call avoids double-applying the effect.',
       });
     }
     return findings;

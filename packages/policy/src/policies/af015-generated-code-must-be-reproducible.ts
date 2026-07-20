@@ -13,7 +13,8 @@ import type { PolicyDefinition } from '../types.js';
 export const af015GeneratedCodeMustBeReproducible: PolicyDefinition = {
   id: 'AF015',
   name: 'generated-code-must-be-reproducible',
-  description: 'Reject non-deterministic code generation. Always passes until Phase 8 adds a compiler to check.',
+  description:
+    'Reject non-deterministic code generation. Always passes until Phase 8 adds a compiler to check.',
   defaultSeverity: 'error',
   mandatory: true,
   check: () => [],

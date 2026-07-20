@@ -66,7 +66,14 @@ describe('validateLimits', () => {
     const diagnostics = validateLimits(app, { maxExpressionLength: 10 });
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.code).toBe('AGF3018');
-    expect(diagnostics[0]?.path).toEqual(['spec', 'workflows', 'main', 'nodes', 'gate', 'expression']);
+    expect(diagnostics[0]?.path).toEqual([
+      'spec',
+      'workflows',
+      'main',
+      'nodes',
+      'gate',
+      'expression',
+    ]);
   });
 
   it('rejects a transform node expression longer than maxExpressionLength', () => {

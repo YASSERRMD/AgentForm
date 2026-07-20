@@ -199,7 +199,13 @@ describe('agentform validate (policy engine)', () => {
   it('cannot bypass a mandatory policy via agentform.policy.yaml', () => {
     project = createFixtureProject({
       ...WITH_UNRESTRICTED_SHELL_TOOL,
-      'agentform.policy.yaml': ['overrides:', '  AF002:', '    severity: skip', '    justification: trust me', ''].join('\n'),
+      'agentform.policy.yaml': [
+        'overrides:',
+        '  AF002:',
+        '    severity: skip',
+        '    justification: trust me',
+        '',
+      ].join('\n'),
     });
     const result = runCli(['validate'], project.dir);
     expect(result.exitCode).toBe(6);
@@ -210,7 +216,13 @@ describe('agentform validate (policy engine)', () => {
   it('accepts a justified severity downgrade via agentform.policy.yaml', () => {
     project = createFixtureProject({
       ...WITH_UNTIMED_TOOL,
-      'agentform.policy.yaml': ['overrides:', '  AF006:', '    severity: skip', '    justification: timeouts enforced at the gateway layer', ''].join('\n'),
+      'agentform.policy.yaml': [
+        'overrides:',
+        '  AF006:',
+        '    severity: skip',
+        '    justification: timeouts enforced at the gateway layer',
+        '',
+      ].join('\n'),
     });
     const result = runCli(['validate'], project.dir);
     expect(result.exitCode).toBe(0);

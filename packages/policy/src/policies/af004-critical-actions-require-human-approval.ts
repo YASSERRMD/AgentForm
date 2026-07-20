@@ -10,7 +10,8 @@ import type { PolicyDefinition, PolicyFinding } from '../types.js';
 export const af004CriticalActionsRequireHumanApproval: PolicyDefinition = {
   id: 'AF004',
   name: 'critical-actions-require-human-approval',
-  description: 'Reject destructive tool calls that are not gated by a preceding human approval node.',
+  description:
+    'Reject destructive tool calls that are not gated by a preceding human approval node.',
   defaultSeverity: 'error',
   mandatory: true,
   check: (context) => {

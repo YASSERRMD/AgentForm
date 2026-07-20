@@ -22,7 +22,12 @@ describe('evaluatePolicies', () => {
     const { results, diagnostics } = evaluatePolicies([definePolicy()], context);
     expect(diagnostics).toEqual([]);
     expect(results).toEqual([
-      { policyId: 'AF999', policyName: 'test-policy', status: 'pass', message: 'No violations found.' },
+      {
+        policyId: 'AF999',
+        policyName: 'test-policy',
+        status: 'pass',
+        message: 'No violations found.',
+      },
     ]);
   });
 
@@ -35,8 +40,20 @@ describe('evaluatePolicies', () => {
     });
     const { results } = evaluatePolicies([policy], context);
     expect(results).toEqual([
-      { policyId: 'AF999', policyName: 'test-policy', status: 'fail', message: 'first violation', resourceAddress: 'agents.a' },
-      { policyId: 'AF999', policyName: 'test-policy', status: 'fail', message: 'second violation', resourceAddress: 'agents.b' },
+      {
+        policyId: 'AF999',
+        policyName: 'test-policy',
+        status: 'fail',
+        message: 'first violation',
+        resourceAddress: 'agents.a',
+      },
+      {
+        policyId: 'AF999',
+        policyName: 'test-policy',
+        status: 'fail',
+        message: 'second violation',
+        resourceAddress: 'agents.b',
+      },
     ]);
   });
 
@@ -83,7 +100,12 @@ describe('evaluatePolicies', () => {
       overrides: { AF999: { severity: 'skip', justification: 'we do not care' } },
     });
     expect(results).toEqual([
-      { policyId: 'AF999', policyName: 'test-policy', status: 'fail', message: 'must not be bypassed' },
+      {
+        policyId: 'AF999',
+        policyName: 'test-policy',
+        status: 'fail',
+        message: 'must not be bypassed',
+      },
     ]);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.code).toBe('AGF4001');
@@ -124,7 +146,12 @@ describe('evaluatePolicies', () => {
     });
     expect(diagnostics).toEqual([]);
     expect(results).toEqual([
-      { policyId: 'AF999', policyName: 'test-policy', status: 'warn', message: 'downgraded violation' },
+      {
+        policyId: 'AF999',
+        policyName: 'test-policy',
+        status: 'warn',
+        message: 'downgraded violation',
+      },
     ]);
   });
 

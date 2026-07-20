@@ -18,7 +18,10 @@ export const SECRET_PATTERNS: readonly SecretPattern[] = [
   { name: 'Slack token', pattern: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
   { name: 'OpenAI-style secret key', pattern: /\bsk-[A-Za-z0-9]{20,}\b/ },
   { name: 'PEM private key block', pattern: /-----BEGIN (?:RSA |EC |OPENSSH |)PRIVATE KEY-----/ },
-  { name: 'generic bearer token assignment', pattern: /\b[Aa]uthorization["']?\s*[:=]\s*["']?Bearer\s+[A-Za-z0-9._-]{16,}/ },
+  {
+    name: 'generic bearer token assignment',
+    pattern: /\b[Aa]uthorization["']?\s*[:=]\s*["']?Bearer\s+[A-Za-z0-9._-]{16,}/,
+  },
 ];
 
 /** Returns the first pattern that matches `value`, or `undefined` if none does. */

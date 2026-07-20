@@ -12,7 +12,8 @@ import type { PolicyDefinition } from '../types.js';
 export const af014StateMustNotContainSecrets: PolicyDefinition = {
   id: 'AF014',
   name: 'state-must-not-contain-secrets',
-  description: 'Reject persisted state that contains an inline secret. Always passes until Phase 7 adds a state engine to check.',
+  description:
+    'Reject persisted state that contains an inline secret. Always passes until Phase 7 adds a state engine to check.',
   defaultSeverity: 'error',
   mandatory: true,
   check: () => [],

@@ -3,7 +3,9 @@ import type { PolicyDefinition, PolicyFinding } from '../types.js';
 const SHELL_INDICATOR = /\b(shell|bash|zsh|sh|cmd|powershell|exec|subprocess|system)\b/i;
 
 /** The field on each tool type most likely to name what it actually runs. */
-function shellIndicatorTarget(tool: { type: string } & Record<string, unknown>): string | undefined {
+function shellIndicatorTarget(
+  tool: { type: string } & Record<string, unknown>,
+): string | undefined {
   switch (tool.type) {
     case 'function':
       return typeof tool.handler === 'string' ? tool.handler : undefined;

@@ -5,7 +5,11 @@ import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { loadPolicyConfig } from '../lib/policy-config.js';
-import { formatPolicySummary, policyResultsToDiagnostics, summarizePolicyResults } from '../lib/policy-output.js';
+import {
+  formatPolicySummary,
+  policyResultsToDiagnostics,
+  summarizePolicyResults,
+} from '../lib/policy-output.js';
 import { getGlobalOptions } from '../program.js';
 
 interface ValidateCommandOptions {

@@ -26,7 +26,8 @@ export const af013ProductionModelAliasesMustBePinned: PolicyDefinition = {
       findings.push({
         message: `Model "${modelId}" has no pinned version in a production runtime environment.`,
         resourceAddress: `spec.models.${modelId}.version`,
-        remediation: 'Set version to a specific, pinned model version rather than leaving it to float.',
+        remediation:
+          'Set version to a specific, pinned model version rather than leaving it to float.',
       });
     }
     return findings;

@@ -27,7 +27,8 @@ export const af005WorkflowLoopsRequireLimits: PolicyDefinition = {
         findings.push({
           message: `Workflow "${workflowId}" loop node "${nodeId}" has no positive maxIterations bound.`,
           resourceAddress: `spec.workflows.${workflowId}.nodes.${nodeId}`,
-          remediation: 'Set maxIterations to a positive integer bounding how many times this loop can run.',
+          remediation:
+            'Set maxIterations to a positive integer bounding how many times this loop can run.',
         });
       }
     }

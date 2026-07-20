@@ -12,7 +12,8 @@ const SENSITIVE_CLASSIFICATIONS = new Set(['confidential', 'restricted']);
 export const af009SensitiveDataRequiresResidency: PolicyDefinition = {
   id: 'AF009',
   name: 'sensitive-data-requires-residency',
-  description: 'Reject an agent handling sensitive data through a model with no declared data residency.',
+  description:
+    'Reject an agent handling sensitive data through a model with no declared data residency.',
   defaultSeverity: 'error',
   mandatory: true,
   check: (context) => {
@@ -34,7 +35,8 @@ export const af009SensitiveDataRequiresResidency: PolicyDefinition = {
       findings.push({
         message: `Agent "${agentId}" handles sensitive data but its model "${agent.model}" declares no dataResidency.`,
         resourceAddress: `spec.models.${agent.model}.dataResidency`,
-        remediation: 'Set dataResidency on the model to the region/jurisdiction this sensitive data must stay in.',
+        remediation:
+          'Set dataResidency on the model to the region/jurisdiction this sensitive data must stay in.',
       });
     }
     return findings;

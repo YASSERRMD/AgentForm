@@ -24,9 +24,11 @@ export const af010PromptRecordingDisabledForRestrictedData: PolicyDefinition = {
       return [];
     }
     const finding: PolicyFinding = {
-      message: 'spec.observability.recordPrompts is true but the document has a restricted-classification tool.',
+      message:
+        'spec.observability.recordPrompts is true but the document has a restricted-classification tool.',
       resourceAddress: 'spec.observability.recordPrompts',
-      remediation: 'Set recordPrompts to false (or remove it) whenever restricted data is in scope.',
+      remediation:
+        'Set recordPrompts to false (or remove it) whenever restricted data is in scope.',
     };
     return [finding];
   },

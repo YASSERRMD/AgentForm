@@ -74,7 +74,10 @@ export function evaluatePolicies(
           severity: 'error',
           message: `Policy "${policy.id}" (${policy.name}) is mandatory; its severity cannot be overridden to "${override.severity}". Keeping "${policy.defaultSeverity}".`,
         });
-      } else if (isDowngrade(policy.defaultSeverity, override.severity) && !override.justification?.trim()) {
+      } else if (
+        isDowngrade(policy.defaultSeverity, override.severity) &&
+        !override.justification?.trim()
+      ) {
         diagnostics.push({
           code: POLICY_ENGINE_DIAGNOSTIC_CODES.MISSING_OVERRIDE_JUSTIFICATION.code,
           severity: 'error',

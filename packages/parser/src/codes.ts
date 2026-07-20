@@ -42,4 +42,8 @@ export const PARSER_DIAGNOSTIC_CODES = defineDiagnosticCodes({
     code: 'AGF1009',
     summary: 'An ${env.*} reference names an environment variable that is not set.',
   },
+  MAX_SOURCE_FILE_SIZE_EXCEEDED: {
+    code: 'AGF1010',
+    summary: 'A source file exceeds the maximum allowed file size.',
+  },
 });

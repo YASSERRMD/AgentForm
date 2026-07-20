@@ -149,3 +149,93 @@ describe('agentform validate', () => {
     expect(result.exitCode).toBe(2);
   });
 });
+
+const WITH_UNTIMED_TOOL = {
+  'agentform.yaml': VALID_PROJECT['agentform.yaml'].replace(
+    '  agents:\n    assistant:\n      model: primary\n      role: assistant',
+    '  tools:\n    lookup:\n      type: function\n      handler: lookup.ts#run\n  agents:\n    assistant:\n      model: primary\n      role: assistant\n      tools:\n        - lookup',
+  ),
+};
+
+const WITH_UNRESTRICTED_SHELL_TOOL = {
+  'agentform.yaml': VALID_PROJECT['agentform.yaml'].replace(
+    '  agents:\n    assistant:\n      model: primary\n      role: assistant',
+    '  tools:\n    runner:\n      type: function\n      handler: \'exec: bash -c "$CMD"\'\n  agents:\n    assistant:\n      model: primary\n      role: assistant\n      tools:\n        - runner',
+  ),
+};
+
+describe('agentform validate (policy engine)', () => {
+  it('reports a policy warning without blocking validation', () => {
+    project = createFixtureProject(WITH_UNTIMED_TOOL);
+    const result = runCli(['validate'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('AF006');
+    expect(result.stdout).toContain('Validation succeeded.');
+  });
+
+  it('escalates a policy warning to a failure under --strict (exit code 6)', () => {
+    project = createFixtureProject(WITH_UNTIMED_TOOL);
+    const result = runCli(['validate', '--strict'], project.dir);
+    expect(result.exitCode).toBe(6);
+  });
+
+  it('fails with exit code 6 (policy failure) on a mandatory policy violation, no --strict needed', () => {
+    project = createFixtureProject(WITH_UNRESTRICTED_SHELL_TOOL);
+    const result = runCli(['validate'], project.dir);
+    expect(result.exitCode).toBe(6);
+    expect(result.stdout).toContain('AF002');
+  });
+
+  it('includes the full policyResults array in --json output', () => {
+    project = createFixtureProject(VALID_PROJECT);
+    const result = runCli(['validate', '--json'], project.dir);
+    const parsed = JSON.parse(result.stdout) as {
+      policyResults: { policyId: string; status: string }[];
+    };
+    expect(parsed.policyResults.length).toBe(15);
+    expect(parsed.policyResults.every((r) => r.status === 'pass')).toBe(true);
+  });
+
+  it('cannot bypass a mandatory policy via agentform.policy.yaml', () => {
+    project = createFixtureProject({
+      ...WITH_UNRESTRICTED_SHELL_TOOL,
+      'agentform.policy.yaml': [
+        'overrides:',
+        '  AF002:',
+        '    severity: skip',
+        '    justification: trust me',
+        '',
+      ].join('\n'),
+    });
+    const result = runCli(['validate'], project.dir);
+    expect(result.exitCode).toBe(6);
+    expect(result.stdout).toContain('AGF4001');
+    expect(result.stdout).toContain('AF002');
+  });
+
+  it('accepts a justified severity downgrade via agentform.policy.yaml', () => {
+    project = createFixtureProject({
+      ...WITH_UNTIMED_TOOL,
+      'agentform.policy.yaml': [
+        'overrides:',
+        '  AF006:',
+        '    severity: skip',
+        '    justification: timeouts enforced at the gateway layer',
+        '',
+      ].join('\n'),
+    });
+    const result = runCli(['validate'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('AF006');
+  });
+
+  it('fails with exit code 6 and a diagnostic on a malformed agentform.policy.yaml', () => {
+    project = createFixtureProject({
+      ...VALID_PROJECT,
+      'agentform.policy.yaml': ['overrides:', '  AF006:', '    severity: off', ''].join('\n'),
+    });
+    const result = runCli(['validate'], project.dir);
+    expect(result.exitCode).toBe(6);
+    expect(result.stdout).toContain('AGF4004');
+  });
+});

@@ -1,6 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import { loadDocument } from './document.js';
 
+describe('loadDocument (max source file size)', () => {
+  it('rejects text over the configured limit without attempting to parse it', () => {
+    const oversized = `metadata:\n  name: ${'a'.repeat(100)}\n`;
+    const result = loadDocument(oversized, 'agentform.yaml', { maxSourceFileSizeBytes: 50 });
+
+    expect(result.value).toBeUndefined();
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe('AGF1010');
+    expect(result.diagnostics[0]?.severity).toBe('error');
+  });
+
+  it('accepts text at or under the configured limit', () => {
+    const text = 'metadata:\n  name: a\n';
+    const result = loadDocument(text, 'agentform.yaml', {
+      maxSourceFileSizeBytes: Buffer.byteLength(text, 'utf-8'),
+    });
+
+    expect(result.diagnostics).toEqual([]);
+    expect(result.value).toEqual({ metadata: { name: 'a' } });
+  });
+
+  it('uses the default limit when none is given, well above a normal document', () => {
+    const result = loadDocument('metadata:\n  name: a\n', 'agentform.yaml');
+    expect(result.diagnostics).toEqual([]);
+  });
+});
+
 describe('loadDocument (YAML)', () => {
   it('parses a simple document with no diagnostics', () => {
     const result = loadDocument(

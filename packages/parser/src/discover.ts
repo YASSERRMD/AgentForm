@@ -82,6 +82,7 @@ export function discoverResourceCollection(
   existingKeys: ReadonlySet<string>,
   consumedFiles: ReadonlySet<string> = new Set(),
   maxReferenceDepth?: number,
+  maxSourceFileSizeBytes?: number,
 ): DiscoveredResources {
   const diagnostics: Diagnostic[] = [];
   const resources: Record<string, unknown> = {};
@@ -114,7 +115,9 @@ export function discoverResourceCollection(
     }
     seenKeys.add(key);
 
-    const doc = loadDocument(fs.readFile(path.join(rootDir, relativePath)), relativePath);
+    const doc = loadDocument(fs.readFile(path.join(rootDir, relativePath)), relativePath, {
+      maxSourceFileSizeBytes,
+    });
     diagnostics.push(...doc.diagnostics);
 
     // An auto-discovered file can itself contain $ref/file/schemaRef
@@ -127,6 +130,7 @@ export function discoverResourceCollection(
           rootDir,
           fs,
           maxDepth: maxReferenceDepth,
+          maxSourceFileSizeBytes,
         });
     diagnostics.push(...resolved.diagnostics);
     resources[key] = resolved.value;

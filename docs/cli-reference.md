@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline.
+`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate` additionally runs `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds — see its own section below.
 
 ## Global options
 
@@ -22,16 +22,17 @@ Every command accepts these (defined once on the root program):
 
 Every command sets `process.exitCode` (never calls `process.exit()` directly mid-command, so pending output always flushes first) to one of the stable codes from §14:
 
-| Code | Meaning                     | Where it comes from                                                                                                                                                                         |
-| ---- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success                     |                                                                                                                                                                                             |
-| 1    | General failure             | e.g. `format --check` finding an unformatted file; a file that can't be read                                                                                                                |
-| 2    | Invalid command usage       | Unknown flag/command/argument (remapped from Commander's own default of `1` — see ADR-0006), an unknown `--format`/`--template`/`--target` value, an `inspect` address that doesn't resolve |
-| 3    | Source parsing failure      | Any `AGF1xxx` error from `@agentform/parser`                                                                                                                                                |
-| 4    | Schema validation failure   | Any `AGF2xxx` error from `@agentform/schema`                                                                                                                                                |
-| 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                    |
+| Code | Meaning                     | Where it comes from                                                                                                                                                                          |
+| ---- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Success                     |                                                                                                                                                                                              |
+| 1    | General failure             | e.g. `format --check` finding an unformatted file; a file that can't be read                                                                                                                 |
+| 2    | Invalid command usage       | Unknown flag/command/argument (remapped from Commander's own default of `1` — see ADR-0006), an unknown `--format`/`--template`/`--target` value, an `inspect` address that doesn't resolve  |
+| 3    | Source parsing failure      | Any `AGF1xxx` error from `@agentform/parser`                                                                                                                                                 |
+| 4    | Schema validation failure   | Any `AGF2xxx` error from `@agentform/schema`                                                                                                                                                 |
+| 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                     |
+| 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate` only |
 
-`lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation.
+`lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation (or policy checks, which don't even run until parsing/schema/semantic validation all succeed).
 
 ## Commands
 
@@ -65,14 +66,29 @@ Interactive mode (prompts for whichever of name/template wasn't given as a flag)
 
 ### `agentform validate`
 
-Runs the full pipeline and reports every diagnostic.
+Runs the full pipeline — parsing, schema, semantic, then policy — and reports every diagnostic.
 
 ```bash
 agentform validate
-agentform validate --strict           # warnings also fail
+agentform validate --strict           # warnings (including policy warnings) also fail
 agentform validate --environment production
 agentform --json validate
 ```
+
+Policy checks run `@agentform/policy`'s 15 built-in policies (`docs/policy-reference.md`) against the document once parsing/schema/semantic validation all succeed — evaluating policy against a document already broken in a more fundamental way would just add confusing secondary output. A `fail`-status policy result is an error diagnostic (blocks, exit 6, with or without `--strict`); a `warn`-status result is a warning diagnostic (blocks only under `--strict`, same as any other stage's warnings). Each diagnostic's `code` is the policy ID itself (e.g. `AF003`), so it's visible directly in both human and `--json` output.
+
+An optional `agentform.policy.yaml` at the project root configures per-policy severity overrides — same "found by fixed filename, absent is fine" convention as `environments/<name>.yaml`:
+
+```yaml
+overrides:
+  AF006:
+    severity: skip
+    justification: timeouts enforced at the gateway layer
+```
+
+A mandatory policy's severity can never be overridden (attempting to produces an `AGF4001` diagnostic and the override is ignored); a non-mandatory override that _weakens_ severity requires a non-empty `justification` (`AGF4002` otherwise). There is no CLI flag to point at a different config file or to skip policy checks entirely — see the Security implications section below for why.
+
+`--json` output includes a `policyResults` field: the full array of all 15 results (`pass`/`warn`/`fail`/`skip`), not just the ones that became diagnostics — useful for tooling that wants to show "everything that was checked," not only what failed.
 
 ### `agentform format [file]`
 
@@ -115,10 +131,13 @@ With no `--workflow`, every workflow in the project is rendered (concatenated fo
 
 - `init`/`format` are the only commands that write to disk, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file).
 - No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution.
-- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`, none of which read or echo secret material (§3.5, §18).
+- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first.
+- **Mandatory policies cannot be bypassed with CLI flags** (§16's own acceptance criterion): there is no `--no-policy`/`--skip-policy` flag, no way to pass overrides inline on the command line, and no flag to point `agentform.policy.yaml` at a different file. The _only_ lever is the fixed-filename config file, and even that file cannot change a mandatory policy's severity — `evaluatePolicies` rejects the attempt regardless of what the config says.
 
 ## Troubleshooting
 
 - **A command hangs with no output**: you're very likely in `init`'s interactive path with stdin that isn't actually connected to a terminal (e.g. running inside some non-interactive wrapper that still reports `isTTY: true`). Pass `--non-interactive` explicitly.
 - **`agentform format` "fixes" something you didn't expect**: check whether the file is JSON or YAML — JSON files are never rewritten into YAML syntax, and YAML files never get their keys reordered, only their whitespace/quote style normalized.
-- **Exit code 2 for what looks like a real validation problem**: 2 is reserved for _usage_ errors (a bad flag, an unknown `inspect` address, an unknown `--template`) — a genuine document problem always exits 3/4/5, never 2.
+- **Exit code 2 for what looks like a real validation problem**: 2 is reserved for _usage_ errors (a bad flag, an unknown `inspect` address, an unknown `--template`) — a genuine document problem always exits 3/4/5/6, never 2.
+- **An override in `agentform.policy.yaml` doesn't seem to apply**: check for an `AGF4001`/`AGF4002` diagnostic in the output — a mandatory policy's severity can't be overridden at all, and a non-mandatory _downgrade_ (e.g. `error` to `warning`) needs a non-empty `justification` or it's rejected and the default severity is kept.
+- **`agentform validate` exits 6 but you expected 0**: a policy fired at `error` severity. The diagnostic's `code` is the policy ID (e.g. `AF003`) — check `docs/policy-reference.md` for what that policy checks and how to fix the underlying document, or (if it's genuinely not mandatory and you have a real reason) add a justified override.

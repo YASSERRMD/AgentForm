@@ -62,6 +62,9 @@ importers:
       '@agentform/parser':
         specifier: workspace:*
         version: link:../../packages/parser
+      '@agentform/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
       '@agentform/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -142,7 +145,21 @@ importers:
 
   packages/plugin-sdk: {}
 
-  packages/policy: {}
+  packages/policy:
+    dependencies:
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/runtime: {}
 

@@ -1,6 +1,7 @@
 import type { Diagnostic } from '@agentform/diagnostics';
 import { type AgentformIR, buildIR } from '@agentform/ir';
 import { loadProject, nodeFileSystem } from '@agentform/parser';
+import type { AgenticApplication } from '@agentform/schema';
 
 export interface LoadAndBuildOptions {
   readonly rootDir: string;
@@ -9,6 +10,7 @@ export interface LoadAndBuildOptions {
 
 export interface LoadAndBuildResult {
   readonly ir?: AgentformIR;
+  readonly application?: AgenticApplication;
   readonly diagnostics: readonly Diagnostic[];
 }
 
@@ -30,5 +32,9 @@ export function loadAndBuildIR(options: LoadAndBuildOptions): LoadAndBuildResult
   }
 
   const irResult = buildIR(project.value, { sourceMap: project.sourceMap });
-  return { ir: irResult.ir, diagnostics: [...project.diagnostics, ...irResult.diagnostics] };
+  return {
+    ir: irResult.ir,
+    application: irResult.application,
+    diagnostics: [...project.diagnostics, ...irResult.diagnostics],
+  };
 }

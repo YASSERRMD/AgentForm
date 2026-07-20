@@ -39,16 +39,23 @@ describe('buildIR', () => {
   it('fails (no IR) when schema validation fails', () => {
     const result = buildIR({ apiVersion: 'wrong', kind: 'AgenticApplication' });
     expect(result.ir).toBeUndefined();
+    expect(result.application).toBeUndefined();
     expect(result.diagnostics.some((d) => d.severity === 'error')).toBe(true);
   });
 
-  it('fails (no IR) when a schema-valid document has an invalid graph', () => {
+  it('fails (no IR) when a schema-valid document has an invalid graph, but still exposes the schema-validated application', () => {
     const app = withApplication((a) => {
       a.spec.workflows.main!.nodes.orphan = { type: 'agent', agent: 'assistant' };
     });
     const result = buildIR(app);
     expect(result.ir).toBeUndefined();
+    expect(result.application).toBeDefined();
     expect(result.diagnostics.some((d) => d.code === 'AGF3005')).toBe(true);
+  });
+
+  it('exposes the schema-validated application alongside a successful build', () => {
+    const result = buildIR(withApplication(() => {}));
+    expect(result.application?.spec.agents.assistant?.role).toBe('assistant');
   });
 
   it('passes a valid branching graph through to a real IR', () => {

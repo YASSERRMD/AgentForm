@@ -1,0 +1,4 @@
+model: primary
+role: assistant
+instructions:
+  $ref: ./b.yaml

@@ -1,0 +1,31 @@
+# Security fixture: agents.assistant $refs into agents/a.yaml, which $refs
+# agents/b.yaml, which $refs back to agents/a.yaml — a direct cycle.
+# loadProject() must detect this and stop with an AGF1003 REFERENCE_CYCLE
+# diagnostic instead of recursing until it exhausts memory/stack — see the
+# threat model's "Denial-of-service through recursive references" section
+# (docs/security/threat-model.md).
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: recursive-reference-exhaustion-fixture
+  version: 1.0.0
+
+spec:
+  runtime:
+    target: openai
+    environment: development
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+  agents:
+    assistant:
+      $ref: ./agents/a.yaml
+  workflows:
+    main:
+      entrypoint: assistant
+      nodes:
+        assistant:
+          type: agent
+          agent: assistant

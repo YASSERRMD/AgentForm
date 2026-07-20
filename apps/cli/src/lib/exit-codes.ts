@@ -23,9 +23,10 @@ export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
 /**
  * Picks the exit code matching the *earliest* pipeline stage that
  * produced an error diagnostic — parsing (`AGF1xxx`) before schema
- * (`AGF2xxx`) before semantic (`AGF3xxx`) — since that's the stage whose
- * fix actually unblocks the rest. Returns `SUCCESS` if there are no error
- * diagnostics at all.
+ * (`AGF2xxx`) before semantic (`AGF3xxx`) before policy (a built-in
+ * policy ID like `AF003`, or `AGF4xxx` for a rejected policy override) —
+ * since that's the stage whose fix actually unblocks the rest. Returns
+ * `SUCCESS` if there are no error diagnostics at all.
  */
 export function exitCodeForDiagnostics(
   diagnostics: readonly { code: string; severity: string }[],
@@ -39,6 +40,12 @@ export function exitCodeForDiagnostics(
   }
   if (errorCodes.some((code) => code.startsWith('AGF2'))) {
     return EXIT_CODES.SCHEMA_VALIDATION_FAILURE;
+  }
+  if (errorCodes.some((code) => code.startsWith('AGF3'))) {
+    return EXIT_CODES.SEMANTIC_VALIDATION_FAILURE;
+  }
+  if (errorCodes.some((code) => /^AF\d/.test(code) || code.startsWith('AGF4'))) {
+    return EXIT_CODES.POLICY_FAILURE;
   }
   return EXIT_CODES.SEMANTIC_VALIDATION_FAILURE;
 }

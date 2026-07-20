@@ -1,0 +1,33 @@
+# Security fixture: agents.assistant.instructions attempts to read a file
+# far outside this project's root via `../` traversal. loadProject() must
+# reject this with an AGF1002 UNSAFE_PATH diagnostic rather than reading
+# the target file — see the threat model's "Path traversal" / "Unsafe file
+# references" sections (docs/security/threat-model.md).
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: malicious-path-fixture
+  version: 1.0.0
+
+spec:
+  runtime:
+    target: openai
+    environment: development
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+  agents:
+    assistant:
+      model: primary
+      role: assistant
+      instructions:
+        file: ../../../../../../../../etc/passwd
+  workflows:
+    main:
+      entrypoint: assistant
+      nodes:
+        assistant:
+          type: agent
+          agent: assistant

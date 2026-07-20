@@ -11,6 +11,7 @@ export type {
 } from './types.js';
 export { POLICY_ENGINE_DIAGNOSTIC_CODES } from './codes.js';
 export { redactSecretValue } from './redact.js';
+export { detectSecret, SECRET_PATTERNS, type SecretPattern } from './secret-patterns.js';
 export { evaluatePolicies, hasPolicyFailures, type EvaluatePoliciesResult } from './evaluate.js';
 export { BUILTIN_POLICIES } from './policies/index.js';
 export {

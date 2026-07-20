@@ -52,16 +52,18 @@ An Agentform specification describes an agentic application's models, tools, age
 
 This repository is in active, phased development. Each phase lands on its own branch and pull request; see [`temp/instruction.md`](temp/instruction.md) for the full build plan.
 
-**Phase 1 (current)** delivers the repository foundation only: the pnpm/TypeScript monorepo, build/lint/test tooling, CI, and a CLI shell that supports `--help` and `--version`. It does **not** yet implement the specification schema, parser, IR, planner, compiler, adapters, policy engine, or any of the lifecycle commands below — those land in later phases. Nothing in this repository should be treated as functional until its owning phase has merged.
+Through Phase 5, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); and the first five CLI commands (Phase 5), wired to that full pipeline end to end. Still not implemented: the planner, compiler, policy engine, evaluator, framework adapters, or state engine — those land in later phases. See [`temp/instruction.md`](temp/instruction.md) for the full plan and [`docs/cli-reference.md`](docs/cli-reference.md) for command details.
 
-The planned CLI lifecycle:
+The CLI lifecycle — implemented commands first:
 
 ```bash
-agentform init
-agentform validate
-agentform format
-agentform inspect
-agentform graph
+agentform init          # scaffold a new project from one of five starter templates
+agentform validate      # parse, schema-validate, and semantically validate a project
+agentform format        # deterministically reformat a YAML/JSON source file
+agentform inspect       # print a resolved resource, or an application summary
+agentform graph         # generate a Mermaid, DOT, or JSON workflow graph
+
+# Not yet implemented — later phases:
 agentform plan
 agentform compile
 agentform test
@@ -107,7 +109,7 @@ agentform/
 └── docs/adr/                      # architecture decision records
 ```
 
-`core`, `diagnostics`, `schema`, `parser`, and `ir` have real implementations (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), and [`docs/ir-reference.md`](docs/ir-reference.md)). Every other package under `packages/` is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
+`core`, `diagnostics`, `schema`, `parser`, and `ir` have real implementations, and `apps/cli` has five working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). Every other package under `packages/` is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
 
 ## Development
 

@@ -83,7 +83,24 @@ importers:
 
   packages/evaluator: {}
 
-  packages/ir: {}
+  packages/ir:
+    dependencies:
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
 
   packages/observability: {}
 

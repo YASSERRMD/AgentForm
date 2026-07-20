@@ -218,4 +218,54 @@ describe('resolveReferences', () => {
     expect(result.diagnostics[0]?.code).toBe('AGF1001');
     expect(result.value).toEqual({ instructions: undefined });
   });
+
+  it('enforces the max source file size on a $ref target', () => {
+    const fs = createInMemoryFileSystem({
+      [path.join(rootDir, 'agents/researcher.yaml')]: `role: ${'a'.repeat(100)}\n`,
+    });
+    const entry = parseEntry('agents:\n  researcher:\n    $ref: ./agents/researcher.yaml\n');
+
+    const result = resolveReferences(entry.value, 'agentform.yaml', entry.sourceMap, {
+      rootDir,
+      fs,
+      maxSourceFileSizeBytes: 50,
+    });
+
+    expect(result.diagnostics.some((d) => d.code === 'AGF1010')).toBe(true);
+  });
+
+  it('enforces the max source file size on an inlined file: reference', () => {
+    const fs = createInMemoryFileSystem({
+      [path.join(rootDir, 'prompts/intake.md')]: 'x'.repeat(100),
+    });
+    const entry = parseEntry('instructions:\n  file: prompts/intake.md\n');
+
+    const result = resolveReferences(entry.value, 'agentform.yaml', entry.sourceMap, {
+      rootDir,
+      fs,
+      maxSourceFileSizeBytes: 50,
+    });
+
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]?.code).toBe('AGF1010');
+    expect(result.value).toEqual({ instructions: undefined });
+  });
+
+  it('enforces the max source file size on a schemaRef target', () => {
+    const fs = createInMemoryFileSystem({
+      [path.join(rootDir, 'schemas/complaint.json')]: JSON.stringify({
+        type: 'object',
+        description: 'y'.repeat(100),
+      }),
+    });
+    const entry = parseEntry('responseFormat:\n  schemaRef: schemas/complaint.json\n');
+
+    const result = resolveReferences(entry.value, 'agentform.yaml', entry.sourceMap, {
+      rootDir,
+      fs,
+      maxSourceFileSizeBytes: 50,
+    });
+
+    expect(result.diagnostics.some((d) => d.code === 'AGF1010')).toBe(true);
+  });
 });

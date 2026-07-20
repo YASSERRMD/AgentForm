@@ -80,4 +80,22 @@ describe('discoverResourceCollection', () => {
     expect(result.resources).toEqual({});
     expect(result.diagnostics).toEqual([]);
   });
+
+  it('enforces the max source file size on an auto-discovered file', () => {
+    const fs = createInMemoryFileSystem({
+      [path.join(rootDir, 'agents/researcher.yaml')]: `role: ${'a'.repeat(100)}\n`,
+    });
+
+    const result = discoverResourceCollection(
+      'agents',
+      rootDir,
+      fs,
+      new Set(),
+      new Set(),
+      undefined,
+      50,
+    );
+
+    expect(result.diagnostics.some((d) => d.code === 'AGF1010')).toBe(true);
+  });
 });

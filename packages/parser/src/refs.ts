@@ -2,7 +2,7 @@ import path from 'node:path';
 import { resolvePathRelativeToFile, UnsafePathError } from '@agentform/core';
 import type { Diagnostic, SourceLocation } from '@agentform/diagnostics';
 import { PARSER_DIAGNOSTIC_CODES } from './codes.js';
-import { loadDocument } from './document.js';
+import { DEFAULT_MAX_SOURCE_FILE_SIZE_BYTES, loadDocument } from './document.js';
 import type { FileSystem } from './filesystem.js';
 import { pathToKey, type ResourcePath, type SourceMap } from './types.js';
 
@@ -12,6 +12,7 @@ export interface ReferenceResolutionOptions {
   readonly rootDir: string;
   readonly fs: FileSystem;
   readonly maxDepth?: number;
+  readonly maxSourceFileSizeBytes?: number;
 }
 
 export interface ReferenceResolutionResult {
@@ -26,6 +27,7 @@ interface WalkState {
   readonly rootDir: string;
   readonly fs: FileSystem;
   readonly maxDepth: number;
+  readonly maxSourceFileSizeBytes: number | undefined;
   readonly diagnostics: Diagnostic[];
   readonly sourceMap: Map<string, SourceLocation>;
   readonly consumedFiles: Set<string>;
@@ -128,7 +130,9 @@ function resolveRef(
   }
 
   state.consumedFiles.add(relativeTarget);
-  const doc = loadDocument(state.fs.readFile(target), relativeTarget);
+  const doc = loadDocument(state.fs.readFile(target), relativeTarget, {
+    maxSourceFileSizeBytes: state.maxSourceFileSizeBytes,
+  });
   state.diagnostics.push(...doc.diagnostics);
   mergeSourceMap(state.sourceMap, fieldPath, doc.sourceMap);
 
@@ -146,7 +150,14 @@ function resolveRef(
   );
 }
 
-/** `{ file: "<path>" }` (e.g. an agent's `instructions`) becomes `{ text: "<file contents>" }`. Does not recurse into the file's content — it's plain text, not more Agentform document structure. */
+/**
+ * `{ file: "<path>" }` (e.g. an agent's `instructions`) becomes `{ text:
+ * "<file contents>" }`. Does not recurse into the file's content — it's
+ * plain text, not more Agentform document structure — so unlike `$ref`/
+ * `schemaRef` it never reaches `loadDocument`'s own size check; this
+ * checks the raw text directly against the same limit (§19 "Maximum
+ * source file size").
+ */
 function resolveFileContent(
   relativePath: string,
   currentFile: string,
@@ -154,7 +165,22 @@ function resolveFileContent(
   state: WalkState,
 ): unknown {
   const resolved = resolveAndCheck(relativePath, currentFile, fieldPath, state);
-  return resolved ? { text: state.fs.readFile(resolved.absolute) } : undefined;
+  if (!resolved) {
+    return undefined;
+  }
+  const text = state.fs.readFile(resolved.absolute);
+  const maxSize = state.maxSourceFileSizeBytes ?? DEFAULT_MAX_SOURCE_FILE_SIZE_BYTES;
+  const sizeBytes = Buffer.byteLength(text, 'utf-8');
+  if (sizeBytes > maxSize) {
+    state.diagnostics.push({
+      code: PARSER_DIAGNOSTIC_CODES.MAX_SOURCE_FILE_SIZE_EXCEEDED.code,
+      severity: 'error',
+      message: `File "${resolved.relative}" is ${sizeBytes} bytes, exceeding the maximum allowed size of ${maxSize} bytes`,
+      path: fieldPath,
+    });
+    return undefined;
+  }
+  return { text };
 }
 
 /** `{ schemaRef: "<path>" }` (a model's `responseFormat`) becomes `{ schema: <parsed JSON/YAML> }`. Like `resolveFileContent`, does not recurse further — a JSON Schema file's own `$ref`s belong to the JSON Schema spec, not Agentform's. */
@@ -168,7 +194,9 @@ function resolveSchemaRefContent(
   if (!resolved) {
     return undefined;
   }
-  const doc = loadDocument(state.fs.readFile(resolved.absolute), relativePath);
+  const doc = loadDocument(state.fs.readFile(resolved.absolute), relativePath, {
+    maxSourceFileSizeBytes: state.maxSourceFileSizeBytes,
+  });
   state.diagnostics.push(...doc.diagnostics);
   return { schema: doc.value };
 }
@@ -233,6 +261,7 @@ export function resolveReferences(
     rootDir: path.resolve(options.rootDir),
     fs: options.fs,
     maxDepth: options.maxDepth ?? DEFAULT_MAX_REFERENCE_DEPTH,
+    maxSourceFileSizeBytes: options.maxSourceFileSizeBytes,
     diagnostics: [],
     sourceMap: new Map(sourceMap),
     consumedFiles: new Set(),

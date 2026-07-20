@@ -19,6 +19,7 @@ export interface LoadProjectOptions {
   readonly fs: FileSystem;
   readonly environment?: string;
   readonly maxReferenceDepth?: number;
+  readonly maxSourceFileSizeBytes?: number;
   readonly env?: InterpolateDocumentOptions['env'];
   readonly variableOverrides?: InterpolateDocumentOptions['variableOverrides'];
 }
@@ -66,6 +67,7 @@ function loadAndResolve(
   const doc = loadDocument(
     options.fs.readFile(path.join(options.rootDir, entryRelativePath)),
     entryRelativePath,
+    { maxSourceFileSizeBytes: options.maxSourceFileSizeBytes },
   );
   const diagnostics: Diagnostic[] = [...doc.diagnostics];
 
@@ -82,6 +84,7 @@ function loadAndResolve(
     rootDir: options.rootDir,
     fs: options.fs,
     maxDepth: options.maxReferenceDepth,
+    maxSourceFileSizeBytes: options.maxSourceFileSizeBytes,
   });
   diagnostics.push(...resolved.diagnostics);
 
@@ -125,6 +128,7 @@ export function loadProject(options: LoadProjectOptions): LoadProjectResult {
         existingResourceKeys(value, collection),
         base.consumedFiles,
         options.maxReferenceDepth,
+        options.maxSourceFileSizeBytes,
       );
       diagnostics.push(...discovered.diagnostics);
       value = withResourceCollection(value, collection, discovered.resources);

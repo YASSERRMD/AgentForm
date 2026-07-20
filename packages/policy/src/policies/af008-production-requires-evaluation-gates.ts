@@ -1,6 +1,5 @@
+import { isProductionEnvironment } from '../production.js';
 import type { PolicyDefinition, PolicyFinding } from '../types.js';
-
-const PRODUCTION_ENVIRONMENT_PATTERN = /^prod(uction)?$/i;
 
 /**
  * A production-labeled runtime environment (`spec.runtime.environment`
@@ -16,7 +15,7 @@ export const af008ProductionRequiresEvaluationGates: PolicyDefinition = {
   mandatory: true,
   check: (context) => {
     const { runtime, evaluations } = context.application.spec;
-    if (!PRODUCTION_ENVIRONMENT_PATTERN.test(runtime.environment)) {
+    if (!isProductionEnvironment(runtime.environment)) {
       return [];
     }
     const hasDatasets = (evaluations?.datasets?.length ?? 0) > 0;

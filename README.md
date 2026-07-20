@@ -52,7 +52,7 @@ An Agentform specification describes an agentic application's models, tools, age
 
 This repository is in active, phased development. Each phase lands on its own branch and pull request; see [`temp/instruction.md`](temp/instruction.md) for the full build plan.
 
-Through Phase 6, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); the first five CLI commands (Phase 5); and a built-in policy engine — 15 policies, configurable severity within mandatory-policy bounds, wired into `agentform validate` (Phase 6). Still not implemented: the planner, compiler, evaluator, framework adapters, or state engine — those land in later phases. See [`temp/instruction.md`](temp/instruction.md) for the full plan, [`docs/cli-reference.md`](docs/cli-reference.md) for command details, and [`docs/policy-reference.md`](docs/policy-reference.md) for the policy engine.
+Through Phase 7, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); the first five CLI commands (Phase 5); a built-in policy engine — 15 policies, configurable severity within mandatory-policy bounds, wired into `agentform validate` (Phase 6); and a local state engine and planner — a SQLite-backed record of deployed state, dependency-ordered desired/current comparison, risk classification, and tamper-evident plan files, wired into `agentform plan`/`agentform status` (Phase 7). Still not implemented: the compiler, evaluator, or framework adapters — those land in later phases. See [`temp/instruction.md`](temp/instruction.md) for the full plan, [`docs/cli-reference.md`](docs/cli-reference.md) for command details, [`docs/policy-reference.md`](docs/policy-reference.md) for the policy engine, and [`docs/state-reference.md`](docs/state-reference.md)/[`docs/planner-reference.md`](docs/planner-reference.md) for the state engine and planner.
 
 The CLI lifecycle — implemented commands first:
 
@@ -62,13 +62,13 @@ agentform validate      # parse, schema-validate, semantically validate, and pol
 agentform format        # deterministically reformat a YAML/JSON source file
 agentform inspect       # print a resolved resource, or an application summary
 agentform graph         # generate a Mermaid, DOT, or JSON workflow graph
+agentform plan          # compare desired specification against deployed state, no changes made
+agentform status        # show application, deployed state, and policy status
 
 # Not yet implemented — later phases:
-agentform plan
 agentform compile
 agentform test
 agentform apply
-agentform status
 agentform drift
 agentform import
 agentform rollback
@@ -109,7 +109,7 @@ agentform/
 └── docs/adr/                      # architecture decision records
 ```
 
-`core`, `diagnostics`, `schema`, `parser`, `ir`, and `policy` have real implementations, and `apps/cli` has five working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), [`docs/policy-reference.md`](docs/policy-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). Every other package under `packages/` is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
+`core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, and `planner` have real implementations, and `apps/cli` has seven working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), [`docs/policy-reference.md`](docs/policy-reference.md), [`docs/state-reference.md`](docs/state-reference.md), [`docs/planner-reference.md`](docs/planner-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). Every other package under `packages/` is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
 
 ## Development
 

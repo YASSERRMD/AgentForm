@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { findCycle, reachableNodes, sinkNodes, type DirectedGraph } from './graph.js';
+import {
+  findCycle,
+  reachableNodes,
+  sinkNodes,
+  topologicalSort,
+  type DirectedGraph,
+} from './graph.js';
 
 describe('reachableNodes', () => {
   it('finds every node reachable from the start, including itself', () => {
@@ -116,5 +122,72 @@ describe('findCycle', () => {
   it('returns undefined when start is not in the graph', () => {
     const graph: DirectedGraph = { nodes: new Set(['a']), edges: [] };
     expect(findCycle(graph, 'missing')).toBeUndefined();
+  });
+});
+
+describe('topologicalSort', () => {
+  it('orders a simple dependency chain with the dependency first', () => {
+    const graph: DirectedGraph = {
+      nodes: new Set(['model', 'agent', 'workflow']),
+      edges: [
+        { from: 'model', to: 'agent' },
+        { from: 'agent', to: 'workflow' },
+      ],
+    };
+    const result = topologicalSort(graph);
+    expect(result.cyclic).toEqual([]);
+    expect(result.order).toEqual(['model', 'agent', 'workflow']);
+  });
+
+  it('places every independent node when there are no edges', () => {
+    const graph: DirectedGraph = { nodes: new Set(['a', 'b', 'c']), edges: [] };
+    const result = topologicalSort(graph);
+    expect(result.cyclic).toEqual([]);
+    expect(result.order).toHaveLength(3);
+    expect(new Set(result.order)).toEqual(new Set(['a', 'b', 'c']));
+  });
+
+  it('respects a diamond dependency shape', () => {
+    const graph: DirectedGraph = {
+      nodes: new Set(['model', 'toolA', 'toolB', 'agent']),
+      edges: [
+        { from: 'model', to: 'toolA' },
+        { from: 'model', to: 'toolB' },
+        { from: 'toolA', to: 'agent' },
+        { from: 'toolB', to: 'agent' },
+      ],
+    };
+    const result = topologicalSort(graph);
+    expect(result.cyclic).toEqual([]);
+    const index = (id: string) => result.order.indexOf(id);
+    expect(index('model')).toBeLessThan(index('toolA'));
+    expect(index('model')).toBeLessThan(index('toolB'));
+    expect(index('toolA')).toBeLessThan(index('agent'));
+    expect(index('toolB')).toBeLessThan(index('agent'));
+  });
+
+  it('reports every node in a cycle as unplaceable, leaving unrelated nodes ordered', () => {
+    const graph: DirectedGraph = {
+      nodes: new Set(['a', 'b', 'independent']),
+      edges: [
+        { from: 'a', to: 'b' },
+        { from: 'b', to: 'a' },
+      ],
+    };
+    const result = topologicalSort(graph);
+    expect(result.order).toEqual(['independent']);
+    expect(new Set(result.cyclic)).toEqual(new Set(['a', 'b']));
+  });
+
+  it('is deterministic for the same graph across repeated calls', () => {
+    const graph: DirectedGraph = {
+      nodes: new Set(['a', 'b', 'c', 'd']),
+      edges: [
+        { from: 'a', to: 'c' },
+        { from: 'b', to: 'c' },
+        { from: 'c', to: 'd' },
+      ],
+    };
+    expect(topologicalSort(graph).order).toEqual(topologicalSort(graph).order);
   });
 });

@@ -10,7 +10,7 @@ Status labels used below:
 - **Partially mitigated** — a real control exists but doesn't cover the full threat (usually because the runtime half of Agentform doesn't exist yet).
 - **Planned** — no control exists yet because the subsystem it would protect doesn't exist yet; a placeholder is registered where one makes sense so it can't be silently disabled later.
 
-As of Phase 6, Agentform validates, compiles to an IR, and evaluates policy against specifications. It does not yet execute agents, apply state, or generate framework code — several threats below are structurally about _runtime_ behavior Agentform doesn't have yet. Those are marked Planned rather than overclaimed as mitigated.
+As of Phase 7, Agentform validates, compiles to an IR, evaluates policy, and can plan (compare desired state against a local SQLite-backed record of deployed state) against specifications. It does not yet execute agents, actually apply state, or generate framework code — several threats below are structurally about _runtime_ behavior Agentform doesn't have yet. Those are marked Planned rather than overclaimed as mitigated.
 
 ## Threats and mitigations
 
@@ -36,11 +36,11 @@ A real credential appearing in a document, a diagnostic message, a log line, or 
 
 ### State tampering
 
-Unauthorized modification of Agentform's persisted current-state record. **Planned**: no state engine exists until Phase 7. [`AF014`](../../packages/policy/src/policies/af014-state-must-not-contain-secrets.ts) is registered now, as mandatory, specifically so an organization's override config committed _today_ can't later disable it the moment state does exist.
+Unauthorized modification of Agentform's persisted current-state record. **Partially mitigated**: [`@agentform/state-local`](../../packages/state-local) stores every mutation in a real transactional database (SQLite, atomic per-migration and — once `apply` exists in Phase 11 — per-apply transactions), and file-based locking (`.agentform/lock`) prevents two `agentform` processes from writing concurrently. What's not yet covered: `state.db` itself has no integrity check (a hash over its contents, checked on open) and no encryption at rest (§6.6 lists encryption hooks as future work) — protection today is "hard to corrupt via normal concurrent use," not "detects a file edited directly on disk." [`AF014`](../../packages/policy/src/policies/af014-state-must-not-contain-secrets.ts) remains a mandatory placeholder for the same reason as before: nothing raw is stored in state to leak in the first place (see `docs/state-reference.md`), so there's currently nothing for a real `AF014` check to find.
 
 ### Plan tampering
 
-Unauthorized modification of a generated plan file between `plan` and `apply`. **Planned**: no planner or plan file exists until Phase 7. The building block plan integrity will need — a deterministic content hash of the compiled IR — already exists ([`computeContentHash`](../../packages/ir/src/hash.ts)), but plan-file-specific signing/verification is Phase 7 scope.
+Unauthorized modification of a generated plan file between `plan` and `apply`. **Mitigated**: [`@agentform/planner`](../../packages/planner)'s `.afplan` files are tamper-evident — `createPlanFile`/`verifyPlanFile` compute and check a content hash (the same canonicalization [`computeContentHash`](../../packages/ir/src/hash.ts) uses) over the plan's full contents; any edit to the file, including an attempt to also edit the recorded hash to match, is caught on verify (`packages/planner/src/plan-file.test.ts` proves both cases). What's not yet wired up: no command actually calls `verifyPlanFile` before acting on a saved plan yet, since `agentform apply plan.afplan` doesn't exist until Phase 11 — the detection mechanism exists and is tested standalone, but nothing consumes it end-to-end yet.
 
 ### Generated-code tampering
 
@@ -113,8 +113,9 @@ A structure that causes a small input to trigger an unbounded or exponential num
 | Network allowlisting                         | `@agentform/policy` `AF012`                                             | Partially mitigated (declaration only, no request-time enforcement) |
 | Plugin trust policy                          | —                                                                       | Planned (Phase 8+, once plugins load)                               |
 | Content hashing                              | `@agentform/ir` (`computeContentHash`)                                  | Mitigated                                                           |
-| State integrity checks                       | —                                                                       | Planned (Phase 7)                                                   |
-| Plan integrity checks                        | —                                                                       | Planned (Phase 7)                                                   |
+| State atomicity and locking                  | `@agentform/state-local` (SQLite transactions, file lock)               | Mitigated                                                           |
+| State integrity checks (tamper detection)    | —                                                                       | Planned                                                             |
+| Plan integrity checks                        | `@agentform/planner` (`createPlanFile`/`verifyPlanFile`)                | Mitigated (detection only — no command calls it yet; Phase 11)      |
 | Redacted logs/diagnostics                    | `@agentform/policy` (`redactSecretValue`, `AF001`, `AF010`)             | Mitigated                                                           |
 | Safe YAML parsing                            | `@agentform/parser` (`yaml` package)                                    | Mitigated                                                           |
 
@@ -124,7 +125,9 @@ A structure that causes a small input to trigger an unbounded or exponential num
 - `packages/parser/src/security-fixtures.test.ts` — the same protections proven against real on-disk fixture projects rather than the in-memory test harness.
 - `packages/ir/src/semantic/limits.test.ts` — workflow node/edge/expression-length caps.
 - `packages/policy/src/policies/*.test.ts` — every built-in policy, including the redaction and mandatory-override tests in `packages/policy/src/evaluate.test.ts` and `packages/policy/src/redact.test.ts`.
+- `packages/state-local/src/lock.test.ts` and `sqlite-state-backend.test.ts` — lock contention/staleness, atomic transactions, crash recovery, all against real temp-directory SQLite files.
+- `packages/planner/src/plan-file.test.ts` — plan file tamper detection, including an attempt to also edit the recorded hash.
 
 ## Updating this document
 
-Add a section (or update a status label) whenever a phase changes what's actually enforced — a status of "Planned" that quietly becomes true without this document being updated is itself a documentation-drift risk. Phase 7 (state/planner), Phase 8–9 (compiler/adapters), and Phase 11 (apply/drift/rollback) are each expected to move several rows above from Planned/Partially mitigated to Mitigated.
+Add a section (or update a status label) whenever a phase changes what's actually enforced — a status of "Planned" that quietly becomes true without this document being updated is itself a documentation-drift risk. Phase 8–9 (compiler/adapters) and Phase 11 (apply/drift/rollback) are each expected to move several rows above from Planned/Partially mitigated to Mitigated — Phase 11 in particular is what will make plan-file verification and state's real-world write path actually meet, since `apply` is the first command that will read a saved plan back.

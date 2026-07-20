@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate` additionally runs `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds — see its own section below.
+`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy,state,planner}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph`/`plan`/`status` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate`/`plan`/`status` additionally run `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds; `plan`/`status` also open the local state backend (`@agentform/state-local`) under `.agentform/` — see their own sections below.
 
 ## Global options
 
@@ -30,9 +30,10 @@ Every command sets `process.exitCode` (never calls `process.exit()` directly mid
 | 3    | Source parsing failure      | Any `AGF1xxx` error from `@agentform/parser`                                                                                                                                                 |
 | 4    | Schema validation failure   | Any `AGF2xxx` error from `@agentform/schema`                                                                                                                                                 |
 | 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                     |
-| 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate` only |
+| 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate`/`plan` |
+| 7    | Unapproved critical change  | `agentform plan` produced at least one `PlanItem` with `risk: 'CRITICAL'` (`requiresApproval: true`) — `@agentform/planner`, `plan` only                                                    |
 
-`lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation (or policy checks, which don't even run until parsing/schema/semantic validation all succeed).
+`lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation (or policy checks, which don't even run until parsing/schema/semantic validation all succeed). `plan`'s own exit code layers on top: policy failure (6) takes priority over an unapproved critical change (7) — a plan with pending, non-critical, policy-clean changes exits 0, same as Terraform's `plan` treating "there are changes" as success on its own.
 
 ## Commands
 
@@ -127,9 +128,36 @@ agentform graph --workflow main --output workflow.mmd
 
 With no `--workflow`, every workflow in the project is rendered (concatenated for Mermaid/DOT, an array for JSON). The entrypoint node gets a visually distinct shape (Mermaid stadium / DOT double-circle) in both text formats.
 
+### `agentform plan`
+
+Compares the desired specification against deployed state without changing either.
+
+```bash
+agentform plan
+agentform plan --out plan.afplan       # save a tamper-evident plan file
+agentform plan --environment production
+agentform --json plan
+```
+
+Runs the full pipeline, opens the local state backend (`@agentform/state-local`, `.agentform/state.db`) **read-only** — `plan` never acquires the state lock and never calls any mutating `StateBackend` method, so "failed planning never mutates state" holds structurally, not just by convention — compares desired resources against stored ones (`@agentform/planner`'s `comparePlan`), and runs policy checks against the plan exactly like `validate` does (§15.6). Output matches §9's example shape: a `+`/`~`/`!`/`-` prefixed line per changed resource (unchanged resources are omitted) with its reasons and risk, then a `Plan: N to create, N to change, N to destroy.` summary.
+
+`--out <file>` additionally saves the plan as a tamper-evident `.afplan` file (`docs/planner-reference.md`) — JSON with a content hash covering everything in it, so editing the file afterward is detectable. `--json` output includes the full `items` array (every `PlanItem`, including `NO_OP`s) alongside `policyResults`, mirroring `validate`'s `--json` shape.
+
+### `agentform status`
+
+Shows the application, deployed state, and policy status (§15.10).
+
+```bash
+agentform status
+agentform --json status
+```
+
+Always exits 0 once the pipeline itself succeeds — like `inspect`, this is a read-only reporting command, not a pass/fail gate. `Policy:` reflects a real `evaluatePolicies` run against the current specification (`PASSED`/`PASSED (with warnings)`/`FAILED`); `Drift:` and `Evaluation:` honestly report `unknown (... not implemented until a later phase)` rather than fabricating data — no drift detection (`agentform drift`) or evaluation engine exists yet to produce a real answer for either.
+
 ## Security implications
 
-- `init`/`format` are the only commands that write to disk, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file).
+- `init`/`format` are the only commands that write to disk unconditionally, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file). `plan --out <file>` also writes, but only the file the user explicitly named.
+- `plan`/`status` never store raw resource values in `.agentform/state.db` — see `docs/state-reference.md`.
 - No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution.
 - Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first.
 - **Mandatory policies cannot be bypassed with CLI flags** (§16's own acceptance criterion): there is no `--no-policy`/`--skip-policy` flag, no way to pass overrides inline on the command line, and no flag to point `agentform.policy.yaml` at a different file. The _only_ lever is the fixed-filename config file, and even that file cannot change a mandatory policy's severity — `evaluatePolicies` rejects the attempt regardless of what the config says.
@@ -138,6 +166,8 @@ With no `--workflow`, every workflow in the project is rendered (concatenated fo
 
 - **A command hangs with no output**: you're very likely in `init`'s interactive path with stdin that isn't actually connected to a terminal (e.g. running inside some non-interactive wrapper that still reports `isTTY: true`). Pass `--non-interactive` explicitly.
 - **`agentform format` "fixes" something you didn't expect**: check whether the file is JSON or YAML — JSON files are never rewritten into YAML syntax, and YAML files never get their keys reordered, only their whitespace/quote style normalized.
-- **Exit code 2 for what looks like a real validation problem**: 2 is reserved for _usage_ errors (a bad flag, an unknown `inspect` address, an unknown `--template`) — a genuine document problem always exits 3/4/5/6, never 2.
+- **Exit code 2 for what looks like a real validation problem**: 2 is reserved for _usage_ errors (a bad flag, an unknown `inspect` address, an unknown `--template`) — a genuine document problem always exits 3/4/5/6/7, never 2.
 - **An override in `agentform.policy.yaml` doesn't seem to apply**: check for an `AGF4001`/`AGF4002` diagnostic in the output — a mandatory policy's severity can't be overridden at all, and a non-mandatory _downgrade_ (e.g. `error` to `warning`) needs a non-empty `justification` or it's rejected and the default severity is kept.
-- **`agentform validate` exits 6 but you expected 0**: a policy fired at `error` severity. The diagnostic's `code` is the policy ID (e.g. `AF003`) — check `docs/policy-reference.md` for what that policy checks and how to fix the underlying document, or (if it's genuinely not mandatory and you have a real reason) add a justified override.
+- **`agentform validate`/`agentform plan` exits 6 but you expected 0**: a policy fired at `error` severity. The diagnostic's `code` is the policy ID (e.g. `AF003`) — check `docs/policy-reference.md` for what that policy checks and how to fix the underlying document, or (if it's genuinely not mandatory and you have a real reason) add a justified override.
+- **`agentform plan` exits 7**: at least one plan item is `CRITICAL` risk — check `docs/planner-reference.md`'s risk classification section for what triggers it (deleting a workflow, or a workflow with an ungated destructive-tool call).
+- **`agentform plan`/`agentform status` seem to hang or a `.agentform/` directory unexpectedly appears**: both commands create `.agentform/state.db` on first run (SQLite's default behavior for a database file that doesn't exist yet) — this is expected, not an error; see `docs/state-reference.md`.

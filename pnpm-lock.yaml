@@ -99,7 +99,24 @@ importers:
 
   packages/adapter-openai: {}
 
-  packages/compiler: {}
+  packages/compiler:
+    dependencies:
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+      '@agentform/policy':
+        specifier: workspace:*
+        version: link:../policy
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/core:
     devDependencies:

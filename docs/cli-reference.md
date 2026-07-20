@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy,state,planner}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph`/`plan`/`status` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate`/`plan`/`status` additionally run `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds; `plan`/`status` also open the local state backend (`@agentform/state-local`) under `.agentform/` — see their own sections below.
+`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy,state,planner,compiler}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph`/`plan`/`status`/`compile` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate`/`plan`/`status` additionally run `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds; `plan`/`status` also open the local state backend (`@agentform/state-local`) under `.agentform/`; `compile` runs `@agentform/compiler` against a `FrameworkAdapter` — see their own sections below.
 
 ## Global options
 
@@ -32,6 +32,8 @@ Every command sets `process.exitCode` (never calls `process.exit()` directly mid
 | 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                       |
 | 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate`/`plan` |
 | 7    | Unapproved critical change  | `agentform plan` produced at least one `PlanItem` with `risk: 'CRITICAL'` (`requiresApproval: true`) — `@agentform/planner`, `plan` only                                                       |
+| 8    | Compilation failure         | An `AGF5xxx` error from `@agentform/compiler` other than `AGF5001` (e.g. `AGF5003`, a blocked secret leak) — `compile` only                                                                    |
+| 13   | Unsupported target feature  | `AGF5001` — the project uses a node/tool type the target adapter has no generator for (`docs/compiler-reference.md`) — `compile` only                                                          |
 
 `lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation (or policy checks, which don't even run until parsing/schema/semantic validation all succeed). `plan`'s own exit code layers on top: policy failure (6) takes priority over an unapproved critical change (7) — a plan with pending, non-critical, policy-clean changes exits 0, same as Terraform's `plan` treating "there are changes" as success on its own.
 
@@ -154,12 +156,30 @@ agentform --json status
 
 Always exits 0 once the pipeline itself succeeds — like `inspect`, this is a read-only reporting command, not a pass/fail gate. `Policy:` reflects a real `evaluatePolicies` run against the current specification (`PASSED`/`PASSED (with warnings)`/`FAILED`); `Drift:` and `Evaluation:` honestly report `unknown (... not implemented until a later phase)` rather than fabricating data — no drift detection (`agentform drift`) or evaluation engine exists yet to produce a real answer for either.
 
+### `agentform compile`
+
+Generates a real project for a target framework from the specification (`docs/compiler-reference.md`).
+
+```bash
+agentform compile                          # the project's declared spec.runtime.target
+agentform compile --target langgraph       # a specific target, overriding runtime.target
+agentform compile --all                    # every target this build currently supports
+agentform compile --output ./out --clean   # custom output dir, wiping it first
+agentform --json compile
+```
+
+Only `openai` and `langgraph` have a registered adapter as of Phase 8 — `microsoft`/`google-adk`/`autogen`/`crewai` are valid `runtime.target` schema values but land in Phase 9; requesting one exits 2 with a message naming what's currently available, not a silent no-op. `--target` and `--all` cannot be combined.
+
+`--output` (default `./generated`) resolves against `--cwd`, not the real process working directory — unlike `graph`'s/`plan`'s `--output`/`--out` (arbitrary user-chosen file paths with no default), it's meant as "relative to the project being compiled," matching every `generated/<target>/` layout in the spec. Each target's files are written under `<output>/<target>/`, alongside a `manifest.json` (§22's exact shape, `generatedAt` always `null`). `--clean` removes a target's existing output subdirectory before writing — scoped to that one subdirectory, never anything else.
+
+Compilation never deploys anything — `compile` only ever calls an adapter's `validateCompatibility`/`generate`, never `deploy`/`destroy` (those don't exist yet; see `docs/compiler-reference.md`'s Scope section). A project using a node/tool type one target's adapter can't generate writes no files for that target and contributes an `AGF5001` diagnostic; with `--all`, every _other_ requested target still compiles and writes normally, but the overall exit code reflects the worst diagnostic across all of them — so a `--all` run can exit 13 while still having written a complete, successful project for the target(s) that didn't have the problem. Check the per-target `diagnostics` (`--json`) or the per-target block (human output) to see which target(s) actually failed. `--json` output includes a `targets` array (one entry per compiled target: `outputDir`, `filesWritten`, `manifest`, `diagnostics`) and a `skippedTargets` array (present, possibly empty, only meaningful with `--all`).
+
 ## Security implications
 
-- `init`/`format` are the only commands that write to disk unconditionally, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file). `plan --out <file>` also writes, but only the file the user explicitly named.
+- `init`/`format` are the only commands that write to disk unconditionally, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file). `plan --out <file>` also writes, but only the file the user explicitly named. `compile` writes an entire generated project, but only under `<output>/<target>/`, and only `--clean` ever deletes anything (scoped to that one subdirectory).
 - `plan`/`status` never store raw resource values in `.agentform/state.db` — see `docs/state-reference.md`.
-- No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution.
-- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first.
+- No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution; `compile`'s generated files are written to disk, never executed by `agentform` itself.
+- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first. `compile` additionally blocks on any generated file that looks like it contains a secret — see `docs/compiler-reference.md`.
 - **Mandatory policies cannot be bypassed with CLI flags** (§16's own acceptance criterion): there is no `--no-policy`/`--skip-policy` flag, no way to pass overrides inline on the command line, and no flag to point `agentform.policy.yaml` at a different file. The _only_ lever is the fixed-filename config file, and even that file cannot change a mandatory policy's severity — `evaluatePolicies` rejects the attempt regardless of what the config says.
 
 ## Troubleshooting
@@ -171,3 +191,6 @@ Always exits 0 once the pipeline itself succeeds — like `inspect`, this is a r
 - **`agentform validate`/`agentform plan` exits 6 but you expected 0**: a policy fired at `error` severity. The diagnostic's `code` is the policy ID (e.g. `AF003`) — check `docs/policy-reference.md` for what that policy checks and how to fix the underlying document, or (if it's genuinely not mandatory and you have a real reason) add a justified override.
 - **`agentform plan` exits 7**: at least one plan item is `CRITICAL` risk — check `docs/planner-reference.md`'s risk classification section for what triggers it (deleting a workflow, or a workflow with an ungated destructive-tool call).
 - **`agentform plan`/`agentform status` seem to hang or a `.agentform/` directory unexpectedly appears**: both commands create `.agentform/state.db` on first run (SQLite's default behavior for a database file that doesn't exist yet) — this is expected, not an error; see `docs/state-reference.md`.
+- **`agentform compile` exits 13**: the project uses a node/tool type the target adapter has no generator for — the diagnostic names the specific feature and target. See `docs/compiler-reference.md`'s tables for what each adapter currently supports.
+- **`agentform compile --target <name>` exits 2 saying "not yet supported"**: `<name>` is a schema-valid `runtime.target` value, but Phase 8 only registered `openai`/`langgraph` adapters — the other four land in Phase 9.
+- **Generated code throws/raises the moment you run it**: expected — Agentform generates a project's interface (agents, tools, graph wiring), never its business logic. See the `TODO` in the specific file the error names.

@@ -21,11 +21,15 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@agentform/adapter-langgraph": "workspace:*",
+    "@agentform/adapter-openai": "workspace:*",
+    "@agentform/compiler": "workspace:*",
     "@agentform/core": "workspace:*",
     "@agentform/diagnostics": "workspace:*",
     "@agentform/ir": "workspace:*",
     "@agentform/parser": "workspace:*",
     "@agentform/planner": "workspace:*",
+    "@agentform/plugin-sdk": "workspace:*",
     "@agentform/policy": "workspace:*",
     "@agentform/schema": "workspace:*",
     "@agentform/state": "workspace:*",

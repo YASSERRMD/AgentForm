@@ -50,6 +50,15 @@ importers:
 
   apps/cli:
     dependencies:
+      '@agentform/adapter-langgraph':
+        specifier: workspace:*
+        version: link:../../packages/adapter-langgraph
+      '@agentform/adapter-openai':
+        specifier: workspace:*
+        version: link:../../packages/adapter-openai
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
       '@agentform/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -65,6 +74,9 @@ importers:
       '@agentform/planner':
         specifier: workspace:*
         version: link:../../packages/planner
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy
@@ -93,13 +105,61 @@ importers:
 
   packages/adapter-google-adk: {}
 
-  packages/adapter-langgraph: {}
+  packages/adapter-langgraph:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/adapter-microsoft: {}
 
-  packages/adapter-openai: {}
+  packages/adapter-openai:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
-  packages/compiler: {}
+  packages/compiler:
+    dependencies:
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+      '@agentform/policy':
+        specifier: workspace:*
+        version: link:../policy
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/core:
     devDependencies:
@@ -166,7 +226,15 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
 
-  packages/plugin-sdk: {}
+  packages/plugin-sdk:
+    dependencies:
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/policy:
     dependencies:

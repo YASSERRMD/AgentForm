@@ -10,7 +10,7 @@ Status labels used below:
 - **Partially mitigated** — a real control exists but doesn't cover the full threat (usually because the runtime half of Agentform doesn't exist yet).
 - **Planned** — no control exists yet because the subsystem it would protect doesn't exist yet; a placeholder is registered where one makes sense so it can't be silently disabled later.
 
-As of Phase 7, Agentform validates, compiles to an IR, evaluates policy, and can plan (compare desired state against a local SQLite-backed record of deployed state) against specifications. It does not yet execute agents, actually apply state, or generate framework code — several threats below are structurally about _runtime_ behavior Agentform doesn't have yet. Those are marked Planned rather than overclaimed as mitigated.
+As of Phase 8, Agentform validates, compiles to an IR, evaluates policy, can plan (compare desired state against a local SQLite-backed record of deployed state), and can compile a specification into a real OpenAI Agents SDK or LangGraph project against specifications. It does not yet execute agents, actually apply state, or generate code for the remaining four target frameworks — several threats below are structurally about _runtime_ behavior Agentform doesn't have yet, or about frameworks Phase 9 hasn't added adapters for. Those are marked Planned rather than overclaimed as mitigated.
 
 ## Threats and mitigations
 
@@ -20,7 +20,7 @@ A hostile YAML/JSON document crafted to exploit the parser, the schema validator
 
 ### Prompt injection
 
-Text inside an agent's instructions, a tool's description, or interpolated content that's designed to manipulate the model at run time. **Planned** (structural mitigations only): Agentform validates and compiles specifications; it does not run a model against a prompt itself, so it cannot detect injected intent at parse time — that's inherently a runtime/model-level concern, not a static-analysis one. What today's policy engine _does_ do is bound the blast radius of a successful injection: [`AF004`](../../packages/policy/src/policies/af004-critical-actions-require-human-approval.ts) requires human approval before a destructive tool runs regardless of what convinced the agent to call it, and [`AF003`](../../packages/policy/src/policies/af003-write-tools-require-explicit-permission.ts)/[`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts) keep an agent's tool surface narrow. Runtime-level defenses (input/output filtering, guardrails) are adapter/runtime scope, starting Phase 8.
+Text inside an agent's instructions, a tool's description, or interpolated content that's designed to manipulate the model at run time. **Planned** (structural mitigations only): Agentform validates and compiles specifications; it does not run a model against a prompt itself, so it cannot detect injected intent at parse time — that's inherently a runtime/model-level concern, not a static-analysis one. What today's policy engine _does_ do is bound the blast radius of a successful injection: [`AF004`](../../packages/policy/src/policies/af004-critical-actions-require-human-approval.ts) requires human approval before a destructive tool runs regardless of what convinced the agent to call it, and [`AF003`](../../packages/policy/src/policies/af003-write-tools-require-explicit-permission.ts)/[`AF002`](../../packages/policy/src/policies/af002-no-unrestricted-shell-tools.ts) keep an agent's tool surface narrow. Phase 8's OpenAI adapter now generates a real, named stub per declared guardrail (`InputGuardrail`-typed, wired into the agent's `inputGuardrails`) — the _scaffolding_ for a runtime defense exists and is structurally correct, but the stub body always reports `tripwireTriggered: false` until a human fills in real detection logic, so this remains Planned for actual mitigation, not Mitigated by the stub's existence alone.
 
 ### Tool injection
 
@@ -32,7 +32,7 @@ A malicious or spoofed tool definition entering the resolved document, e.g. via 
 
 ### Secret leakage
 
-A real credential appearing in a document, a diagnostic message, a log line, or a test snapshot. **Mitigated**: [`AF001`](../../packages/policy/src/policies/af001-no-inline-secrets.ts) walks the entire document looking for known credential shapes; [`redactSecretValue`](../../packages/policy/src/redact.ts) ensures any message that names a detected secret never echoes the raw value; [`AF010`](../../packages/policy/src/policies/af010-prompt-recording-disabled-for-restricted-data.ts) blocks `recordPrompts: true` alongside restricted-classification data, and `recordPrompts` itself defaults to unset/off (§18).
+A real credential appearing in a document, a diagnostic message, a log line, a test snapshot, or — new in Phase 8 — generated framework code. **Mitigated**: [`AF001`](../../packages/policy/src/policies/af001-no-inline-secrets.ts) walks the entire document looking for known credential shapes; [`redactSecretValue`](../../packages/policy/src/redact.ts) ensures any message that names a detected secret never echoes the raw value; [`AF010`](../../packages/policy/src/policies/af010-prompt-recording-disabled-for-restricted-data.ts) blocks `recordPrompts: true` alongside restricted-classification data, and `recordPrompts` itself defaults to unset/off (§18). `@agentform/compiler`'s `scanForSecretLeaks` (reusing the same `detectSecret`/`SECRET_PATTERNS` `AF001` uses) runs over every file either adapter generates and blocks `compile()` from returning a project containing a secret-shaped value, regardless of whether the value reached the IR through `${env.*}` interpolation (already fully resolved before the compiler ever sees it) or some other path — see `docs/compiler-reference.md`.
 
 ### State tampering
 
@@ -44,7 +44,11 @@ Unauthorized modification of a generated plan file between `plan` and `apply`. *
 
 ### Generated-code tampering
 
-Unauthorized modification of framework code Agentform generates. **Planned**: no compiler exists until Phase 8. [`AF015`](../../packages/policy/src/policies/af015-generated-code-must-be-reproducible.ts) is registered now for the same forward-compatibility reason as `AF014`.
+Unauthorized modification of framework code Agentform generates. **Partially mitigated**: generation is deterministic — the same IR always produces byte-identical files (proven for both adapters: `adapter.test.ts`'s "two `generate()` calls produce byte-identical files" test), and every generated project carries a manifest recording the exact `sourceHash`/`irHash` that produced it (§22, `generatedAt` always `null`). Together these make tampering _detectable_ by recompiling from the same source and diffing against the manifest's recorded hashes — but nothing automated does this today; there is no `agentform compile --verify`-style command, and the manifest hashes the _inputs_ to generation, not the generated files themselves. [`AF015`](../../packages/policy/src/policies/af015-generated-code-must-be-reproducible.ts) (registered since Phase 6) is exactly the policy this phase gives real teeth to — a non-deterministic adapter would now actually fail its own test suite, not just violate an aspirational policy.
+
+### Unsupported specification fields silently dropped
+
+A compiler that generates a project missing part of what the specification actually declared, without saying so — the generated system would then diverge from the declared desired state in a way nothing surfaces. **Mitigated**: every adapter's `validateCompatibility` reports every workflow node type and tool type against what it can actually generate; any `unsupported` entry sets `hasBlockingIncompatibility`, and `compile()` refuses to call `generate()` at all when that's set — returning diagnostics only, never a partial project (§12 "do not silently ignore unsupported specification fields," enforced structurally, not by adapter discipline alone). `agentform compile` surfaces this as exit code 13 with a diagnostic naming the specific unsupported feature. See `docs/compiler-reference.md`.
 
 ### Dependency confusion
 
@@ -100,24 +104,27 @@ A structure that causes a small input to trigger an unbounded or exponential num
 
 ## Defense-in-depth summary
 
-| Protection                                   | Where                                                                   | Status                                                              |
-| -------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Reference cycle detection                    | `@agentform/parser` (`AGF1003`)                                         | Mitigated                                                           |
-| Maximum reference depth                      | `@agentform/parser` (`AGF1004`)                                         | Mitigated                                                           |
-| File access confined to project root         | `@agentform/core` safe-path, used throughout the parser                 | Mitigated                                                           |
-| Safe path normalization                      | `@agentform/core` (`resolvePathWithinRoot`/`resolvePathRelativeToFile`) | Mitigated                                                           |
-| Maximum source file size                     | `@agentform/parser` (`AGF1010`)                                         | Mitigated                                                           |
-| Maximum workflow nodes                       | `@agentform/ir` (`AGF3016`)                                             | Mitigated                                                           |
-| Maximum graph edges                          | `@agentform/ir` (`AGF3017`)                                             | Mitigated                                                           |
-| Maximum expression complexity (length proxy) | `@agentform/ir` (`AGF3018`)                                             | Mitigated                                                           |
-| Network allowlisting                         | `@agentform/policy` `AF012`                                             | Partially mitigated (declaration only, no request-time enforcement) |
-| Plugin trust policy                          | —                                                                       | Planned (Phase 8+, once plugins load)                               |
-| Content hashing                              | `@agentform/ir` (`computeContentHash`)                                  | Mitigated                                                           |
-| State atomicity and locking                  | `@agentform/state-local` (SQLite transactions, file lock)               | Mitigated                                                           |
-| State integrity checks (tamper detection)    | —                                                                       | Planned                                                             |
-| Plan integrity checks                        | `@agentform/planner` (`createPlanFile`/`verifyPlanFile`)                | Mitigated (detection only — no command calls it yet; Phase 11)      |
-| Redacted logs/diagnostics                    | `@agentform/policy` (`redactSecretValue`, `AF001`, `AF010`)             | Mitigated                                                           |
-| Safe YAML parsing                            | `@agentform/parser` (`yaml` package)                                    | Mitigated                                                           |
+| Protection                                         | Where                                                                   | Status                                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Reference cycle detection                          | `@agentform/parser` (`AGF1003`)                                         | Mitigated                                                                                |
+| Maximum reference depth                            | `@agentform/parser` (`AGF1004`)                                         | Mitigated                                                                                |
+| File access confined to project root               | `@agentform/core` safe-path, used throughout the parser                 | Mitigated                                                                                |
+| Safe path normalization                            | `@agentform/core` (`resolvePathWithinRoot`/`resolvePathRelativeToFile`) | Mitigated                                                                                |
+| Maximum source file size                           | `@agentform/parser` (`AGF1010`)                                         | Mitigated                                                                                |
+| Maximum workflow nodes                             | `@agentform/ir` (`AGF3016`)                                             | Mitigated                                                                                |
+| Maximum graph edges                                | `@agentform/ir` (`AGF3017`)                                             | Mitigated                                                                                |
+| Maximum expression complexity (length proxy)       | `@agentform/ir` (`AGF3018`)                                             | Mitigated                                                                                |
+| Network allowlisting                               | `@agentform/policy` `AF012`                                             | Partially mitigated (declaration only, no request-time enforcement)                      |
+| Plugin trust policy                                | —                                                                       | Planned (Phase 8+, once plugins load)                                                    |
+| Content hashing                                    | `@agentform/ir` (`computeContentHash`)                                  | Mitigated                                                                                |
+| State atomicity and locking                        | `@agentform/state-local` (SQLite transactions, file lock)               | Mitigated                                                                                |
+| State integrity checks (tamper detection)          | —                                                                       | Planned                                                                                  |
+| Plan integrity checks                              | `@agentform/planner` (`createPlanFile`/`verifyPlanFile`)                | Mitigated (detection only — no command calls it yet; Phase 11)                           |
+| Redacted logs/diagnostics                          | `@agentform/policy` (`redactSecretValue`, `AF001`, `AF010`)             | Mitigated                                                                                |
+| Blocking incompatibility (no silent feature drops) | `@agentform/compiler` (`compile()`, `AGF5001`)                          | Mitigated                                                                                |
+| Generated-code secret scan                         | `@agentform/compiler` (`scanForSecretLeaks`, `AGF5003`)                 | Mitigated                                                                                |
+| Generated-code determinism + manifest hashing      | `@agentform/compiler`/adapters (`buildManifest`, `generatedAt: null`)   | Partially mitigated (detectable via recompile-and-diff; no automated verify command yet) |
+| Safe YAML parsing                                  | `@agentform/parser` (`yaml` package)                                    | Mitigated                                                                                |
 
 ## Verifying these protections
 
@@ -127,7 +134,9 @@ A structure that causes a small input to trigger an unbounded or exponential num
 - `packages/policy/src/policies/*.test.ts` — every built-in policy, including the redaction and mandatory-override tests in `packages/policy/src/evaluate.test.ts` and `packages/policy/src/redact.test.ts`.
 - `packages/state-local/src/lock.test.ts` and `sqlite-state-backend.test.ts` — lock contention/staleness, atomic transactions, crash recovery, all against real temp-directory SQLite files.
 - `packages/planner/src/plan-file.test.ts` — plan file tamper detection, including an attempt to also edit the recorded hash.
+- `packages/compiler/src/secret-scan.test.ts` and `packages/compiler/src/compile.test.ts` — the generated-code secret scan and blocking-incompatibility gate, including a fixture that would otherwise leak a secret-shaped value.
+- `packages/adapter-openai/src/adapter.test.ts` and `packages/adapter-langgraph/src/adapter.test.ts` — deterministic generation (byte-identical repeat `generate()` calls) and isolation (a prompt-only change alters only that agent's file), the two properties `AF015`/manifest hashing depend on.
 
 ## Updating this document
 
-Add a section (or update a status label) whenever a phase changes what's actually enforced — a status of "Planned" that quietly becomes true without this document being updated is itself a documentation-drift risk. Phase 8–9 (compiler/adapters) and Phase 11 (apply/drift/rollback) are each expected to move several rows above from Planned/Partially mitigated to Mitigated — Phase 11 in particular is what will make plan-file verification and state's real-world write path actually meet, since `apply` is the first command that will read a saved plan back.
+Add a section (or update a status label) whenever a phase changes what's actually enforced — a status of "Planned" that quietly becomes true without this document being updated is itself a documentation-drift risk. Phase 8 moved "Generated-code tampering" from Planned to Partially mitigated and added the blocking-incompatibility and generated-code-secret-scan rows above; it deliberately left "Generated-code tampering" at Partially (not Mitigated) since there's still no automated verify command, and left "Prompt injection" at Planned since Phase 8's guardrail stubs are structural scaffolding, not real runtime filtering. Phase 9 (the remaining four adapters) is expected to extend the same rows to cover Microsoft/Google ADK/AutoGen/CrewAI rather than open new ones; Phase 11 (apply/drift/rollback) is what's expected to move plan-file verification and state's real-world write path from Planned/Partially mitigated to Mitigated, since `apply` is the first command that will read a saved plan back.

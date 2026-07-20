@@ -1,0 +1,32 @@
+# Defect: spec.policies lists the same policy ID twice.
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: fixture-app
+  version: 1.0.0
+
+spec:
+  runtime:
+    target: openai
+    environment: development
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+  agents:
+    assistant:
+      model: primary
+      role: assistant
+      instructions:
+        text: You are a helpful assistant.
+  workflows:
+    main:
+      entrypoint: assistant
+      nodes:
+        assistant:
+          type: agent
+          agent: assistant
+  policies:
+    - require-human-approval-for-write
+    - require-human-approval-for-write

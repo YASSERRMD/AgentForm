@@ -1,0 +1,37 @@
+# Defect: agents.assistant.tools lists the same tool twice.
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: fixture-app
+  version: 1.0.0
+
+spec:
+  runtime:
+    target: openai
+    environment: development
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+  tools:
+    search:
+      type: mcp
+      server: search-service
+      operation: search.query
+  agents:
+    assistant:
+      model: primary
+      role: assistant
+      instructions:
+        text: You are a helpful assistant.
+      tools:
+        - search
+        - search
+  workflows:
+    main:
+      entrypoint: assistant
+      nodes:
+        assistant:
+          type: agent
+          agent: assistant

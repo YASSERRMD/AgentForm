@@ -1,0 +1,6 @@
+# Defect: `spec` is missing entirely, and metadata.version is missing too.
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: fixture-app

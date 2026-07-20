@@ -1,0 +1,27 @@
+{
+  "name": "@agentform/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentform CLI — Agentic Systems as Code.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "agentform": "./dist/index.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "pino": "^10.3.1"
+  }
+}

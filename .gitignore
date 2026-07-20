@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.turbo/
+coverage/
+
+# Agentform local state and generated artifacts
+.agentform/
+*.afplan
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Temporary files
+temp/
+*.tmp
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.lsdheaders
+.Spotlight-V100
+.Trashes
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/

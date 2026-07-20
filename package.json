@@ -1,0 +1,39 @@
+{
+  "name": "agentform-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Agentform — a declarative control plane for portable agentic systems.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint -- --fix",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "clean": "turbo run clean --continue && rm -rf node_modules",
+    "changeset": "changeset",
+    "agentform": "node ./apps/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.1",
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.1",
+    "eslint": "^10.7.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-node": "^0.4.0",
+    "eslint-plugin-import-x": "^4.17.1",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.5",
+    "turbo": "^2.10.5",
+    "typescript": "6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  }
+}

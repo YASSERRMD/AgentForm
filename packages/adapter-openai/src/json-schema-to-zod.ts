@@ -54,22 +54,26 @@ function objectExpression(schema: JsonSchemaLike): string {
 }
 
 /**
- * Best-effort conversion of an Agentform tool's `inputSchema`/`outputSchema`
- * (`@agentform/schema`'s `z.record(z.string(), z.unknown())` — a loose,
- * JSON-Schema-*shaped* object, not validated as real JSON Schema) into Zod
- * source code text for the generated tool file. Covers the common shapes
- * (`type`, `properties`, `required`, `enum`, `description`, one level of
- * `array`/`object` nesting) and falls back to `z.record(z.string(),
- * z.unknown())` for anything it doesn't recognize, rather than guessing —
- * an honestly-loose schema is safer than a wrong one for a tool the
- * generated agent will actually call.
+ * Best-effort conversion of an Agentform tool/agent's
+ * `inputSchema`/`outputSchema` (`@agentform/schema`'s
+ * `z.record(z.string(), z.unknown())` — a loose, JSON-Schema-*shaped*
+ * object, not validated as real JSON Schema) into Zod source code text.
+ * Covers the common shapes (`type`, `properties`, `required`, `enum`,
+ * `description`, one level of `array`/`object` nesting) and falls back to
+ * an empty `z.object({})` for anything it doesn't recognize.
+ *
+ * Always produces an object schema at the top level — verified against
+ * the real `@openai/agents` SDK: both `tool()`'s `parameters` and
+ * `Agent`'s `outputType` require `ZodObjectLike` (something with
+ * `.shape`/`.keyof()`/etc., i.e. `z.object(...)`), which a bare
+ * `z.record(...)` or a top-level primitive schema (`z.string()`) does not
+ * satisfy — a schema whose declared `type` isn't `object` is dropped in
+ * favor of the safe empty-object fallback rather than generating code
+ * that fails to compile against the real SDK.
  */
 export function jsonSchemaToZodExpression(schema: unknown): string {
   if (!isJsonSchemaLike(schema) || Object.keys(schema).length === 0) {
-    return 'z.record(z.string(), z.unknown())';
-  }
-  if (schema.type && schema.type !== 'object') {
-    return expressionFor(schema);
+    return 'z.object({})';
   }
   return objectExpression(schema);
 }

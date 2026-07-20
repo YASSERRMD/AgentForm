@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { jsonSchemaToZodExpression } from './json-schema-to-zod.js';
 
 describe('jsonSchemaToZodExpression', () => {
-  it('falls back to a loose record for an empty or missing schema', () => {
-    expect(jsonSchemaToZodExpression(undefined)).toBe('z.record(z.string(), z.unknown())');
-    expect(jsonSchemaToZodExpression({})).toBe('z.record(z.string(), z.unknown())');
+  it('falls back to an empty object schema for an empty or missing schema', () => {
+    expect(jsonSchemaToZodExpression(undefined)).toBe('z.object({})');
+    expect(jsonSchemaToZodExpression({})).toBe('z.object({})');
   });
 
   it('converts a simple object schema with required and optional fields', () => {

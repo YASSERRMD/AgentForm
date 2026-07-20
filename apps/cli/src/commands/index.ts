@@ -1,0 +1,14 @@
+import type { Command } from 'commander';
+import { registerFormatCommand } from './format.js';
+import { registerGraphCommand } from './graph.js';
+import { registerInitCommand } from './init.js';
+import { registerInspectCommand } from './inspect.js';
+import { registerValidateCommand } from './validate.js';
+
+export function registerCommands(program: Command): void {
+  registerInitCommand(program);
+  registerValidateCommand(program);
+  registerFormatCommand(program);
+  registerInspectCommand(program);
+  registerGraphCommand(program);
+}

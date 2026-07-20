@@ -47,6 +47,11 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: JSON Schema regeneration produces no diff
+        run: |
+          pnpm --filter @agentform/schema generate:json-schema
+          git diff --exit-code -- specifications/v1alpha1/agentic-application.schema.json
+
       - name: Format check
         run: pnpm format:check
 

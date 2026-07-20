@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateToolFile } from './generate-tool.js';
 import { graphWorkflowIR } from './test-fixtures.js';
+import { isSyntacticallyValidPython } from './test-syntax-check.js';
 
 function toolFromFixture(toolId: string) {
   const ir = graphWorkflowIR();
@@ -46,5 +47,10 @@ describe('generateToolFile', () => {
     expect(source).toContain('from typing import Any\n');
     expect(source).not.toContain('Optional');
     expect(source).not.toContain('Literal');
+  });
+
+  it('produces syntactically valid Python', () => {
+    const source = generateToolFile('search-registry', toolFromFixture('search-registry'));
+    expect(isSyntacticallyValidPython(source)).toBe(true);
   });
 });

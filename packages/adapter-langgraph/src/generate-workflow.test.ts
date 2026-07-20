@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateWorkflowFile } from './generate-workflow.js';
 import { baseIR, graphWorkflowIR } from './test-fixtures.js';
+import { isSyntacticallyValidPython } from './test-syntax-check.js';
 
 function workflowFromFixture(ir: ReturnType<typeof graphWorkflowIR>, workflowId: string) {
   const workflow = ir.workflows.get(workflowId);
@@ -108,5 +109,10 @@ describe('generateWorkflowFile', () => {
     expect(source).toContain('def build_graph() -> StateGraph:');
     expect(source).toContain('builder = StateGraph(State)');
     expect(source).toContain('return builder');
+  });
+
+  it('produces syntactically valid Python for the full graph fixture (every node type)', () => {
+    const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
+    expect(isSyntacticallyValidPython(source)).toBe(true);
   });
 });

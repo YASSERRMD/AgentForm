@@ -180,7 +180,15 @@ importers:
 
   packages/state: {}
 
-  packages/state-local: {}
+  packages/state-local:
+    dependencies:
+      '@agentform/state':
+        specifier: workspace:*
+        version: link:../state
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/state-postgres: {}
 

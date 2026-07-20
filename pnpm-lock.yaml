@@ -97,7 +97,24 @@ importers:
 
   packages/adapter-microsoft: {}
 
-  packages/adapter-openai: {}
+  packages/adapter-openai:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/compiler:
     dependencies:

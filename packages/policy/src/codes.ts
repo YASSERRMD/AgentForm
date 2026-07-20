@@ -21,4 +21,8 @@ export const POLICY_ENGINE_DIAGNOSTIC_CODES = defineDiagnosticCodes({
     code: 'AGF4003',
     summary: 'A configuration override references a policy ID that does not exist.',
   },
+  INVALID_POLICY_CONFIG: {
+    code: 'AGF4004',
+    summary: 'The policy configuration document does not match the expected shape.',
+  },
 });

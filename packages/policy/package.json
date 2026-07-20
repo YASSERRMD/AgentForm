@@ -21,7 +21,8 @@
   },
   "dependencies": {
     "@agentform/diagnostics": "workspace:*",
-    "@agentform/schema": "workspace:*"
+    "@agentform/schema": "workspace:*",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.1"

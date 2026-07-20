@@ -63,4 +63,16 @@ export const SEMANTIC_DIAGNOSTIC_CODES = defineDiagnosticCodes({
     summary:
       'An output value references a resource collection and identifier that is not declared.',
   },
+  MAX_WORKFLOW_NODES_EXCEEDED: {
+    code: 'AGF3016',
+    summary: 'A workflow declares more nodes than the maximum allowed.',
+  },
+  MAX_WORKFLOW_EDGES_EXCEEDED: {
+    code: 'AGF3017',
+    summary: 'A workflow declares more edges than the maximum allowed.',
+  },
+  MAX_EXPRESSION_LENGTH_EXCEEDED: {
+    code: 'AGF3018',
+    summary: 'A when/condition/transform expression exceeds the maximum allowed length.',
+  },
 });

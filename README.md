@@ -107,7 +107,7 @@ agentform/
 └── docs/adr/                      # architecture decision records
 ```
 
-Every package under `packages/` is currently a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
+`core`, `diagnostics`, `schema`, and `parser` have real implementations (see [`docs/schema-reference.md`](docs/schema-reference.md) and [`docs/parser-reference.md`](docs/parser-reference.md)). Every other package under `packages/` is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
 
 ## Development
 

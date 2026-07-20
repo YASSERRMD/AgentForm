@@ -28,13 +28,13 @@ writeFileSync('plan.afplan', serializePlanFile(planFile));
 
 `comparePlan({ ir, currentResourceStates })` classifies each resource address:
 
-| Condition | Operation |
-| --- | --- |
-| Desired, not in current state | `CREATE` |
-| In current state, not desired | `DELETE` |
-| Both present, hashes match | `NO_OP` |
-| Both present, `contentHash` differs, `identityHash` the same | `UPDATE` |
-| Both present, `identityHash` differs | `REPLACE` |
+| Condition                                                    | Operation |
+| ------------------------------------------------------------ | --------- |
+| Desired, not in current state                                | `CREATE`  |
+| In current state, not desired                                | `DELETE`  |
+| Both present, hashes match                                   | `NO_OP`   |
+| Both present, `contentHash` differs, `identityHash` the same | `UPDATE`  |
+| Both present, `identityHash` differs                         | `REPLACE` |
 
 `IMPORT`/`READ` are part of `PlanOperation`'s type (matching §9) but never produced by `comparePlan` — they belong to the future `agentform import` command (Phase 11).
 
@@ -45,7 +45,7 @@ Items are ordered by `orderPlanItems`: non-delete items in forward dependency or
 `classifyRisk` implements §9's risk table in two tiers — read `packages/planner/src/risk.ts`'s own doc comment for the full reasoning, summarized:
 
 - **Precise**, computed from the desired value alone (always fully available): a newly created tool's `sideEffect` (`read` → `MEDIUM`, `write`/`destructive` → `HIGH`), and a workflow containing a `destructive`-tool call with no `humanApproval` gate (`CRITICAL` — the same structural signal `@agentform/policy`'s `AF004` checks, adapted to the IR).
-- **Operation-type baselines**, used wherever a precise §9 rule (a prompt-text change, a model version bump, an expanded network destination, an increased cost ceiling, a data-residency change) would need the resource's *actual previous value* — which `ResourceState` deliberately never stores (§10; see ADR-0008 and `docs/state-reference.md`). `UPDATE` defaults to `MEDIUM` (escalated to `HIGH` for a `model`); `REPLACE` and `DELETE` default to `HIGH` (`DELETE` of a `workflow` is `CRITICAL`, standing in for "removal of human approval" at the coarser grain that's actually determinable).
+- **Operation-type baselines**, used wherever a precise §9 rule (a prompt-text change, a model version bump, an expanded network destination, an increased cost ceiling, a data-residency change) would need the resource's _actual previous value_ — which `ResourceState` deliberately never stores (§10; see ADR-0008 and `docs/state-reference.md`). `UPDATE` defaults to `MEDIUM` (escalated to `HIGH` for a `model`); `REPLACE` and `DELETE` default to `HIGH` (`DELETE` of a `workflow` is `CRITICAL`, standing in for "removal of human approval" at the coarser grain that's actually determinable).
 
 `requiresApproval` is `true` exactly when `risk === 'CRITICAL'`.
 
@@ -67,6 +67,6 @@ Items are ordered by `orderPlanItems`: non-delete items in forward dependency or
 
 ## Troubleshooting
 
-- **A resource shows `UPDATE` when you expected `NO_OP`**: the resource's content hash changed. Since field-level diffs aren't available (see Scope), check the resource's full desired value against what you expect it to be — the hash is sensitive to *any* difference, including ones that don't look meaningful from the outside (e.g. whitespace inside `instructions.text`).
+- **A resource shows `UPDATE` when you expected `NO_OP`**: the resource's content hash changed. Since field-level diffs aren't available (see Scope), check the resource's full desired value against what you expect it to be — the hash is sensitive to _any_ difference, including ones that don't look meaningful from the outside (e.g. whitespace inside `instructions.text`).
 - **A resource shows `REPLACE` when you expected `UPDATE`**: its identity fingerprint changed — for a tool, its `type`; for a model, its `provider`. Nothing else currently triggers `REPLACE`.
 - **`requiresApproval` is `true` and you don't see why**: check `risk` — it's `CRITICAL` either because a workflow is being deleted, or because a workflow contains a `destructive`-sideEffect tool call with no preceding `humanApproval` node.

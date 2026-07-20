@@ -20,21 +20,21 @@ await backend.close();
 
 Every field §10 requires, via `StateBackend`'s methods:
 
-| §10 requirement | Where |
-| --- | --- |
-| Application identity, environment, schema version | `ApplicationState` (`getApplicationState`/`putApplicationState`) |
-| Specification hash, IR hash | `ApplicationState.specificationHash`/`irHash` |
-| Adapter versions, deployment identifiers | `ApplicationState.adapterVersions`/`deploymentIdentifiers` |
-| Resource states, resource dependencies | `ResourceState` (`listResourceStates`/`getResourceState`/`putResourceState`/`deleteResourceState`) |
-| Apply history | `ApplyHistoryEntry` (`recordApplyStart`/`recordApplyFinish`/`listApplyHistory`) |
-| Lock information | `LockInfo`, `.agentform/lock` |
+| §10 requirement                                              | Where                                                                                                                                             |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Application identity, environment, schema version            | `ApplicationState` (`getApplicationState`/`putApplicationState`)                                                                                  |
+| Specification hash, IR hash                                  | `ApplicationState.specificationHash`/`irHash`                                                                                                     |
+| Adapter versions, deployment identifiers                     | `ApplicationState.adapterVersions`/`deploymentIdentifiers`                                                                                        |
+| Resource states, resource dependencies                       | `ResourceState` (`listResourceStates`/`getResourceState`/`putResourceState`/`deleteResourceState`)                                                |
+| Apply history                                                | `ApplyHistoryEntry` (`recordApplyStart`/`recordApplyFinish`/`listApplyHistory`)                                                                   |
+| Lock information                                             | `LockInfo`, `.agentform/lock`                                                                                                                     |
 | Generated artifact hashes, rollback snapshots, output values | Hooked via `ApplyHistoryEntry.backupId` + `createBackup()` — full population starts with the apply engine (Phase 11) that actually produces these |
 
-**`ResourceState` never contains a resource's actual value — only two hashes.** `contentHash` covers the whole resource; `identityHash` covers only its identity-defining fields (a tool's `type`, a model's `provider`). This is what makes "never store raw secret values; store secret reference metadata only" (§10) true by construction rather than by a redaction step that has to stay correct forever: there is no field anywhere in this shape that *could* hold a secret, because there's no field that holds arbitrary resource content at all. See ADR-0008 for the full reasoning, including what this trades away (precise field-level plan diffs and a few of §9's risk rules — `@agentform/planner`'s docs cover the specifics).
+**`ResourceState` never contains a resource's actual value — only two hashes.** `contentHash` covers the whole resource; `identityHash` covers only its identity-defining fields (a tool's `type`, a model's `provider`). This is what makes "never store raw secret values; store secret reference metadata only" (§10) true by construction rather than by a redaction step that has to stay correct forever: there is no field anywhere in this shape that _could_ hold a secret, because there's no field that holds arbitrary resource content at all. See ADR-0008 for the full reasoning, including what this trades away (precise field-level plan diffs and a few of §9's risk rules — `@agentform/planner`'s docs cover the specifics).
 
 ## SQLite backend details
 
-- **Driver**: Node's built-in `node:sqlite` (`DatabaseSync`), not a native dependency — avoids every install needing a working native-compilation toolchain. It's still `ExperimentalWarning`-flagged in the Node versions this targets; `sqlite-module.ts` suppresses *only* that specific warning for the duration of the import, so a CLI user never sees it, while every other Node warning still prints normally.
+- **Driver**: Node's built-in `node:sqlite` (`DatabaseSync`), not a native dependency — avoids every install needing a working native-compilation toolchain. It's still `ExperimentalWarning`-flagged in the Node versions this targets; `sqlite-module.ts` suppresses _only_ that specific warning for the duration of the import, so a CLI user never sees it, while every other Node warning still prints normally.
 - **Migrations**: a `schema_migrations` table tracks applied versions; `runMigrations()` (`open()` calls this automatically) applies each pending migration in its own transaction, rolling back and raising `StateMigrationError` on the first failure.
 - **Locking**: `.agentform/lock`, acquired via exclusive file creation (atomic at the filesystem level — no separate coordination needed). A lock held longer than `staleTimeoutMs` (default 10 minutes) is treated as abandoned and taken over rather than blocking forever. `agentform plan`/`agentform status` never acquire it — they're read-only; only a future mutating command (`apply`, Phase 11) will.
 - **Backups**: `createBackup()` checkpoints the WAL (`PRAGMA wal_checkpoint(TRUNCATE)`) before copying `state.db`, so the copied file is a complete, consistent snapshot rather than missing whatever hadn't been checkpointed yet.

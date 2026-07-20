@@ -71,7 +71,11 @@ importers:
 
   packages/compiler: {}
 
-  packages/core: {}
+  packages/core:
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/create-agentform: {}
 
@@ -83,7 +87,21 @@ importers:
 
   packages/observability: {}
 
-  packages/parser: {}
+  packages/parser:
+    dependencies:
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/planner: {}
 

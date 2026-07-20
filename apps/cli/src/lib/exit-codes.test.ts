@@ -58,6 +58,26 @@ describe('exitCodeForDiagnostics', () => {
     ];
     expect(exitCodeForDiagnostics(diagnostics)).toBe(EXIT_CODES.SEMANTIC_VALIDATION_FAILURE);
   });
+
+  it('returns UNSUPPORTED_TARGET_FEATURE for an AGF5001 (unsupported compiler feature) error', () => {
+    expect(exitCodeForDiagnostics([{ code: 'AGF5001', severity: 'error' }])).toBe(
+      EXIT_CODES.UNSUPPORTED_TARGET_FEATURE,
+    );
+  });
+
+  it('returns COMPILATION_FAILURE for other AGF5xxx (compiler) errors', () => {
+    expect(exitCodeForDiagnostics([{ code: 'AGF5003', severity: 'error' }])).toBe(
+      EXIT_CODES.COMPILATION_FAILURE,
+    );
+  });
+
+  it('prefers policy failure over compilation failure when both are present', () => {
+    const diagnostics = [
+      { code: 'AGF5003', severity: 'error' },
+      { code: 'AF003', severity: 'error' },
+    ];
+    expect(exitCodeForDiagnostics(diagnostics)).toBe(EXIT_CODES.POLICY_FAILURE);
+  });
 });
 
 describe('resolveCommanderExitCode', () => {

@@ -47,6 +47,12 @@ export function exitCodeForDiagnostics(
   if (errorCodes.some((code) => /^AF\d/.test(code) || code.startsWith('AGF4'))) {
     return EXIT_CODES.POLICY_FAILURE;
   }
+  if (errorCodes.some((code) => code === 'AGF5001')) {
+    return EXIT_CODES.UNSUPPORTED_TARGET_FEATURE;
+  }
+  if (errorCodes.some((code) => code.startsWith('AGF5'))) {
+    return EXIT_CODES.COMPILATION_FAILURE;
+  }
   return EXIT_CODES.SEMANTIC_VALIDATION_FAILURE;
 }
 

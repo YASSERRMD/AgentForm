@@ -50,6 +50,15 @@ importers:
 
   apps/cli:
     dependencies:
+      '@agentform/adapter-langgraph':
+        specifier: workspace:*
+        version: link:../../packages/adapter-langgraph
+      '@agentform/adapter-openai':
+        specifier: workspace:*
+        version: link:../../packages/adapter-openai
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../../packages/compiler
       '@agentform/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -65,6 +74,9 @@ importers:
       '@agentform/planner':
         specifier: workspace:*
         version: link:../../packages/planner
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy

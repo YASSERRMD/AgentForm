@@ -8,6 +8,9 @@ const packageJson = require('../package.json') as {
   description: string;
 };
 
+/** The CLI's own version — `compile()`'s `agentformVersion` manifest field, per §22 "Include exact generation metadata", reads this rather than a hardcoded value. */
+export const CLI_VERSION = packageJson.version;
+
 export interface GlobalOptions {
   json: boolean;
   color: boolean;

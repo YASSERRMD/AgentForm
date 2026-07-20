@@ -11,6 +11,16 @@ export interface AdapterContext {
 export interface GenerationContext {
   readonly outputDir: string;
   readonly agentformVersion: string;
+  /**
+   * A hash of the original source document(s), distinct from `ir.contentHash`
+   * (which is over the *normalized* IR — stable across cosmetic source
+   * changes like whitespace or key order). Optional because `generate()`
+   * only ever receives the IR, never the source — a caller that has a real
+   * source hash (the CLI, from `@agentform/parser`'s output) should pass
+   * it for §22's manifest `sourceHash` field; an adapter should fall back
+   * to `ir.contentHash` when it's absent rather than requiring it.
+   */
+  readonly sourceHash?: string;
 }
 
 /**

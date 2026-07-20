@@ -1,7 +1,7 @@
 import type { Diagnostic, SourceLocation } from '@agentform/diagnostics';
 import { validateAgenticApplication } from '@agentform/schema';
 import { computeContentHash } from './hash.js';
-import { validateSemantics } from './semantic/index.js';
+import { validateSemantics, type ValidateLimitsOptions } from './semantic/index.js';
 import type { AgentformIR, IRAgent, IRModel, IROutput, IRTool, IRWorkflow } from './types.js';
 
 export const IR_VERSION = '0.1.0';
@@ -9,6 +9,7 @@ export const COMPILER_VERSION = '0.1.0';
 
 export interface BuildIROptions {
   readonly sourceMap?: ReadonlyMap<string, SourceLocation>;
+  readonly limits?: ValidateLimitsOptions;
 }
 
 export interface BuildIRResult {
@@ -49,7 +50,7 @@ export function buildIR(input: unknown, options: BuildIROptions = {}): BuildIRRe
   }
 
   const application = schemaResult.data;
-  const semanticDiagnostics = validateSemantics(application);
+  const semanticDiagnostics = validateSemantics(application, options.limits);
   const diagnostics = [...schemaResult.diagnostics, ...semanticDiagnostics];
 
   if (semanticDiagnostics.some((d) => d.severity === 'error')) {

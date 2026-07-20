@@ -24,6 +24,11 @@ export {
   validateSubworkflows,
   validateToolPermissions,
   validateOutputReferences,
+  validateLimits,
+  DEFAULT_MAX_WORKFLOW_NODES,
+  DEFAULT_MAX_WORKFLOW_EDGES,
+  DEFAULT_MAX_EXPRESSION_LENGTH,
+  type ValidateLimitsOptions,
 } from './semantic/index.js';
 export {
   buildIR,

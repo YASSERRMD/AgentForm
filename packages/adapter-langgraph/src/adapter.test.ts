@@ -42,12 +42,16 @@ describe('langGraphAdapter.generate', () => {
     expect(paths).toContain('README.md');
   });
 
+  // isSyntacticallyValidPython spawns a real python3 subprocess per file —
+  // same category of risk as the OpenAI adapter's equivalent loop test on a
+  // slower/contended CI runner, even though this one passed at ~1.3s in the
+  // run that surfaced the OpenAI one timing out.
   it('every generated .py file is syntactically valid Python', async () => {
     const project = await langGraphAdapter.generate(graphWorkflowIR(), CONTEXT);
     for (const file of project.files.filter((f) => f.path.endsWith('.py'))) {
       expect(isSyntacticallyValidPython(file.content), file.path).toBe(true);
     }
-  });
+  }, 30000);
 
   it('sets the manifest correctly, including generatedAt: null', async () => {
     const project = await langGraphAdapter.generate(baseIR(), CONTEXT);

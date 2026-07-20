@@ -49,12 +49,16 @@ describe('openAiAdapter.generate', () => {
     expect(paths).toContain('README.md');
   });
 
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram per file;
+  // looping over every generated .ts file (~8-9 here) comfortably exceeds
+  // vitest's 5s default on a slower/contended CI runner even though each
+  // individual call is fast locally.
   it('every generated .ts file is syntactically valid TypeScript', async () => {
     const project = await openAiAdapter.generate(multiAgentIR(), CONTEXT);
     for (const file of project.files.filter((f) => f.path.endsWith('.ts'))) {
       expect(isSyntacticallyValidTypeScript(file.content), file.path).toBe(true);
     }
-  });
+  }, 30000);
 
   it('every generated .json file is valid JSON', async () => {
     const project = await openAiAdapter.generate(multiAgentIR(), CONTEXT);

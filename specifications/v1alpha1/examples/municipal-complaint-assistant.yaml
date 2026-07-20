@@ -1,0 +1,100 @@
+# The canonical example from temp/instruction.md §2, used verbatim as the
+# schema package's primary "valid full specification" fixture.
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: municipal-complaint-assistant
+  version: 1.0.0
+  description: Processes citizen complaints
+  labels:
+    domain: government
+    data-classification: restricted
+
+spec:
+  runtime:
+    target: langgraph
+    environment: development
+
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+      temperature: 0
+      responseFormat:
+        schemaRef: schemas/complaint.json
+
+  tools:
+    locationLookup:
+      type: mcp
+      server: municipal-services
+      operation: location.lookup
+
+    complaintRegistry:
+      type: http
+      baseUrl: ${env.COMPLAINT_API_URL}
+      operations:
+        create:
+          method: POST
+          path: /complaints
+
+  agents:
+    intake:
+      model: primary
+      role: complaint-intake
+      instructions:
+        file: prompts/intake.md
+      tools:
+        - locationLookup
+        - complaintRegistry
+      limits:
+        maxSteps: 8
+        timeout: 30s
+        maxCostUsd: 0.15
+
+  workflows:
+    main:
+      entrypoint: intake
+      nodes:
+        intake:
+          type: agent
+          agent: intake
+
+        approval:
+          type: humanApproval
+          timeout: 24h
+
+        submit:
+          type: tool
+          tool: complaintRegistry.create
+
+      edges:
+        - from: intake
+          to: approval
+          when: output.confidence < 0.85
+
+        - from: intake
+          to: submit
+          when: output.confidence >= 0.85
+
+        - from: approval
+          to: submit
+          when: approval.status == "approved"
+
+  policies:
+    - require-human-approval-for-write
+    - restrict-data-residency
+
+  evaluations:
+    datasets:
+      - tests/complaints.jsonl
+    thresholds:
+      taskSuccess: 0.92
+      policyViolations: 0
+      maximumAverageCostUsd: 0.10
+
+  observability:
+    tracing:
+      provider: opentelemetry
+    recordPrompts: false
+    recordToolCalls: true

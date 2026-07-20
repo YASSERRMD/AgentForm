@@ -1,0 +1,29 @@
+# Defect: apiVersion does not match the v1alpha1 literal Agentform expects.
+apiVersion: agentform.dev/v2beta3
+kind: AgenticApplication
+
+metadata:
+  name: fixture-app
+  version: 1.0.0
+
+spec:
+  runtime:
+    target: openai
+    environment: development
+  models:
+    primary:
+      provider: openai
+      model: gpt-5
+  agents:
+    assistant:
+      model: primary
+      role: assistant
+      instructions:
+        text: You are a helpful assistant.
+  workflows:
+    main:
+      entrypoint: assistant
+      nodes:
+        assistant:
+          type: agent
+          agent: assistant

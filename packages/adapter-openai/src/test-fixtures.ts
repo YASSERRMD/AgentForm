@@ -46,7 +46,11 @@ export function multiAgentIR(): AgentformIR {
           type: 'function',
           handler: 'search.ts#run',
           sideEffect: 'read',
-          inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+          inputSchema: {
+            type: 'object',
+            properties: { query: { type: 'string' } },
+            required: ['query'],
+          },
         },
       },
       agents: {
@@ -83,7 +87,9 @@ export function multiAgentIR(): AgentformIR {
     },
   });
   if (!result.ir) {
-    throw new Error(`multiAgentIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`);
+    throw new Error(
+      `multiAgentIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`,
+    );
   }
   return result.ir;
 }

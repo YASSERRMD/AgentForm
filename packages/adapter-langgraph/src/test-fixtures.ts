@@ -51,7 +51,11 @@ export function graphWorkflowIR(): AgentformIR {
           type: 'function',
           handler: 'search.ts#run',
           sideEffect: 'read',
-          inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+          inputSchema: {
+            type: 'object',
+            properties: { query: { type: 'string' } },
+            required: ['query'],
+          },
         },
       },
       agents: {
@@ -94,7 +98,9 @@ export function graphWorkflowIR(): AgentformIR {
     },
   });
   if (!result.ir) {
-    throw new Error(`graphWorkflowIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`);
+    throw new Error(
+      `graphWorkflowIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`,
+    );
   }
   return result.ir;
 }
@@ -128,7 +134,9 @@ export function unsupportedNodeIR(): AgentformIR {
     },
   });
   if (!result.ir) {
-    throw new Error(`unsupportedNodeIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`);
+    throw new Error(
+      `unsupportedNodeIR() fixture failed to build: ${JSON.stringify(result.diagnostics)}`,
+    );
   }
   return result.ir;
 }

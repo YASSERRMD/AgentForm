@@ -49,13 +49,11 @@ export async function compile(
     return {
       diagnostics: [
         ...diagnostics,
-        ...leaks.map(
-          (leak): Diagnostic => ({
-            code: COMPILER_DIAGNOSTIC_CODES.SECRET_LEAK_BLOCKED.code,
-            severity: 'error',
-            message: `Generated file "${leak.path}" would contain what looks like a ${leak.patternName}: ${leak.redactedValue}`,
-          }),
-        ),
+        ...leaks.map((leak): Diagnostic => ({
+          code: COMPILER_DIAGNOSTIC_CODES.SECRET_LEAK_BLOCKED.code,
+          severity: 'error',
+          message: `Generated file "${leak.path}" would contain what looks like a ${leak.patternName}: ${leak.redactedValue}`,
+        })),
       ],
     };
   }

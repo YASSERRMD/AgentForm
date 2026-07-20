@@ -43,7 +43,7 @@ export function generatePyprojectToml(ir: AgentformIR): string {
 export function generateEnvExample(ir: AgentformIR): string {
   const lines = [
     '# Agent nodes are generated as stubs (see src/agents/) — wire up your',
-    "model provider(s) of choice and set their credentials here. Nothing in",
+    'model provider(s) of choice and set their credentials here. Nothing in',
     'generated code reads these automatically; this file is a starting point.',
   ].map((line) => `# ${line}`);
   const modelLines = [...ir.models.entries()].map(

@@ -1,5 +1,9 @@
 export type { PluginType, AgentformPluginManifest } from './manifest.js';
-export type { FeatureSupportLevel, FeatureSupportEntry, CompatibilityReport } from './compatibility.js';
+export type {
+  FeatureSupportLevel,
+  FeatureSupportEntry,
+  CompatibilityReport,
+} from './compatibility.js';
 export type { GeneratedFile, GeneratedManifest, GeneratedProject } from './generated-project.js';
 export type {
   AdapterContext,

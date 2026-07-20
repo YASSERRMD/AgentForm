@@ -8,7 +8,7 @@ describe('pythonStringLiteral', () => {
 
   it('does not escape embedded double quotes', () => {
     expect(pythonStringLiteral('Tool "search-registry" is not yet implemented.')).toBe(
-      "'Tool \"search-registry\" is not yet implemented.'",
+      '\'Tool "search-registry" is not yet implemented.\'',
     );
   });
 
@@ -17,7 +17,7 @@ describe('pythonStringLiteral', () => {
   });
 
   it('escapes an embedded single quote when the string also contains a double quote', () => {
-    expect(pythonStringLiteral('it\'s "fine"')).toBe('\'it\\\'s "fine"\'');
+    expect(pythonStringLiteral('it\'s "fine"')).toBe("'it\\'s \"fine\"'");
   });
 
   it('escapes backslashes and newlines', () => {

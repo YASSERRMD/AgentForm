@@ -55,7 +55,11 @@ function pythonTypeHint(schema: JsonSchemaLike): string {
  * signature, just one with no declared parameters to infer a schema from.
  */
 export function jsonSchemaToPythonParams(schema: unknown): string {
-  if (!isJsonSchemaLike(schema) || !schema.properties || Object.keys(schema.properties).length === 0) {
+  if (
+    !isJsonSchemaLike(schema) ||
+    !schema.properties ||
+    Object.keys(schema.properties).length === 0
+  ) {
     return '**kwargs: Any';
   }
   const required = new Set(schema.required ?? []);

@@ -1,5 +1,10 @@
 import { generatedFileHeader, toIdentifier } from '@agentform/compiler';
-import { resourceAddress, type IRWorkflow, type IRWorkflowEdge, type IRWorkflowNode } from '@agentform/ir';
+import {
+  resourceAddress,
+  type IRWorkflow,
+  type IRWorkflowEdge,
+  type IRWorkflowNode,
+} from '@agentform/ir';
 import { loopCounterFieldName } from './generate-state.js';
 import { pythonStringLiteral } from './python-repr.js';
 
@@ -48,7 +53,12 @@ function renderNode(nodeId: string, node: IRWorkflowNode, workflowId: string): N
     }
     case 'tool': {
       const varName = toIdentifier(node.tool);
-      return { nodeId, actionExpression: `ToolNode([${varName}])`, toolImport: node.tool, usesToolNode: true };
+      return {
+        nodeId,
+        actionExpression: `ToolNode([${varName}])`,
+        toolImport: node.tool,
+        usesToolNode: true,
+      };
     }
     case 'router': {
       const fnName = `${toIdentifier(nodeId)}_node`;
@@ -105,7 +115,9 @@ function renderNode(nodeId: string, node: IRWorkflowNode, workflowId: string): N
       // `generate()` while `validateLangGraphCompatibility` reports a blocking
       // incompatibility, and every node type not handled above is reported
       // unsupported there.
-      throw new Error(`generate-workflow: unsupported node type "${(node as IRWorkflowNode).type}" on node "${nodeId}"`);
+      throw new Error(
+        `generate-workflow: unsupported node type "${(node as IRWorkflowNode).type}" on node "${nodeId}"`,
+      );
   }
 }
 
@@ -132,7 +144,9 @@ function renderEdgesForNode(
   }
 
   if (edgesFromNode.length === 1 && onlyEdge !== undefined && onlyEdge.when === undefined) {
-    return { statements: `    builder.add_edge(${nodeRef}, ${pythonIdentifierLiteral(onlyEdge.to)})\n` };
+    return {
+      statements: `    builder.add_edge(${nodeRef}, ${pythonIdentifierLiteral(onlyEdge.to)})\n`,
+    };
   }
 
   const fnName = `${toIdentifier(nodeId)}_path`;
@@ -147,7 +161,10 @@ function renderEdgesForNode(
     `    raise NotImplementedError(${pythonStringLiteral(`TODO: implement routing logic for node "${nodeId}".`)})\n`;
 
   const pathMapEntries = edgesFromNode
-    .map((edge) => `            ${pythonIdentifierLiteral(edge.to)}: ${pythonIdentifierLiteral(edge.to)},`)
+    .map(
+      (edge) =>
+        `            ${pythonIdentifierLiteral(edge.to)}: ${pythonIdentifierLiteral(edge.to)},`,
+    )
     .join('\n');
   const statements =
     `    builder.add_conditional_edges(\n` +
@@ -197,7 +214,9 @@ export function generateWorkflowFile(workflowId: string, workflow: IRWorkflow): 
     edgesByFromNode.get(edge.from)?.push(edge);
   }
 
-  const edgeCodegens = nodes.map(([nodeId]) => renderEdgesForNode(nodeId, edgesByFromNode.get(nodeId) ?? []));
+  const edgeCodegens = nodes.map(([nodeId]) =>
+    renderEdgesForNode(nodeId, edgesByFromNode.get(nodeId) ?? []),
+  );
   for (const { pathFunctionDefinition } of edgeCodegens) {
     if (pathFunctionDefinition) {
       inlineDefinitions.push(pathFunctionDefinition);
@@ -212,12 +231,19 @@ export function generateWorkflowFile(workflowId: string, workflow: IRWorkflow): 
     `from ..state import State`,
     ...[...agentImports]
       .sort()
-      .map((agentId) => `from ..agents.${toIdentifier(agentId)} import ${toIdentifier(agentId)}_node`),
-    ...[...toolImports].sort().map((toolId) => `from ..tools.${toIdentifier(toolId)} import ${toIdentifier(toolId)}`),
+      .map(
+        (agentId) => `from ..agents.${toIdentifier(agentId)} import ${toIdentifier(agentId)}_node`,
+      ),
+    ...[...toolImports]
+      .sort()
+      .map((toolId) => `from ..tools.${toIdentifier(toolId)} import ${toIdentifier(toolId)}`),
   ].filter((line): line is string => line !== undefined);
 
   const addNodeLines = nodeCodegens
-    .map((codegen) => `    builder.add_node(${pythonIdentifierLiteral(codegen.nodeId)}, ${codegen.actionExpression})`)
+    .map(
+      (codegen) =>
+        `    builder.add_node(${pythonIdentifierLiteral(codegen.nodeId)}, ${codegen.actionExpression})`,
+    )
     .join('\n');
 
   const edgeLines = [

@@ -22,7 +22,11 @@ export function generateToolFile(toolId: string, tool: IRTool): string {
   // The `-> Any` return annotation always needs `Any`; params may pull in more.
   const typingImports = ['Any', ...['Optional', 'Literal'].filter((name) => params.includes(name))];
 
-  const importLines = [`from typing import ${typingImports.join(', ')}`, '', 'from langchain_core.tools import tool'];
+  const importLines = [
+    `from typing import ${typingImports.join(', ')}`,
+    '',
+    'from langchain_core.tools import tool',
+  ];
 
   return (
     `${header}\n\n` +

@@ -18,11 +18,7 @@ function instructionsText(agent: IRAgent): string {
  * stores guardrail *references*, not logic) — see `generate-guardrail.ts`
  * for the stub each name becomes.
  */
-export function generateAgentFile(
-  agentId: string,
-  agent: IRAgent,
-  ir: AgentformIR,
-): string {
+export function generateAgentFile(agentId: string, agent: IRAgent, ir: AgentformIR): string {
   const varName = toIdentifier(agentId);
   const model = ir.models.get(agent.model);
   const header = generatedFileHeader({
@@ -41,9 +37,7 @@ export function generateAgentFile(
   }
   const guardrailVars = (agent.guardrails ?? []).map(toIdentifier);
   if (guardrailVars.length > 0) {
-    imports.push(
-      `import { ${guardrailVars.join(', ')} } from '../policies/guardrails.js';`,
-    );
+    imports.push(`import { ${guardrailVars.join(', ')} } from '../policies/guardrails.js';`);
   }
   if (agent.outputSchema) {
     imports.push("import { z } from 'zod';");

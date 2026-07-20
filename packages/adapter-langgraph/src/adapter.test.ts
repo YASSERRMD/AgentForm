@@ -8,13 +8,17 @@ const CONTEXT = { outputDir: './generated/langgraph', agentformVersion: '0.1.0' 
 
 describe('langGraphAdapter.validateCompatibility', () => {
   it('reports the full-graph fixture as fully compatible', async () => {
-    const report = await langGraphAdapter.validateCompatibility(graphWorkflowIR(), { outputDir: '.' });
+    const report = await langGraphAdapter.validateCompatibility(graphWorkflowIR(), {
+      outputDir: '.',
+    });
     expect(report.hasBlockingIncompatibility).toBe(false);
     expect(report.target).toBe('langgraph');
   });
 
   it('flags an unsupported workflow node type as blocking', async () => {
-    const report = await langGraphAdapter.validateCompatibility(unsupportedNodeIR(), { outputDir: '.' });
+    const report = await langGraphAdapter.validateCompatibility(unsupportedNodeIR(), {
+      outputDir: '.',
+    });
     expect(report.hasBlockingIncompatibility).toBe(true);
   });
 });
@@ -58,21 +62,26 @@ describe('langGraphAdapter.generate', () => {
     expect(first.files).toEqual(second.files);
   });
 
-  it('a prompt-only change alters only that agent\'s file, not unrelated files', async () => {
+  it("a prompt-only change alters only that agent's file, not unrelated files", async () => {
     const before = await langGraphAdapter.generate(graphWorkflowIR(), CONTEXT);
 
     const ir = graphWorkflowIR();
     const triage = ir.agents.get('triage');
     if (!triage) throw new Error('missing fixture agent');
     const mutatedAgents = new Map(ir.agents);
-    mutatedAgents.set('triage', { ...triage, instructions: { text: 'Completely different instructions.' } });
+    mutatedAgents.set('triage', {
+      ...triage,
+      instructions: { text: 'Completely different instructions.' },
+    });
     const mutatedIr = { ...ir, agents: mutatedAgents };
     const after = await langGraphAdapter.generate(mutatedIr, CONTEXT);
 
     const beforeByPath = new Map(before.files.map((f) => [f.path, f.content]));
     const afterByPath = new Map(after.files.map((f) => [f.path, f.content]));
 
-    const changedPaths = [...beforeByPath.keys()].filter((path) => beforeByPath.get(path) !== afterByPath.get(path));
+    const changedPaths = [...beforeByPath.keys()].filter(
+      (path) => beforeByPath.get(path) !== afterByPath.get(path),
+    );
     expect(changedPaths).toEqual(['src/agents/triage.py']);
   });
 });

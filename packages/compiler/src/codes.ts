@@ -12,6 +12,7 @@ export const COMPILER_DIAGNOSTIC_CODES = defineDiagnosticCodes({
   },
   SECRET_LEAK_BLOCKED: {
     code: 'AGF5003',
-    summary: 'Generation was blocked because a generated file would have contained a secret-shaped value.',
+    summary:
+      'Generation was blocked because a generated file would have contained a secret-shaped value.',
   },
 });

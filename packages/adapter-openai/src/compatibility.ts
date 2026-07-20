@@ -39,13 +39,21 @@ export function validateOpenAiCompatibility(ir: AgentformIR): CompatibilityRepor
   const entries: FeatureSupportEntry[] = [];
 
   for (const id of ir.agents.keys()) {
-    entries.push({ feature: 'agent', level: 'supported', resourceAddress: resourceAddress('agent', id) });
+    entries.push({
+      feature: 'agent',
+      level: 'supported',
+      resourceAddress: resourceAddress('agent', id),
+    });
   }
 
   for (const [id, tool] of ir.tools) {
     const address = resourceAddress('tool', id);
     if (SUPPORTED_TOOL_TYPES.has(tool.type)) {
-      entries.push({ feature: `tool (${tool.type})`, level: 'supported', resourceAddress: address });
+      entries.push({
+        feature: `tool (${tool.type})`,
+        level: 'supported',
+        resourceAddress: address,
+      });
     } else {
       entries.push({
         feature: `tool (${tool.type})`,
@@ -60,7 +68,11 @@ export function validateOpenAiCompatibility(ir: AgentformIR): CompatibilityRepor
     for (const [nodeId, node] of workflow.nodes) {
       const address = `${resourceAddress('workflow', workflowId)}.nodes.${nodeId}`;
       if (SUPPORTED_NODE_TYPES.has(node.type)) {
-        entries.push({ feature: `workflow node (${node.type})`, level: 'supported', resourceAddress: address });
+        entries.push({
+          feature: `workflow node (${node.type})`,
+          level: 'supported',
+          resourceAddress: address,
+        });
       } else {
         entries.push({
           feature: `workflow node (${node.type})`,
@@ -77,8 +89,16 @@ export function validateOpenAiCompatibility(ir: AgentformIR): CompatibilityRepor
   // project regardless of what the specification uses.
   entries.push(
     { feature: 'sessions', level: 'partial', detail: 'not yet generated; add manually if needed' },
-    { feature: 'tracing hooks', level: 'partial', detail: 'SDK default tracing only, not configured per-agent' },
-    { feature: 'tool restrictions', level: 'partial', detail: 'per-run tool allowlisting is not yet generated' },
+    {
+      feature: 'tracing hooks',
+      level: 'partial',
+      detail: 'SDK default tracing only, not configured per-agent',
+    },
+    {
+      feature: 'tool restrictions',
+      level: 'partial',
+      detail: 'per-run tool allowlisting is not yet generated',
+    },
   );
 
   return {

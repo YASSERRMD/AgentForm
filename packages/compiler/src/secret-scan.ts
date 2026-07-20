@@ -29,7 +29,11 @@ export function scanForSecretLeaks(files: readonly GeneratedFile[]): readonly Se
     for (const { name, pattern } of SECRET_PATTERNS) {
       const match = pattern.exec(file.content);
       if (match) {
-        leaks.push({ path: file.path, patternName: name, redactedValue: redactSecretValue(match[0]) });
+        leaks.push({
+          path: file.path,
+          patternName: name,
+          redactedValue: redactSecretValue(match[0]),
+        });
         break;
       }
     }

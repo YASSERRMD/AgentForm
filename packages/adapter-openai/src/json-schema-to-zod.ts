@@ -34,7 +34,9 @@ function primitiveExpression(schema: JsonSchemaLike): string {
 
 function expressionFor(schema: JsonSchemaLike): string {
   const expression = primitiveExpression(schema);
-  return schema.description ? `${expression}.describe(${JSON.stringify(schema.description)})` : expression;
+  return schema.description
+    ? `${expression}.describe(${JSON.stringify(schema.description)})`
+    : expression;
 }
 
 function objectExpression(schema: JsonSchemaLike): string {

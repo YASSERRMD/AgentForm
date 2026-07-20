@@ -34,7 +34,7 @@ describe('generateAgentFile', () => {
   it('never fabricates real model-calling logic — always a NotImplementedError stub', () => {
     const source = generateAgentFile('triage', agentFromFixture('triage'));
     expect(source).toContain('raise NotImplementedError(');
-    expect(source).toContain("'Agent \"triage\" is not yet implemented.'");
+    expect(source).toContain('\'Agent "triage" is not yet implemented.\'');
   });
 
   it('omits the Tools line for an agent with no declared tools', () => {

@@ -12,7 +12,14 @@ import { LANGGRAPH_VERSION, PYTHON_VERSION_REQUIREMENT } from './versions.js';
  * edge. Every other node type (`parallel`, `join`, `delay`, `event`,
  * `subworkflow`, `transform`, `condition`) has no generator yet.
  */
-const SUPPORTED_NODE_TYPES = new Set(['agent', 'tool', 'humanApproval', 'loop', 'router', 'terminate']);
+const SUPPORTED_NODE_TYPES = new Set([
+  'agent',
+  'tool',
+  'humanApproval',
+  'loop',
+  'router',
+  'terminate',
+]);
 
 const SUPPORTED_TOOL_TYPES = new Set([
   'function',
@@ -30,13 +37,21 @@ export function validateLangGraphCompatibility(ir: AgentformIR): CompatibilityRe
   const entries: FeatureSupportEntry[] = [];
 
   for (const id of ir.agents.keys()) {
-    entries.push({ feature: 'agent', level: 'supported', resourceAddress: resourceAddress('agent', id) });
+    entries.push({
+      feature: 'agent',
+      level: 'supported',
+      resourceAddress: resourceAddress('agent', id),
+    });
   }
 
   for (const [id, tool] of ir.tools) {
     const address = resourceAddress('tool', id);
     if (SUPPORTED_TOOL_TYPES.has(tool.type)) {
-      entries.push({ feature: `tool (${tool.type})`, level: 'supported', resourceAddress: address });
+      entries.push({
+        feature: `tool (${tool.type})`,
+        level: 'supported',
+        resourceAddress: address,
+      });
     } else {
       entries.push({
         feature: `tool (${tool.type})`,
@@ -51,7 +66,11 @@ export function validateLangGraphCompatibility(ir: AgentformIR): CompatibilityRe
     for (const [nodeId, node] of workflow.nodes) {
       const address = `${resourceAddress('workflow', workflowId)}.nodes.${nodeId}`;
       if (SUPPORTED_NODE_TYPES.has(node.type)) {
-        entries.push({ feature: `workflow node (${node.type})`, level: 'supported', resourceAddress: address });
+        entries.push({
+          feature: `workflow node (${node.type})`,
+          level: 'supported',
+          resourceAddress: address,
+        });
       } else {
         entries.push({
           feature: `workflow node (${node.type})`,
@@ -66,7 +85,8 @@ export function validateLangGraphCompatibility(ir: AgentformIR): CompatibilityRe
   entries.push({
     feature: 'checkpointing',
     level: 'emulated',
-    detail: 'generated with an in-memory MemorySaver; swap in a persistent checkpointer for production use',
+    detail:
+      'generated with an in-memory MemorySaver; swap in a persistent checkpointer for production use',
   });
 
   return {

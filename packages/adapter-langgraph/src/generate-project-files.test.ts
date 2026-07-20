@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { generateEnvExample, generateMainFile, generatePyprojectToml, generateReadme } from './generate-project-files.js';
+import {
+  generateEnvExample,
+  generateMainFile,
+  generatePyprojectToml,
+  generateReadme,
+} from './generate-project-files.js';
 import { baseIR, graphWorkflowIR } from './test-fixtures.js';
 
 describe('generatePyprojectToml', () => {

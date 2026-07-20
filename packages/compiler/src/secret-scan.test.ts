@@ -3,7 +3,9 @@ import { scanForSecretLeaks } from './secret-scan.js';
 
 describe('scanForSecretLeaks', () => {
   it('finds no leaks in ordinary generated code', () => {
-    const files = [{ path: 'src/agents/assistant.ts', content: 'export const name = "assistant";' }];
+    const files = [
+      { path: 'src/agents/assistant.ts', content: 'export const name = "assistant";' },
+    ];
     expect(scanForSecretLeaks(files)).toEqual([]);
   });
 

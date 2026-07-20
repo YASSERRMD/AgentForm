@@ -60,7 +60,9 @@ describe('generateWorkflowFile', () => {
     expect(source).toContain('def route_path(state: State) -> str:');
     expect(source).toContain('state.needsResearch == true');
     expect(source).toContain('state.needsResearch == false');
-    expect(source).toContain('builder.add_conditional_edges(\n        "route",\n        route_path,');
+    expect(source).toContain(
+      'builder.add_conditional_edges(\n        "route",\n        route_path,',
+    );
     expect(source).toContain('            "research": "research"');
     expect(source).toContain('            "approve": "approve"');
   });
@@ -68,19 +70,25 @@ describe('generateWorkflowFile', () => {
   it('generates a real (non-stub) pass-through body for the router node itself', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
     expect(source).toContain('def route_node(state: State) -> dict:');
-    expect(source).toMatch(/def route_node\(state: State\) -> dict:\n {4}""".*?""".*?\n {4}return \{\}/s);
+    expect(source).toMatch(
+      /def route_node\(state: State\) -> dict:\n {4}""".*?""".*?\n {4}return \{\}/s,
+    );
   });
 
   it('generates a real (mechanical) iteration-counter increment for the loop node', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
     expect(source).toContain('def retry_node(state: State) -> dict:');
-    expect(source).toContain('return {"main_retry_iterations": state.get("main_retry_iterations", 0) + 1}');
+    expect(source).toContain(
+      'return {"main_retry_iterations": state.get("main_retry_iterations", 0) + 1}',
+    );
   });
 
   it('wires the loop node with add_conditional_edges back to the router and forward to approval', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
     expect(source).toContain('def retry_path(state: State) -> str:');
-    expect(source).toContain('builder.add_conditional_edges(\n        "retry",\n        retry_path,');
+    expect(source).toContain(
+      'builder.add_conditional_edges(\n        "retry",\n        retry_path,',
+    );
     expect(source).toContain('            "route": "route"');
   });
 
@@ -95,7 +103,9 @@ describe('generateWorkflowFile', () => {
 
   it('generates a real (non-stub) pass-through body for the terminate node', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
-    expect(source).toMatch(/def done_node\(state: State\) -> dict:\n {4}""".*?""".*?\n {4}return \{\}/s);
+    expect(source).toMatch(
+      /def done_node\(state: State\) -> dict:\n {4}""".*?""".*?\n {4}return \{\}/s,
+    );
   });
 
   it('never imports ToolNode or interrupt when the workflow has no tool or humanApproval nodes', () => {

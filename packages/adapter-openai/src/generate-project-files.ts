@@ -87,7 +87,7 @@ export function generateReadme(ir: AgentformIR): string {
 
 export function generateIndexFile(workflowFunctionNames: readonly string[]): string {
   if (workflowFunctionNames.length === 0) {
-    return "export {};\n";
+    return 'export {};\n';
   }
   const [first] = workflowFunctionNames;
   return [

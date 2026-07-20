@@ -1,5 +1,9 @@
 import { buildIR, type AgentformIR } from '@agentform/ir';
-import type { CompatibilityReport, FrameworkAdapter, GeneratedProject } from '@agentform/plugin-sdk';
+import type {
+  CompatibilityReport,
+  FrameworkAdapter,
+  GeneratedProject,
+} from '@agentform/plugin-sdk';
 
 /** Mirrors `@agentform/planner`/`@agentform/ir`'s own `test-fixtures.ts` convention: build through the real `buildIR` so a fixture that drifts from the schema fails the test that uses it. */
 export function baseIR(): AgentformIR {

@@ -44,7 +44,11 @@ describe('generateToolFile', () => {
     const tool: IRTool = {
       type: 'function',
       handler: 'x',
-      inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+      inputSchema: {
+        type: 'object',
+        properties: { query: { type: 'string' } },
+        required: ['query'],
+      },
     };
     const source = generateToolFile('search', tool);
     expect(source).toContain('"query": z.string()');

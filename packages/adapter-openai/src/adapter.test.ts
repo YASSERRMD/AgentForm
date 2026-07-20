@@ -25,9 +25,9 @@ describe('openAiAdapter.validateCompatibility', () => {
 
     const report = await openAiAdapter.validateCompatibility(mutatedIr, { outputDir: '.' });
     expect(report.hasBlockingIncompatibility).toBe(true);
-    expect(report.entries.some((e) => e.level === 'unsupported' && e.feature.includes('humanApproval'))).toBe(
-      true,
-    );
+    expect(
+      report.entries.some((e) => e.level === 'unsupported' && e.feature.includes('humanApproval')),
+    ).toBe(true);
   });
 });
 
@@ -76,7 +76,7 @@ describe('openAiAdapter.generate', () => {
     expect(first.files).toEqual(second.files);
   });
 
-  it('a prompt-only change alters only that agent\'s file, not unrelated files', async () => {
+  it("a prompt-only change alters only that agent's file, not unrelated files", async () => {
     const before = await openAiAdapter.generate(multiAgentIR(), CONTEXT);
 
     const ir = multiAgentIR();

@@ -62,12 +62,21 @@ importers:
       '@agentform/parser':
         specifier: workspace:*
         version: link:../../packages/parser
+      '@agentform/planner':
+        specifier: workspace:*
+        version: link:../../packages/planner
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy
       '@agentform/schema':
         specifier: workspace:*
         version: link:../../packages/schema
+      '@agentform/state':
+        specifier: workspace:*
+        version: link:../../packages/state
+      '@agentform/state-local':
+        specifier: workspace:*
+        version: link:../../packages/state-local
       commander:
         specifier: ^15.0.0
         version: 15.0.0
@@ -141,7 +150,21 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
 
-  packages/planner: {}
+  packages/planner:
+    dependencies:
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/state':
+        specifier: workspace:*
+        version: link:../state
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/plugin-sdk: {}
 

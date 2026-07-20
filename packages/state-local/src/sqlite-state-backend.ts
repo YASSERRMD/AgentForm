@@ -145,7 +145,10 @@ export class SqliteStateBackend implements StateBackend {
   }
 
   async acquireLock(options?: LockOptions): Promise<void> {
-    acquireLock(this.lockPath, { reason: options?.reason, staleTimeoutMs: options?.staleTimeoutMs });
+    acquireLock(this.lockPath, {
+      reason: options?.reason,
+      staleTimeoutMs: options?.staleTimeoutMs,
+    });
   }
 
   async releaseLock(): Promise<void> {
@@ -242,7 +245,13 @@ export class SqliteStateBackend implements StateBackend {
         `INSERT INTO apply_history (id, started_at, finished_at, status, plan_hash, backup_id, summary)
          VALUES (?, ?, NULL, 'in_progress', ?, ?, ?)`,
       )
-      .run(entry.id, entry.startedAt, entry.planHash ?? null, entry.backupId ?? null, entry.summary ?? null);
+      .run(
+        entry.id,
+        entry.startedAt,
+        entry.planHash ?? null,
+        entry.backupId ?? null,
+        entry.summary ?? null,
+      );
   }
 
   async recordApplyFinish(

@@ -13,7 +13,9 @@ import type { DatabaseSync } from 'node:sqlite';
  */
 export function recoverInterruptedOperations(db: DatabaseSync): number {
   const result = db
-    .prepare("UPDATE apply_history SET status = 'interrupted', finished_at = ? WHERE status = 'in_progress'")
+    .prepare(
+      "UPDATE apply_history SET status = 'interrupted', finished_at = ? WHERE status = 'in_progress'",
+    )
     .run(new Date().toISOString());
   return Number(result.changes);
 }

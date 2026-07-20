@@ -69,9 +69,7 @@ describe('acquireLock / releaseLock', () => {
     const recentInfo = { holder: 'other@host', acquiredAt: new Date().toISOString() };
     writeFileSync(lockPath, JSON.stringify(recentInfo), { flag: 'wx' });
 
-    expect(() => acquireLock(lockPath, { staleTimeoutMs: 60 * 60 * 1000 })).toThrow(
-      StateLockError,
-    );
+    expect(() => acquireLock(lockPath, { staleTimeoutMs: 60 * 60 * 1000 })).toThrow(StateLockError);
   });
 
   it('takes over a corrupted/unreadable lock file rather than deadlocking forever', () => {

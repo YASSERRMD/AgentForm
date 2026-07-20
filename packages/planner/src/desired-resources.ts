@@ -1,4 +1,9 @@
-import { computeContentHash, resourceAddress, type AgentformIR, type IROutput } from '@agentform/ir';
+import {
+  computeContentHash,
+  resourceAddress,
+  type AgentformIR,
+  type IROutput,
+} from '@agentform/ir';
 import type { ResourceKind } from '@agentform/state';
 
 export interface DesiredResource {

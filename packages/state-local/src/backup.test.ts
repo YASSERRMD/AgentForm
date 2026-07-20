@@ -42,7 +42,9 @@ describe('createBackup', () => {
     db.close();
 
     const restored = openDatabase(path.join(backupsDir, id));
-    const row = restored.prepare('SELECT application_name FROM application_state WHERE id = 1').get();
+    const row = restored
+      .prepare('SELECT application_name FROM application_state WHERE id = 1')
+      .get();
     expect(row).toEqual({ application_name: 'app' });
     restored.close();
   });

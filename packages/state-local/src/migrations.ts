@@ -64,8 +64,7 @@ function ensureMigrationsTable(db: DatabaseSync): void {
 export function currentSchemaVersion(db: DatabaseSync): number {
   ensureMigrationsTable(db);
   const row = db.prepare('SELECT MAX(version) as version FROM schema_migrations').get() as
-    | { version: number | null }
-    | undefined;
+    { version: number | null } | undefined;
   return row?.version ?? 0;
 }
 

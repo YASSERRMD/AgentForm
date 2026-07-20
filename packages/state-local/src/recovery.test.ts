@@ -27,7 +27,9 @@ describe('recoverInterruptedOperations', () => {
     const recovered = recoverInterruptedOperations(db);
 
     expect(recovered).toBe(1);
-    const row = db.prepare('SELECT status, finished_at FROM apply_history WHERE id = ?').get('apply-1');
+    const row = db
+      .prepare('SELECT status, finished_at FROM apply_history WHERE id = ?')
+      .get('apply-1');
     expect(row).toMatchObject({ status: 'interrupted' });
     expect((row as { finished_at: string | null }).finished_at).not.toBeNull();
     db.close();

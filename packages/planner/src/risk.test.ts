@@ -23,7 +23,11 @@ describe('classifyRisk', () => {
 
   it('creating a read-only tool is MEDIUM ("new read-only tool: medium")', () => {
     const risk = classifyRisk(
-      riskInput({ operation: 'CREATE', kind: 'tool', after: { type: 'function', sideEffect: 'read' } }),
+      riskInput({
+        operation: 'CREATE',
+        kind: 'tool',
+        after: { type: 'function', sideEffect: 'read' },
+      }),
       ir,
     );
     expect(risk).toBe('MEDIUM');
@@ -31,7 +35,11 @@ describe('classifyRisk', () => {
 
   it('creating a write-capable tool is HIGH ("new write-capable tool: high")', () => {
     const risk = classifyRisk(
-      riskInput({ operation: 'CREATE', kind: 'tool', after: { type: 'function', sideEffect: 'write' } }),
+      riskInput({
+        operation: 'CREATE',
+        kind: 'tool',
+        after: { type: 'function', sideEffect: 'write' },
+      }),
       ir,
     );
     expect(risk).toBe('HIGH');

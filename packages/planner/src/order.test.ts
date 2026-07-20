@@ -3,7 +3,9 @@ import type { DirectedGraph } from '@agentform/core';
 import { orderPlanItems } from './order.js';
 import type { PlanItem } from './types.js';
 
-function item(overrides: Partial<PlanItem> & Pick<PlanItem, 'resourceAddress' | 'operation'>): PlanItem {
+function item(
+  overrides: Partial<PlanItem> & Pick<PlanItem, 'resourceAddress' | 'operation'>,
+): PlanItem {
   return {
     kind: 'agent',
     risk: 'LOW',

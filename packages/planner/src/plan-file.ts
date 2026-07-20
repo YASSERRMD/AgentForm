@@ -11,7 +11,11 @@ export interface PlanFile {
   readonly contentHash: string;
 }
 
-function computePlanHash(formatVersion: string, createdAt: string, items: readonly PlanItem[]): string {
+function computePlanHash(
+  formatVersion: string,
+  createdAt: string,
+  items: readonly PlanItem[],
+): string {
   return computeContentHash({ formatVersion, createdAt, items });
 }
 
@@ -73,7 +77,8 @@ export function verifyPlanFile(serialized: string): PlanFileVerificationResult {
   if (expectedHash !== parsed.contentHash) {
     return {
       valid: false,
-      error: 'plan file content hash does not match its recorded hash — it may have been tampered with',
+      error:
+        'plan file content hash does not match its recorded hash — it may have been tampered with',
       planFile: parsed,
     };
   }

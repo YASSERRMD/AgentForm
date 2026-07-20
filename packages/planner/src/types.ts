@@ -1,6 +1,7 @@
 import type { ResourceKind } from '@agentform/state';
 
-export type PlanOperation = 'CREATE' | 'UPDATE' | 'REPLACE' | 'DELETE' | 'NO_OP' | 'IMPORT' | 'READ';
+export type PlanOperation =
+  'CREATE' | 'UPDATE' | 'REPLACE' | 'DELETE' | 'NO_OP' | 'IMPORT' | 'READ';
 
 export type PlanRisk = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 

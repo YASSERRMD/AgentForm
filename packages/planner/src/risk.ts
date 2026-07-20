@@ -8,7 +8,11 @@ function escalate(current: PlanRisk, candidate: PlanRisk): PlanRisk {
 }
 
 function isSideEffect(value: unknown, effect: string): boolean {
-  return typeof value === 'object' && value !== null && (value as { sideEffect?: unknown }).sideEffect === effect;
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    (value as { sideEffect?: unknown }).sideEffect === effect
+  );
 }
 
 /**

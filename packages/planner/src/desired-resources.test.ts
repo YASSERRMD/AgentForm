@@ -9,13 +9,13 @@ describe('collectDesiredResources', () => {
     expect(addresses).toEqual(['agent.assistant', 'model.primary', 'workflow.main']);
   });
 
-  it('computes an agent\'s dependencies as its model', () => {
+  it("computes an agent's dependencies as its model", () => {
     const resources = collectDesiredResources(baseIR());
     const agent = resources.find((r) => r.address === 'agent.assistant');
     expect(agent?.dependsOn).toEqual(['model.primary']);
   });
 
-  it('computes a workflow\'s dependencies as the agents its nodes reference', () => {
+  it("computes a workflow's dependencies as the agents its nodes reference", () => {
     const resources = collectDesiredResources(baseIR());
     const workflow = resources.find((r) => r.address === 'workflow.main');
     expect(workflow?.dependsOn).toEqual(['agent.assistant']);
@@ -35,7 +35,7 @@ describe('collectDesiredResources', () => {
     expect(a.map((r) => r.contentHash)).toEqual(b.map((r) => r.contentHash));
   });
 
-  it('a model\'s identity hash changes when its provider changes', () => {
+  it("a model's identity hash changes when its provider changes", () => {
     const ir = baseIR();
     const resources = collectDesiredResources(ir);
     const before = resources.find((r) => r.address === 'model.primary')?.identityHash;
@@ -43,13 +43,14 @@ describe('collectDesiredResources', () => {
     const mutatedModels = new Map(ir.models);
     mutatedModels.set('primary', { ...mutatedModels.get('primary')!, provider: 'azure' });
     const mutatedIr = { ...ir, models: mutatedModels };
-    const after = collectDesiredResources(mutatedIr).find((r) => r.address === 'model.primary')
-      ?.identityHash;
+    const after = collectDesiredResources(mutatedIr).find(
+      (r) => r.address === 'model.primary',
+    )?.identityHash;
 
     expect(after).not.toBe(before);
   });
 
-  it('a model\'s identity hash stays the same when only its version changes', () => {
+  it("a model's identity hash stays the same when only its version changes", () => {
     const ir = baseIR();
     const resources = collectDesiredResources(ir);
     const before = resources.find((r) => r.address === 'model.primary')?.identityHash;
@@ -57,8 +58,9 @@ describe('collectDesiredResources', () => {
     const mutatedModels = new Map(ir.models);
     mutatedModels.set('primary', { ...mutatedModels.get('primary')!, version: '2026-01-01' });
     const mutatedIr = { ...ir, models: mutatedModels };
-    const after = collectDesiredResources(mutatedIr).find((r) => r.address === 'model.primary')
-      ?.identityHash;
+    const after = collectDesiredResources(mutatedIr).find(
+      (r) => r.address === 'model.primary',
+    )?.identityHash;
 
     expect(after).toBe(before);
   });

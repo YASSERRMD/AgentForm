@@ -12,6 +12,7 @@ export type {
 export { POLICY_ENGINE_DIAGNOSTIC_CODES } from './codes.js';
 export { redactSecretValue } from './redact.js';
 export { evaluatePolicies, hasPolicyFailures, type EvaluatePoliciesResult } from './evaluate.js';
+export { BUILTIN_POLICIES } from './policies/index.js';
 
 export const PACKAGE_NAME = '@agentform/policy';
 export const PACKAGE_VERSION = '0.1.0';

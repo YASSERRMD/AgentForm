@@ -142,7 +142,18 @@ importers:
 
   packages/plugin-sdk: {}
 
-  packages/policy: {}
+  packages/policy:
+    dependencies:
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/runtime: {}
 

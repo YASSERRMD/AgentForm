@@ -9,6 +9,7 @@ import { memorySchema } from './memory.js';
 import { evaluationSchema } from './evaluation.js';
 import { observabilitySchema } from './observability.js';
 import { deploymentSchema } from './deployment.js';
+import { moduleReferenceSchema } from './module.js';
 import { outputSchema } from './output.js';
 import { identifierSchema, uniqueArray } from './primitives.js';
 
@@ -28,6 +29,7 @@ const specSchema = z
     observability: observabilitySchema.optional(),
     deployment: deploymentSchema.optional(),
     outputs: z.record(identifierSchema, outputSchema).optional(),
+    modules: z.record(identifierSchema, moduleReferenceSchema).optional(),
   })
   .strict();
 

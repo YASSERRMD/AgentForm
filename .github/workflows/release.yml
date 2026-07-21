@@ -1,0 +1,116 @@
+name: Release
+
+# Manual-only, on purpose: this workflow can version and publish real npm
+# packages. It never runs on push/PR — only a human explicitly choosing
+# "Run workflow" in the Actions tab can trigger it, and even then
+# `dry_run` defaults to true so the default outcome of an accidental
+# trigger is "show me what would change," not "publish."
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Version packages and show the diff, but do not publish, tag, or push'
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  release:
+    name: Version and publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to commit the version bump and push tags (dry_run: false only)
+      id-token: write # for npm provenance (OIDC) — see the publish step below
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.22.0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Never publish something that hasn't passed the same gate every
+      # PR already has to pass — this release workflow trusts nothing
+      # about the state of `main` beyond what CI itself checked.
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test
+        run: pnpm test
+      - name: Build
+        run: pnpm build
+
+      - name: Apply pending changesets (version bump + changelog)
+        run: pnpm changeset version
+
+      - name: Show version diff
+        run: git diff --stat
+
+      - name: Stop here (dry run)
+        if: ${{ inputs.dry_run }}
+        run: |
+          echo "dry_run is true — versions were bumped locally for inspection only."
+          echo "Nothing was committed, tagged, published, or pushed."
+
+      - name: Configure git identity
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git config user.name "agentform-release-bot"
+          git config user.email "release-bot@users.noreply.github.com"
+
+      - name: Commit version bump
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git commit -am "chore: version packages"
+
+      - name: Generate SBOM
+        if: ${{ !inputs.dry_run }}
+        run: pnpm sbom
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry_run }}
+        # NPM_CONFIG_PROVENANCE is npm's documented env-var form of
+        # `npm publish --provenance` — changesets' publish command shells
+        # out to `npm publish` per package without its own provenance
+        # flag, so this is how provenance attestation (signed via the
+        # id-token OIDC permission above) reaches those invocations.
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
+        run: pnpm changeset publish
+
+      - name: Push version commit and tags
+        if: ${{ !inputs.dry_run }}
+        run: git push --follow-tags
+
+      - name: Create GitHub release with SBOM
+        if: ${{ !inputs.dry_run }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for tag in $(git tag --points-at HEAD); do
+            gh release create "$tag" --generate-notes --title "$tag" sbom.json
+          done

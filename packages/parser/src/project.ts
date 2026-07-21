@@ -1,5 +1,7 @@
 import path from 'node:path';
+import { resolvePathWithinRoot, UnsafePathError } from '@agentform/core';
 import type { Diagnostic, SourceLocation } from '@agentform/diagnostics';
+import { PARSER_DIAGNOSTIC_CODES } from './codes.js';
 import {
   discoverEntryFile,
   discoverResourceCollection,
@@ -140,7 +142,22 @@ export function loadProject(options: LoadProjectOptions): LoadProjectResult {
 
   if (options.environment && !diagnostics.some((d) => d.severity === 'error')) {
     const overlayRelativePath = path.join('environments', `${options.environment}.yaml`);
-    if (options.fs.exists(path.join(options.rootDir, overlayRelativePath))) {
+    let overlayAbsolutePath: string | undefined;
+    try {
+      overlayAbsolutePath = resolvePathWithinRoot(options.rootDir, overlayRelativePath);
+    } catch (error) {
+      if (!(error instanceof UnsafePathError)) {
+        throw error;
+      }
+      diagnostics.push({
+        code: PARSER_DIAGNOSTIC_CODES.UNSAFE_PATH.code,
+        severity: 'error',
+        message: `--environment "${options.environment}" resolves outside the project root`,
+        path: ['spec', 'runtime', 'environment'],
+      });
+    }
+
+    if (overlayAbsolutePath && options.fs.exists(overlayAbsolutePath)) {
       const overlay = loadAndResolve(overlayRelativePath, options);
       diagnostics.push(...overlay.diagnostics);
       if (!overlay.diagnostics.some((d) => d.severity === 'error')) {

@@ -1,0 +1,210 @@
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: regulated-approval
+  version: 1.0.0
+  description: Outbound wire-transfer review with mandatory, unconditional compliance sign-off before any transfer executes.
+  labels:
+    domain: financial-services
+    data-classification: restricted
+
+spec:
+  runtime:
+    target: langgraph
+    environment: production
+
+  models:
+    reviewModel:
+      provider: openai
+      model: gpt-5
+      version: '2025-04-14'
+      temperature: 0
+      dataResidency: us
+      fallbacks:
+        - reviewModelFallback
+      rateLimits:
+        requestsPerMinute: 60
+        tokensPerMinute: 100000
+      costMetadata:
+        inputPer1MTokensUsd: 3.00
+        outputPer1MTokensUsd: 12.00
+
+    reviewModelFallback:
+      provider: anthropic
+      model: claude-sonnet-4-5
+      version: '20250514'
+      temperature: 0
+      dataResidency: us
+
+  tools:
+    sanctionsScreen:
+      type: http
+      baseUrl: https://api.compliance.example.com
+      operations:
+        screen:
+          method: POST
+          path: /screenings
+      sideEffect: read
+      networkDestination: api.compliance.example.com
+      dataClassification: restricted
+      timeout: 15s
+
+    executeTransfer:
+      type: http
+      baseUrl: https://api.payments.example.com
+      operations:
+        create:
+          method: POST
+          path: /wire-transfers
+      sideEffect: destructive
+      permissions:
+        - wires:execute
+      idempotencyStrategy: Transfer requests carry a client-generated idempotency key derived from the case ID; a replay with the same key returns the original transfer instead of moving funds twice.
+      networkDestination: api.payments.example.com
+      dataClassification: restricted
+      auditRequired: true
+      timeout: 20s
+
+    auditLog:
+      type: http
+      baseUrl: https://api.compliance.example.com
+      operations:
+        create:
+          method: POST
+          path: /audit-entries
+      sideEffect: write
+      permissions:
+        - audit:write
+      networkDestination: api.compliance.example.com
+      dataClassification: restricted
+      auditRequired: true
+      timeout: 10s
+
+  agents:
+    paymentReview:
+      model: reviewModel
+      role: wire-transfer-review
+      description: Screens an outbound wire-transfer request for sanctions/AML risk ahead of mandatory compliance sign-off.
+      instructions:
+        file: prompts/review.md
+      tools:
+        - sanctionsScreen
+      outputSchema:
+        type: object
+        required:
+          - riskLevel
+          - screeningResult
+          - confidence
+        properties:
+          riskLevel:
+            type: string
+            enum: [low, medium, high]
+          screeningResult:
+            type: string
+            enum: [clear, flagged]
+          confidence:
+            type: number
+            minimum: 0
+            maximum: 1
+      memory:
+        ref: caseRecord
+      guardrails:
+        - no-transfer-execution-without-approval
+      limits:
+        maxSteps: 6
+        timeout: 20s
+        maxCostUsd: 0.10
+      retry:
+        maxAttempts: 2
+        backoff: exponential
+
+  memory:
+    caseRecord:
+      type: longTerm
+      scope: application
+      retention: 2555d
+      encryption: true
+      dataClassification: restricted
+      permissions:
+        - read
+        - write
+      redaction:
+        - accountNumber
+      eviction: manual
+
+  workflows:
+    main:
+      entrypoint: paymentReview
+      nodes:
+        paymentReview:
+          type: agent
+          agent: paymentReview
+
+        complianceApproval:
+          type: humanApproval
+          approvers:
+            - compliance-officer
+          timeout: 4h
+
+        executeTransfer:
+          type: tool
+          tool: executeTransfer.create
+
+        recordAudit:
+          type: tool
+          tool: auditLog.create
+
+        closed:
+          type: terminate
+          reason: transfer executed and recorded
+
+        rejected:
+          type: terminate
+          reason: compliance officer declined the transfer
+
+      edges:
+        - from: paymentReview
+          to: complianceApproval
+        - from: complianceApproval
+          to: executeTransfer
+          when: approval.status == "approved"
+        - from: complianceApproval
+          to: rejected
+          when: approval.status == "rejected"
+        - from: executeTransfer
+          to: recordAudit
+        - from: recordAudit
+          to: closed
+
+  policies:
+    - human-approval-before-transfer
+    - no-unpinned-production-models
+    - restrict-financial-data-residency
+
+  evaluations:
+    datasets:
+      - tests/transfers.jsonl
+    thresholds:
+      taskSuccess: 0.95
+      policyViolations: 0
+      maximumAverageCostUsd: 0.15
+
+  observability:
+    tracing:
+      provider: opentelemetry
+    recordPrompts: false
+    recordToolCalls: true
+
+  deployment:
+    type: kubernetes
+    config:
+      namespace: compliance
+      replicas: 2
+      minReadySeconds: 30
+
+  outputs:
+    transferEndpoint:
+      value: tools.executeTransfer.baseUrl
+      description: Base URL of the payments system this workflow calls once compliance approves a transfer.
+      sensitive: false

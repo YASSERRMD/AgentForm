@@ -1,0 +1,280 @@
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: enterprise-customer-support
+  version: 1.0.0
+  description: Support ticket triage that routes to specialist agents and gates refunds behind human approval.
+  labels:
+    domain: customer-support
+    data-classification: confidential
+
+spec:
+  runtime:
+    target: langgraph
+    environment: staging
+
+  models:
+    supportModel:
+      provider: openai
+      model: gpt-5
+      temperature: 0.1
+      dataResidency: us
+      costMetadata:
+        inputPer1MTokensUsd: 2.50
+        outputPer1MTokensUsd: 10.00
+
+  tools:
+    crmLookup:
+      type: mcp
+      server: crm-services
+      operation: customer.lookup
+      sideEffect: read
+      dataClassification: confidential
+      timeout: 10s
+
+    kbSearch:
+      type: mcp
+      server: support-kb
+      operation: articles.search
+      sideEffect: read
+      timeout: 10s
+
+    ticketReply:
+      type: http
+      baseUrl: https://api.support.example.com
+      operations:
+        send:
+          method: POST
+          path: /tickets/{ticketId}/replies
+      sideEffect: write
+      permissions:
+        - tickets:reply
+      networkDestination: api.support.example.com
+      timeout: 10s
+
+    goodwillCredit:
+      type: http
+      baseUrl: https://api.billing.example.com
+      operations:
+        create:
+          method: POST
+          path: /tickets/{ticketId}/goodwill-credits
+      sideEffect: write
+      permissions:
+        - credits:issue-goodwill
+      networkDestination: api.billing.example.com
+      dataClassification: confidential
+      timeout: 10s
+
+    issueRefund:
+      type: http
+      baseUrl: https://api.billing.example.com
+      operations:
+        create:
+          method: POST
+          path: /refunds
+      sideEffect: destructive
+      permissions:
+        - refunds:issue
+      idempotencyStrategy: Refund requests carry a client-generated idempotency key tied to the ticket ID; a replay with the same key returns the original refund instead of issuing a second one.
+      networkDestination: api.billing.example.com
+      dataClassification: confidential
+      auditRequired: true
+      timeout: 15s
+
+    engineeringTicket:
+      type: http
+      baseUrl: https://api.support.example.com
+      operations:
+        create:
+          method: POST
+          path: /engineering-tickets
+      sideEffect: write
+      permissions:
+        - engineering-tickets:create
+      networkDestination: api.support.example.com
+      timeout: 10s
+
+  agents:
+    triage:
+      model: supportModel
+      role: ticket-triage
+      description: Classifies incoming tickets and routes them to the right specialist or a direct reply.
+      instructions:
+        file: prompts/triage.md
+      tools:
+        - crmLookup
+        - kbSearch
+      outputSchema:
+        type: object
+        required:
+          - category
+          - urgency
+          - confidence
+        properties:
+          category:
+            type: string
+            enum: [billing, technical, general]
+          urgency:
+            type: string
+            enum: [low, medium, high, critical]
+          confidence:
+            type: number
+            minimum: 0
+            maximum: 1
+      memory:
+        ref: ticketContext
+      delegation:
+        allowedAgents:
+          - billing
+          - technical
+        strategy: automatic
+      limits:
+        maxSteps: 6
+        timeout: 20s
+        maxCostUsd: 0.08
+
+    billing:
+      model: supportModel
+      role: billing-specialist
+      description: Resolves billing disputes; drafts refund recommendations for human approval.
+      instructions:
+        file: prompts/billing.md
+      tools:
+        - crmLookup
+        - ticketReply
+        - goodwillCredit
+      memory:
+        ref: ticketContext
+      guardrails:
+        - no-refund-amount-promises-in-free-text
+      limits:
+        maxSteps: 8
+        timeout: 30s
+        maxCostUsd: 0.15
+
+    technical:
+      model: supportModel
+      role: technical-specialist
+      description: Diagnoses technical issues and drafts engineering escalations.
+      instructions:
+        file: prompts/technical.md
+      tools:
+        - crmLookup
+        - kbSearch
+        - ticketReply
+      memory:
+        ref: ticketContext
+      limits:
+        maxSteps: 8
+        timeout: 30s
+        maxCostUsd: 0.15
+
+  memory:
+    ticketContext:
+      type: conversation
+      scope: session
+      retention: 30d
+      dataClassification: confidential
+      permissions:
+        - read
+        - write
+      eviction: lru
+
+  workflows:
+    main:
+      entrypoint: triage
+      nodes:
+        triage:
+          type: agent
+          agent: triage
+
+        route:
+          type: router
+          default: respond
+
+        billing:
+          type: agent
+          agent: billing
+
+        technical:
+          type: agent
+          agent: technical
+
+        respond:
+          type: tool
+          tool: ticketReply.send
+
+        refundApproval:
+          type: humanApproval
+          approvers:
+            - billing-team-lead
+          timeout: 12h
+
+        refund:
+          type: tool
+          tool: issueRefund.create
+
+        fileEngineeringTicket:
+          type: tool
+          tool: engineeringTicket.create
+
+        closed:
+          type: terminate
+          reason: ticket resolved
+
+        refundDenied:
+          type: terminate
+          reason: billing team lead declined the refund
+
+      edges:
+        - from: triage
+          to: route
+        - from: route
+          to: billing
+          when: output.category == "billing"
+        - from: route
+          to: technical
+          when: output.category == "technical"
+        - from: route
+          to: respond
+        - from: billing
+          to: refundApproval
+        - from: technical
+          to: fileEngineeringTicket
+        - from: refundApproval
+          to: refund
+          when: approval.status == "approved"
+        - from: refundApproval
+          to: refundDenied
+          when: approval.status == "rejected"
+        - from: respond
+          to: closed
+        - from: refund
+          to: closed
+        - from: fileEngineeringTicket
+          to: closed
+
+  policies:
+    - human-approval-before-refund
+    - restrict-customer-data-residency
+
+  evaluations:
+    datasets:
+      - tests/tickets.jsonl
+    thresholds:
+      taskSuccess: 0.88
+      policyViolations: 0
+      maximumAverageCostUsd: 0.10
+
+  observability:
+    tracing:
+      provider: opentelemetry
+    recordPrompts: false
+    recordToolCalls: true
+
+  outputs:
+    refundEndpoint:
+      value: tools.issueRefund.baseUrl
+      description: Base URL of the billing system this workflow calls once a refund is approved.

@@ -193,6 +193,32 @@ describe('loadProject', () => {
     expect(value.spec.models.primary.provider).toBe('openai');
   });
 
+  it('rejects a --environment value that resolves outside the project root, never reading the escaped file', () => {
+    const canaryPath = path.join(path.dirname(rootDir), 'secret.yaml');
+    const inMemoryFs = createInMemoryFileSystem({
+      [path.join(rootDir, 'agentform.yaml')]: [
+        'metadata:',
+        '  name: app',
+        '  version: 1.0.0',
+        'spec:',
+        '  runtime:',
+        '    target: openai',
+        '    environment: development',
+        '',
+      ].join('\n'),
+      [canaryPath]: ['spec:', '  runtime:', '    environment: pwned', ''].join('\n'),
+    });
+
+    const result = loadProject({ rootDir, environment: '../../secret', fs: inMemoryFs });
+
+    expect(result.diagnostics.some((d) => d.code === 'AGF1002')).toBe(true);
+    // An unsafe --environment value fails the whole load (consistent with
+    // every other error-diagnostic case in this file) — proving `value`
+    // is undefined, not just "doesn't happen to contain the canary's
+    // content", is what actually shows the escaped file was never read.
+    expect(result.value).toBeUndefined();
+  });
+
   it('resolves prompt files and interpolates env/var together with references', () => {
     const result = loadProject({
       rootDir,

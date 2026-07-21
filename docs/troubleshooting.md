@@ -1,0 +1,94 @@
+# Troubleshooting
+
+## Purpose
+
+Every `docs/*-reference.md` file ends with its own Troubleshooting section, scoped to the one package or command it documents. This page pulls the issues you're actually likely to hit into one place, organized by symptom instead of by package, and links back to the originating reference doc for the full explanation. It is a starting point for diagnosis, not a replacement for those sections — when in doubt, follow the link.
+
+## A command exits with an unexpected code
+
+Most of Agentform's exit codes are not chosen per-command; `apps/cli/src/lib/exit-codes.ts`'s `exitCodeForDiagnostics` picks the code for the _earliest_ pipeline stage that produced an error diagnostic (parsing before schema before semantic validation before policy), on the theory that fixing the earliest problem is what actually unblocks the rest. If a command exits with a code you didn't expect, look at the lowest-numbered diagnostic code in the output before the exit code itself:
+
+- **Exit 3/4/5 (`AGF1xxx`/`AGF2xxx`/`AGF3xxx`)**: the document itself didn't get past parsing, schema validation, or semantic validation — see "`agentform validate` fails" below.
+- **Exit 6**: a built-in policy failed at `error` severity. The diagnostic's `code` is the policy ID itself (e.g. `AF003`), not a generic `AGFxxxx` code.
+- **Exit 2**: reserved for usage errors — a bad flag, an unknown `--template`/`--target`/`--format` value, an `inspect` address that doesn't resolve. A genuine document problem never exits 2.
+- **Exit 7, 9, 10, 11, 12, 13, 14, 15**: each specific to one or two commands — an unapproved `CRITICAL` change (`plan`/`apply`), an evaluation failure (`test`/`apply`), `apply`'s own failure, a held state lock (`apply`/`rollback`/`destroy`), opt-in drift detection (`drift --exit-code`), an unsupported compile target feature, `import` recognizing nothing, and `rollback`'s own failure, respectively. `docs/cli-reference.md`'s exit code table has the full mapping.
+
+One gap worth knowing about directly: a module-resolution problem (an `AGF7xxx` diagnostic — see "Module and registry issues" below) has no dedicated exit code yet. `exitCodeForDiagnostics` has no `AGF7` branch, so it falls through to the same default as an unrecognized error range: exit 5, identical to a genuine semantic validation failure. `agentform lockfile`'s own error handling makes this explicit, hard-coding exit 5 for a failed module resolution rather than inventing a new code for it. If a command exits 5 but the diagnostics only mention `AGF7xxx` codes, the problem is a module, not the specification's own structure.
+
+## `agentform validate` fails
+
+Validation runs four stages in order and stops accumulating new diagnostics from later stages once an earlier one fails outright (parsing failure skips schema/semantic checks entirely, since they'd just produce confusing secondary noise).
+
+- **`AGF1xxx` (parsing, `docs/parser-reference.md`)**: `AGF1002` ("unsafe path") usually means a reference was written relative to the project root instead of the file that actually contains it — `$ref: ../tools/search.yaml` inside `agents/researcher.yaml` resolves relative to `agents/`, not the project root. `AGF1005` (duplicate resource) on an auto-discovered file means that resource ID is already declared some other way — auto-discovery only steps aside silently for the exact same file already pulled in via an explicit `$ref`. `AGF1006` means a `${var.x}` has neither a `default` in the document's `variables:` block nor a supplied override. `AGF1009` means a `${env.NAME}` reference has no matching environment variable set — an unset variable is always an error, never treated as an empty string.
+- **`AGF2xxx` (schema, `docs/schema-reference.md`)**: `AGF2006` ("unrecognized key") means a typo or a field that doesn't exist in `v1alpha1` — every schema object is `.strict()`, so unknown fields fail loudly rather than being silently dropped. `AGF2008` on a tool or workflow node usually means the `type` string doesn't match any known literal exactly (e.g. `humanApproval`, not `human-approval`) — Zod reports a discriminated-union mismatch once per candidate branch, which can look noisier than the actual problem.
+- **`AGF3xxx` (semantic/IR, `docs/ir-reference.md`)**: covers broken cross-references (unknown model/tool/agent/node) and workflow-graph problems (unreachable nodes, no terminal path, unbounded loops, conflicting transitions, invalid subworkflow/memory/output references) — the full table of codes is in `docs/ir-reference.md`. Two are easy to misdiagnose: `AGF3007` ("unlimited loop") requires a `loop`-type node to be part of the cycle itself, not merely present elsewhere in the workflow; and `AGF3009` ("conflicting transition") should never fire on a genuine `parallel` node's branches — if it does, check for a typo'd `type`, since it falls through to the generic ambiguous-transition check.
+- **Policy failures (`AFxxx`/`AGF4xxx`, `docs/policy-reference.md`)**: a `fail`-status policy result is an error diagnostic whose `code` is the policy ID itself (e.g. `AF003`) — look it up in `docs/policy-reference.md`'s table for what it checks and how to fix the document, or add a justified override in `agentform.policy.yaml`. `AGF4001` means an override tried to change a mandatory policy's severity (rejected outright, no exceptions); `AGF4002` means a non-mandatory override tried to _weaken_ severity without a `justification`; `AGF4003` flags an override referencing an unknown policy ID; `AGF4004` means `agentform.policy.yaml` itself is malformed. There is no flag to skip policy checks or point at a different config file — that's deliberate (`docs/cli-reference.md`'s Security implications section).
+
+## State, locking, and drift
+
+- **`StateLockError`**: another `agentform` process — or one that crashed within the last `staleTimeoutMs` (default 10 minutes) — holds `.agentform/lock`. Only `apply`/`rollback`/`destroy` ever acquire it (exit 11); wait for it to release, or retry once the timeout passes and the next attempt takes over automatically.
+- **`StateMigrationError` on open**: a state-database migration failed partway through. The error names which one; the database is left at whatever version last applied cleanly (each migration is its own transaction), never partially migrated.
+- **A `.agentform/` directory or `state.db` file appears unexpectedly**: expected — `plan`/`status` create it on first run (SQLite's default behavior for a database that doesn't exist yet), not an error.
+- **`status` shows `Drift: never checked` right after a successful `apply`**: expected — every `apply` resets the cached drift status to `unknown`, since the freshly-applied state is a new baseline nothing has compared against yet. Run `agentform drift` to populate it.
+- **`agentform drift` reports nothing changed, but you know something did**: `drift` only checks four specific things — resource, environment, adapter-version, and artifact drift (`docs/cli-reference.md`'s `agentform drift` section). It cannot detect a live deployment that changed out-of-band, since no adapter can inspect one yet (ADR-0012). If you expected resource drift specifically, confirm you're checking against the specification file that actually changed (`--environment`/`--cwd`).
+- **A backup you expected to restore from is missing**: backups only exist where `createBackup()` actually wrote one — before every `apply`/`rollback`/`destroy`, never on a schedule. A project that's never run one of those three commands has no backups yet.
+- **`.agentform/state.db-wal`/`-shm` sitting around**: normal SQLite WAL-mode sidecar files, checkpointed into `state.db` before any backup and cleaned up on a clean close.
+
+All of the above applies identically whether the project uses the default local SQLite backend or `@agentform/state-postgres` (selected by setting `AGENTFORM_STATE_POSTGRES_URL`) — both implement the same `StateBackend` interface, including locking, transactions, and backups. See `docs/state-reference.md`.
+
+## Apply, rollback, and destroy
+
+- **`apply` exits 10 with "the saved plan is stale"**: the specification or deployed state changed since the `.afplan` file was created (`agentform plan --out`) — plans are compared by a fingerprint over `{resourceAddress, operation, risk}`, not full equality, so this means a real decision-relevant change, not just incidental formatting. Run `agentform plan` again and retry with the fresh file, or run `agentform apply` with no plan file argument to always compute fresh.
+- **`plan`/`apply` exits 7**: at least one plan item is `CRITICAL` risk — check `docs/planner-reference.md`'s risk classification section for what triggers it (deleting a workflow, or a workflow containing a `destructive`-sideEffect tool call with no preceding `humanApproval` node). Re-run with `--auto-approve` (this never bypasses policy) or from an interactive terminal to confirm.
+- **`rollback` exits 15 with "nothing to roll back to"**: no apply has ever succeeded with a recorded backup in this project's history — there's nothing to restore to. Run `agentform apply` first.
+- **`rollback --to <id>` exits 15 with an unknown identifier**: apply-history IDs are UUIDs assigned at apply time, not sequential numbers. Get a real one from `agentform status`'s "Last apply" line, or by inspecting `.agentform/state.db` directly — there's no CLI command yet that lists full history.
+- **`rollback` reports `regenerationStale: true`**: informational, not a failure — rollback always regenerates artifacts from the _current_ on-disk specification (Agentform never stores a raw historical specification to regenerate from exactly), and the snapshot's recorded IR hash no longer matches it. The state restoration itself is unaffected; only the freshly-regenerated artifacts might not perfectly represent what was live at the snapshot's time.
+- **`destroy --plan` reports "Nothing to destroy"**: no resources are currently tracked in state — either nothing has been applied yet, or a previous `destroy` already ran. Not an error.
+- **`destroy` asks for confirmation even though nothing looks `CRITICAL`**: by design — destroy's confirmation is unconditional (any tracked resource at all), unlike `apply`, which only interrupts for `CRITICAL`-risk items specifically (ADR-0013).
+- **No exit code named "destroy failure"**: destroy failures share `APPLY_FAILURE` (10) with `apply` — the build spec's own exit-code table stops at 15 and reserves nothing separate for destroy (ADR-0013).
+
+See `docs/state-reference.md` and `docs/planner-reference.md` for the underlying mechanics, and ADR-0012/ADR-0013 for why apply/drift and rollback/destroy are shaped the way they are.
+
+## Compilation issues
+
+- **`agentform compile` exits 13**: the project uses a workflow node or tool type the target adapter doesn't generate. The diagnostic names the specific feature and target (e.g. `[openai] workflow node (humanApproval) is unsupported`) — check `docs/compiler-reference.md`'s cross-adapter compatibility matrix; only `agent`/`terminate` nodes are supported by every target, and `tool` as a standalone workflow node is an OpenAI/LangGraph-only concept.
+- **`agentform compile --all` exits 13 but some targets clearly compiled fine**: expected — with `--all`, every target compiles independently and the overall exit code reflects the _worst_ diagnostic across all of them. Check the per-target `diagnostics` (`--json`) or per-target block (human output) to see which target(s) actually failed; the others still wrote a complete project.
+- **A generated file throws/raises the moment you run it**: expected — Agentform generates a project's interface (agents, tools, graph wiring), never its business logic. Every stubbed body fails loudly and immediately by design; follow the `TODO` the specific error names.
+- **LangGraph's `graph.invoke()` raises about a missing `thread_id`**: only relevant if you're calling `.compile(checkpointer=...)` yourself outside the generated `main.py` (which already handles this) — any checkpointed graph needs `config={"configurable": {"thread_id": "..."}}` passed to `invoke()`/`stream()`.
+- **A generated Python project's imports fail**: run it via `python -m src.main` from the project root (module execution, required for the relative imports used throughout) — `python src/main.py` (bare script execution) breaks them.
+
+## Evaluation and testing issues
+
+- **`agentform test` exits 4/5/6 instead of running any tests**: the pipeline failed before evaluation started (schema/semantic/policy) — the same codes `agentform validate` would produce for the same underlying problem. Fix the specification first.
+- **`agentform test` exits 9**: either a dataset test case failed one of its assertions (named in the console/`--junit` output), a recognized threshold gate failed, or the dataset itself failed to load (a missing file, invalid JSON/YAML/JSONL, or a test case that doesn't match the schema) — the error message names which.
+- **A branching or looping test case throws instead of producing a `FAIL` result**: it's missing a `nodes.<id>.next` override for a node with more than one outgoing edge — every genuine branch needs the scenario to say which way it goes.
+- **A declared threshold doesn't seem to do anything**: check the console output for "unrecognized threshold key — not gated" — only `taskSuccess`, `policyViolations`, and `maximumAverageCostUsd` are currently gated; `evaluations.thresholds` accepts any key at the schema level, but only these three are wired to anything.
+- **`agentform plan`/`agentform status` say evaluation gates are stale right after you ran `agentform test`**: the specification changed afterward — even a whitespace-insensitive but hash-sensitive change like instruction text — so the recorded IR hash in `.agentform/test-results.json` no longer matches. Re-run `agentform test`.
+- **You expected `agentform plan` to warn about evaluation gates, but it's silent**: the `AGF6001`/`AGF6002`/`AGF6003` warnings only fire for a production-labeled `runtime.environment` that also declares at least one dataset or threshold.
+- **`agentform test --live` refuses to run**: expected — there is no live-provider execution engine yet. Remove `--live` to run the deterministic mock suite.
+
+See `docs/evaluation-reference.md` for the full assertion vocabulary and dataset format.
+
+## Module and registry issues
+
+`@agentform/registry` resolves a project's `spec.modules` entries against a local module registry — by default `~/.agentform/registry`, a per-machine shared cache analogous to npm/pnpm's own package caches, overridable with `AGENTFORM_REGISTRY_ROOT`. A project with no `spec.modules` section never touches any of this; resolution is a no-op when the field is absent. Every problem it can hit surfaces as an `AGF7xxx` diagnostic (`packages/registry/src/codes.ts`), attached at the `spec.modules.<id>` path, in whichever command's diagnostics you're already looking at (`validate`, `plan`, `apply`, `lockfile`, ...):
+
+- **`AGF7001` (module not found)**: the declared `source`+`version` isn't published at the configured registry root. Confirm `AGENTFORM_REGISTRY_ROOT` actually points where you expect, and that `spec.modules.<id>.version` matches exactly what was published.
+- **`AGF7002` (module integrity failure)**: the module's recorded content hash no longer matches its `module.yaml` on disk. This is treated as tampering, not a warning — the module is skipped entirely rather than partially trusted.
+- **`AGF7003` (module schema invalid)**: the resolved module definition itself fails schema validation — a problem with the published module, not your project.
+- **`AGF7004` (missing required input)**: the module declares an input with no `default`, and your `spec.modules.<id>.inputs` doesn't supply it either. Add it under that module reference's `inputs:`.
+- **`AGF7005` (resource collision)**: a module-provided resource ID collides with one your project — or an earlier-processed module — already declares. The existing declaration always wins and the module's version is dropped; rename one side to resolve it.
+- **`AGF7006` (signature unverified)**: only relevant when `AGENTFORM_REGISTRY_TRUSTED_KEY` is set — a `warning` if the module is simply unsigned (nothing to verify against), an `error` if it's signed but the signature doesn't verify against that key.
+
+There is currently no `agentform publish` command — publishing a module (`publishModule`, `@agentform/registry`) is a programmatic API today, not something the `agentform` CLI itself exposes.
+
+`agentform lockfile [--environment <name>] [--check]` resolves every declared module and writes `agentform.lock` at the project root, pinning each module's resolved `source`, `version`, and content hash. `--check` verifies an existing `agentform.lock` still matches current resolution without rewriting it (exit 0 if up to date, exit 1 if not); without `--check`, it always (re)writes the file. A module resolution failure during `agentform lockfile` exits 5 — see "A command exits with an unexpected code" above for why.
+
+## Import issues
+
+- **`agentform import` exits 14 with "no supported project was recognized"**: `import`'s recognition is deliberately limited to three cases, tried in order — a generated Agentform project, a raw OpenAI Agents SDK project, or a raw LangGraph project. A different framework, or source code that doesn't match closely enough, isn't a bug; it's the honestly-reported limit of what's implemented so far. The error message names what is currently supported.
+- **`agentform import [sourceDir]` exits 14 immediately**: also covers the case where `sourceDir` doesn't exist, and the case where the `--out` target (default `agentform.import.yaml`) already exists — `import` refuses to overwrite an existing candidate file, the same discipline `init` applies to a project's entry file.
+- **The written candidate specification doesn't pass `agentform validate`**: expected for anything beyond the simplest recognized project. Check the printed "Manual follow-up required" list for what still needs filling in — tool handlers, workflow wiring, and model provider verification are the most common. `import` never claims the output is valid, only that it's a reviewed starting point.
+- **A confidence score looks suspiciously high or low**: these are heuristic, not exact — only the generated-Agentform recognizer's resource-_identity_ recovery (reading Agentform's own generated header comments) is ever reported at a full `1.0`, and even then only identity, never field values. Review the recovered resources regardless of the number.
+
+See `docs/migration-guide.md` for the full recommended workflow around `agentform import`, and `docs/cli-reference.md`'s `agentform import` section for the command's exact mechanics.

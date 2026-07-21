@@ -1,0 +1,14 @@
+{
+  "name": "@agentform/docs-site",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Static documentation site build for Agentform — renders docs/**/*.md into a browsable HTML site.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "docs:build": "node src/build.mjs"
+  },
+  "dependencies": {
+    "marked": "^18.0.7"
+  }
+}

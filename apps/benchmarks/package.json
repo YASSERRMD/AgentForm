@@ -1,0 +1,19 @@
+{
+  "name": "@agentform/benchmarks",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Timing harness for the Agentform pipeline (parse, validate, plan, compile) against representative synthetic project sizes.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "benchmark": "node src/run.mjs"
+  },
+  "dependencies": {
+    "@agentform/adapter-openai": "workspace:*",
+    "@agentform/compiler": "workspace:*",
+    "@agentform/ir": "workspace:*",
+    "@agentform/parser": "workspace:*",
+    "@agentform/planner": "workspace:*",
+    "@agentform/policy": "workspace:*"
+  }
+}

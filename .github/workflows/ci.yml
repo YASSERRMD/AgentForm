@@ -10,6 +10,13 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default: this workflow only checks out code and runs local
+# verification (lint/typecheck/test/build) — it never pushes, comments, or
+# otherwise writes back to the repository or any GitHub API, so the default
+# GITHUB_TOKEN needs read access only.
+permissions:
+  contents: read
+
 env:
   TURBO_TELEMETRY_DISABLED: '1'
 
@@ -17,6 +24,22 @@ jobs:
   verify:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: agentform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      AGENTFORM_TEST_POSTGRES_URL: postgresql://postgres:postgres@localhost:5432/agentform_test
     steps:
       - name: Checkout
         uses: actions/checkout@v4

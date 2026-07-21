@@ -1,4 +1,4 @@
-import { generatedFileHeader, toIdentifier } from '@agentform/compiler';
+import { generatedFileHeader, pythonStringLiteral, toIdentifier } from '@agentform/compiler';
 import {
   resourceAddress,
   type IRWorkflow,
@@ -6,7 +6,6 @@ import {
   type IRWorkflowNode,
 } from '@agentform/ir';
 import { loopCounterFieldName } from './generate-state.js';
-import { pythonStringLiteral } from './python-repr.js';
 
 interface NodeCodegen {
   readonly nodeId: string;

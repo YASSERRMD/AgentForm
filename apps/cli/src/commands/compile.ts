@@ -1,7 +1,11 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Command } from 'commander';
+import { autoGenAdapter } from '@agentform/adapter-autogen';
+import { crewAiAdapter } from '@agentform/adapter-crewai';
+import { googleAdkAdapter } from '@agentform/adapter-google-adk';
 import { langGraphAdapter } from '@agentform/adapter-langgraph';
+import { microsoftAdapter } from '@agentform/adapter-microsoft';
 import { openAiAdapter } from '@agentform/adapter-openai';
 import { compile as compileForTarget } from '@agentform/compiler';
 import type { Diagnostic } from '@agentform/diagnostics';
@@ -12,19 +16,14 @@ import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { CLI_VERSION, getGlobalOptions } from '../program.js';
 
-/** Every framework `@agentform/schema`'s `runtime.target` enum allows — only the first two have a registered adapter as of Phase 8; the rest land in Phase 9. */
-const ALL_FRAMEWORK_TARGETS = [
-  'openai',
-  'langgraph',
-  'microsoft',
-  'google-adk',
-  'autogen',
-  'crewai',
-] as const;
-
+/** Every framework `@agentform/schema`'s `runtime.target` enum allows — all six now have a registered adapter (Phase 9 completed the last four). */
 const ADAPTER_REGISTRY: Readonly<Record<string, FrameworkAdapter>> = {
   openai: openAiAdapter,
   langgraph: langGraphAdapter,
+  microsoft: microsoftAdapter,
+  'google-adk': googleAdkAdapter,
+  autogen: autoGenAdapter,
+  crewai: crewAiAdapter,
 };
 
 interface CompileCommandOptions {
@@ -93,7 +92,7 @@ export function registerCompileCommand(program: Command): void {
     .description('Generate a target-framework project from the Agentform specification')
     .option(
       '--target <name>',
-      "openai or langgraph (default: the project's declared runtime.target)",
+      "openai, langgraph, microsoft, google-adk, autogen, or crewai (default: the project's declared runtime.target)",
     )
     .option('--all', 'compile for every framework this build of Agentform supports', false)
     .option('--output <dir>', 'directory to write generated projects into', './generated')
@@ -110,13 +109,10 @@ export function registerCompileCommand(program: Command): void {
         return;
       }
 
-      if (
-        options.target &&
-        !(ALL_FRAMEWORK_TARGETS as readonly string[]).includes(options.target)
-      ) {
+      if (options.target && !(options.target in ADAPTER_REGISTRY)) {
         if (!globalOptions.quiet) {
           process.stderr.write(
-            `Unknown --target "${options.target}" (expected one of: ${ALL_FRAMEWORK_TARGETS.join(', ')}).\n`,
+            `Unknown --target "${options.target}" (expected one of: ${Object.keys(ADAPTER_REGISTRY).join(', ')}).\n`,
           );
         }
         process.exitCode = EXIT_CODES.INVALID_USAGE;
@@ -143,27 +139,13 @@ export function registerCompileCommand(program: Command): void {
         return;
       }
 
+      // `result.ir.application.runtime.target` is schema-validated against
+      // the same six-value enum `ADAPTER_REGISTRY` now fully covers, and an
+      // explicit `--target` was already validated above — every requested
+      // target is guaranteed to resolve to a real adapter below.
       const requestedTargets = options.all
         ? Object.keys(ADAPTER_REGISTRY)
         : [options.target ?? result.ir.application.runtime.target];
-      const skippedTargets = options.all
-        ? ALL_FRAMEWORK_TARGETS.filter((target) => !(target in ADAPTER_REGISTRY))
-        : [];
-
-      // `--all` only ever requests ADAPTER_REGISTRY's own keys, so this can
-      // only fire for a single explicit (or defaulted) --target.
-      const [requestedTarget] = requestedTargets;
-      if (requestedTarget !== undefined && !(requestedTarget in ADAPTER_REGISTRY)) {
-        if (!globalOptions.quiet) {
-          process.stderr.write(
-            `Target "${requestedTarget}" is not yet supported by this build of Agentform ` +
-              `(available: ${Object.keys(ADAPTER_REGISTRY).join(', ')}). ` +
-              'Microsoft/Google ADK/AutoGen/CrewAI adapters land in a later phase.\n',
-          );
-        }
-        process.exitCode = EXIT_CODES.INVALID_USAGE;
-        return;
-      }
 
       // Unlike `graph`'s/`plan`'s `--output`/`--out` (arbitrary user-chosen
       // file paths, resolved against the real process cwd since they have
@@ -200,7 +182,6 @@ export function registerCompileCommand(program: Command): void {
                 manifest: outcome.manifest ?? null,
                 diagnostics: outcome.diagnostics.map(diagnosticToJson),
               })),
-              skippedTargets,
             },
             null,
             2,
@@ -225,9 +206,6 @@ export function registerCompileCommand(program: Command): void {
                 .join('\n')}\n`,
             );
           }
-        }
-        if (skippedTargets.length > 0) {
-          process.stdout.write(`Skipped (not yet supported): ${skippedTargets.join(', ')}\n`);
         }
       }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateWorkflowFile } from './generate-workflow.js';
 import { baseIR, graphWorkflowIR } from './test-fixtures.js';
-import { isSyntacticallyValidPython } from './test-syntax-check.js';
+import { isSyntacticallyValidPython } from '@agentform/compiler';
 
 function workflowFromFixture(ir: ReturnType<typeof graphWorkflowIR>, workflowId: string) {
   const workflow = ir.workflows.get(workflowId);

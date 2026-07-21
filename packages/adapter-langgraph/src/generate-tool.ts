@@ -1,7 +1,10 @@
-import { generatedFileHeader, toIdentifier } from '@agentform/compiler';
+import {
+  generatedFileHeader,
+  jsonSchemaToPythonParams,
+  pythonStringLiteral,
+  toIdentifier,
+} from '@agentform/compiler';
 import { resourceAddress, type IRTool } from '@agentform/ir';
-import { jsonSchemaToPythonParams } from './json-schema-to-python.js';
-import { pythonStringLiteral } from './python-repr.js';
 
 /**
  * One tool becomes one `@tool`-decorated function (`langchain_core.tools`'s

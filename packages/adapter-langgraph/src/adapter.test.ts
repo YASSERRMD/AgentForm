@@ -1,8 +1,7 @@
-import { compile } from '@agentform/compiler';
+import { compile, isSyntacticallyValidPython } from '@agentform/compiler';
 import { describe, expect, it } from 'vitest';
 import { langGraphAdapter } from './adapter.js';
 import { baseIR, graphWorkflowIR, unsupportedNodeIR } from './test-fixtures.js';
-import { isSyntacticallyValidPython } from './test-syntax-check.js';
 
 const CONTEXT = { outputDir: './generated/langgraph', agentformVersion: '0.1.0' };
 

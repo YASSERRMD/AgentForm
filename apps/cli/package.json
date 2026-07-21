@@ -21,7 +21,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@agentform/adapter-autogen": "workspace:*",
+    "@agentform/adapter-crewai": "workspace:*",
+    "@agentform/adapter-google-adk": "workspace:*",
     "@agentform/adapter-langgraph": "workspace:*",
+    "@agentform/adapter-microsoft": "workspace:*",
     "@agentform/adapter-openai": "workspace:*",
     "@agentform/compiler": "workspace:*",
     "@agentform/core": "workspace:*",

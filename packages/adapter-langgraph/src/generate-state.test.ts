@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { collectLoopCounterFields, generateStateFile } from './generate-state.js';
 import { baseIR, graphWorkflowIR } from './test-fixtures.js';
-import { isSyntacticallyValidPython } from './test-syntax-check.js';
+import { isSyntacticallyValidPython } from '@agentform/compiler';
 
 describe('collectLoopCounterFields', () => {
   it('returns no fields when there are no loop nodes', () => {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generateToolFile } from './generate-tool.js';
 import { graphWorkflowIR } from './test-fixtures.js';
-import { isSyntacticallyValidPython } from './test-syntax-check.js';
+import { isSyntacticallyValidPython } from '@agentform/compiler';
 
 function toolFromFixture(toolId: string) {
   const ir = graphWorkflowIR();

@@ -1,4 +1,4 @@
-import { toIdentifier } from '@agentform/compiler';
+import { toIdentifier } from './codegen-utils.js';
 
 interface JsonSchemaLike {
   readonly type?: string;
@@ -53,6 +53,11 @@ function pythonTypeHint(schema: JsonSchemaLike): string {
  * `Optional[...] = None` default. An empty or unrecognized schema falls
  * back to `**kwargs: Any` — still a syntactically valid, callable
  * signature, just one with no declared parameters to infer a schema from.
+ *
+ * Shared across every Python-targeting adapter (`@agentform/adapter-langgraph`,
+ * `@agentform/adapter-autogen`, ...) — both convert a tool's `inputSchema`
+ * into a plain typed Python function signature the same way, since both
+ * frameworks accept plain type-hinted functions as tools directly.
  */
 export function jsonSchemaToPythonParams(schema: unknown): string {
   if (

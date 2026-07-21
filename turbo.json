@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["AGENTFORM_TEST_POSTGRES_URL"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

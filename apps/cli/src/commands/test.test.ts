@@ -78,6 +78,34 @@ describe('agentform test', () => {
     expect(result.stdout).toContain('1 passed, 0 failed');
   });
 
+  it('reports the dataset pass rate and exits 9 when a multi-case dataset has mixed results', () => {
+    project = createFixtureProject(
+      projectWithDataset(
+        'tests/basic.jsonl',
+        [
+          JSON.stringify({
+            name: 'reaches the terminal node',
+            workflow: 'main',
+            assertions: [{ type: 'terminationReason', equals: 'complete' }],
+          }),
+          JSON.stringify({
+            name: 'expects the wrong termination reason',
+            workflow: 'main',
+            assertions: [{ type: 'terminationReason', equals: 'something-else' }],
+          }),
+          JSON.stringify({
+            name: 'checks the intake node was visited',
+            workflow: 'main',
+            assertions: [{ type: 'nodeVisited', node: 'intake' }],
+          }),
+        ].join('\n'),
+      ),
+    );
+    const result = runCli(['test'], project.dir);
+    expect(result.exitCode).toBe(9);
+    expect(result.stdout).toContain('2 passed, 1 failed (3 total)');
+  });
+
   it('exits 9 (TEST_FAILURE) and names the failing assertion when a dataset fails', () => {
     project = createFixtureProject(
       projectWithDataset(

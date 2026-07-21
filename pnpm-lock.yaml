@@ -95,6 +95,9 @@ importers:
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@agentform/registry':
+        specifier: workspace:*
+        version: link:../../packages/registry
       '@agentform/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
@@ -355,6 +358,31 @@ importers:
       zod:
         specifier: ^4.4.3
         version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
+
+  packages/registry:
+    dependencies:
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../schema
+      yaml:
+        specifier: ^2.9.0
+        version: 2.9.0
     devDependencies:
       '@types/node':
         specifier: ^26.1.1

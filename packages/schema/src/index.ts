@@ -29,6 +29,19 @@ export { observabilitySchema, type Observability } from './observability.js';
 export { deploymentSchema, type Deployment } from './deployment.js';
 export { outputSchema, type Output } from './output.js';
 export {
+  moduleReferenceSchema,
+  moduleDefinitionSchema,
+  moduleInputSchema,
+  moduleOutputSchema,
+  MODULE_API_VERSION,
+  MODULE_KIND,
+  type ModuleReference,
+  type ModuleDefinition,
+  type ModuleDefinitionSpec,
+  type ModuleInput,
+  type ModuleOutput,
+} from './module.js';
+export {
   identifierSchema,
   semverSchema,
   durationSchema,

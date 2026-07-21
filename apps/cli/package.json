@@ -36,6 +36,7 @@
     "@agentform/planner": "workspace:*",
     "@agentform/plugin-sdk": "workspace:*",
     "@agentform/policy": "workspace:*",
+    "@agentform/registry": "workspace:*",
     "@agentform/runtime": "workspace:*",
     "@agentform/schema": "workspace:*",
     "@agentform/state": "workspace:*",

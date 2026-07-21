@@ -8,6 +8,7 @@ import { registerGraphCommand } from './graph.js';
 import { registerImportCommand } from './import.js';
 import { registerInitCommand } from './init.js';
 import { registerInspectCommand } from './inspect.js';
+import { registerLockfileCommand } from './lockfile.js';
 import { registerPlanCommand } from './plan.js';
 import { registerRollbackCommand } from './rollback.js';
 import { registerStatusCommand } from './status.js';
@@ -29,4 +30,5 @@ export function registerCommands(program: Command): void {
   registerRollbackCommand(program);
   registerDestroyCommand(program);
   registerImportCommand(program);
+  registerLockfileCommand(program);
 }

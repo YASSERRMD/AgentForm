@@ -1,6 +1,7 @@
 export type { PlanOperation, PlanRisk, FieldChange, PlanItem, Plan } from './types.js';
 export { collectDesiredResources, type DesiredResource } from './desired-resources.js';
 export { comparePlan, type ComparePlanOptions } from './compare.js';
+export { planDestroy } from './destroy-plan.js';
 export { classifyRisk } from './risk.js';
 export { orderPlanItems } from './order.js';
 export {

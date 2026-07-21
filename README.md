@@ -52,9 +52,9 @@ An Agentform specification describes an agentic application's models, tools, age
 
 This repository is in active, phased development. Each phase lands on its own branch and pull request; see [`temp/instruction.md`](temp/instruction.md) for the full build plan.
 
-Through Phase 10, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); the first five CLI commands (Phase 5); a built-in policy engine — 15 policies, configurable severity within mandatory-policy bounds, wired into `agentform validate` (Phase 6); a local state engine and planner — a SQLite-backed record of deployed state, dependency-ordered desired/current comparison, risk classification, and tamper-evident plan files, wired into `agentform plan`/`agentform status` (Phase 7); a compiler with all six target framework adapters (Phase 8 built OpenAI Agents SDK and LangGraph; Phase 9 added Microsoft Agent Framework, Google ADK, AutoGen, and CrewAI), wired into `agentform compile`; and an evaluation engine — a deterministic, fully offline mock execution runtime, a 16-type structural assertion vocabulary, dataset loading, and threshold gates, wired into `agentform test` and surfaced as advisory diagnostics on `agentform plan`/`agentform status` (Phase 10). Still not implemented: the apply/drift/rollback/import/destroy engine, or live (real-provider) evaluation — those land in later phases. See [`temp/instruction.md`](temp/instruction.md) for the full plan, [`docs/cli-reference.md`](docs/cli-reference.md) for command details, [`docs/compiler-reference.md`](docs/compiler-reference.md) for the compiler and adapters (including the cross-adapter compatibility matrix), [`docs/policy-reference.md`](docs/policy-reference.md) for the policy engine, [`docs/state-reference.md`](docs/state-reference.md)/[`docs/planner-reference.md`](docs/planner-reference.md) for the state engine and planner, and [`docs/evaluation-reference.md`](docs/evaluation-reference.md) for the evaluation engine.
+Through Phase 11, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); the first five CLI commands (Phase 5); a built-in policy engine — 15 policies, configurable severity within mandatory-policy bounds, wired into `agentform validate` (Phase 6); a local state engine and planner — a SQLite-backed record of deployed state, dependency-ordered desired/current comparison, risk classification, and tamper-evident plan files, wired into `agentform plan`/`agentform status` (Phase 7); a compiler with all six target framework adapters (Phase 8 built OpenAI Agents SDK and LangGraph; Phase 9 added Microsoft Agent Framework, Google ADK, AutoGen, and CrewAI), wired into `agentform compile`; an evaluation engine — a deterministic, fully offline mock execution runtime, a 16-type structural assertion vocabulary, dataset loading, and threshold gates, wired into `agentform test` and surfaced as advisory diagnostics on `agentform plan`/`agentform status` (Phase 10); and a real apply/drift/rollback/destroy/import engine — atomic, transactional state mutation with pre-mutation backups; drift detection across resource/environment/adapter-version/artifact categories; rollback that restores state without ever erasing audit history; destroy with unconditional confirmation and an honest "cannot be recovered" accounting; and limited, confidence-scored recognition of generated-Agentform/raw-OpenAI-Agents-SDK/raw-LangGraph projects for `agentform import` (Phase 11). Still not implemented: live (real-provider) evaluation, or any adapter actually deploying to/tearing down a real target — those land in later phases. See [`temp/instruction.md`](temp/instruction.md) for the full plan, [`docs/cli-reference.md`](docs/cli-reference.md) for command details, [`docs/compiler-reference.md`](docs/compiler-reference.md) for the compiler and adapters (including the cross-adapter compatibility matrix), [`docs/policy-reference.md`](docs/policy-reference.md) for the policy engine, [`docs/state-reference.md`](docs/state-reference.md)/[`docs/planner-reference.md`](docs/planner-reference.md) for the state engine and planner, and [`docs/evaluation-reference.md`](docs/evaluation-reference.md) for the evaluation engine.
 
-The CLI lifecycle — implemented commands first:
+The CLI lifecycle:
 
 ```bash
 agentform init          # scaffold a new project from one of five starter templates
@@ -63,16 +63,14 @@ agentform format        # deterministically reformat a YAML/JSON source file
 agentform inspect       # print a resolved resource, or an application summary
 agentform graph         # generate a Mermaid, DOT, or JSON workflow graph
 agentform plan          # compare desired specification against deployed state, no changes made
-agentform status        # show application, deployed state, and policy status
+agentform status        # show application, deployed state, drift, and policy status
 agentform compile       # generate a project for any of the six target frameworks from the specification
 agentform test          # run evaluation datasets against the deterministic mock execution engine
-
-# Not yet implemented — later phases:
-agentform apply
-agentform drift
-agentform import
-agentform rollback
-agentform destroy
+agentform apply         # generate artifacts, run smoke tests, and persist deployed state atomically
+agentform drift         # detect resource/environment/adapter-version/artifact drift, no changes made
+agentform rollback      # restore state to a previous apply or snapshot, without erasing audit history
+agentform destroy       # tear down every tracked resource, with unconditional confirmation
+agentform import        # limited, best-effort recognition of an existing project into a candidate spec
 ```
 
 ## Repository layout
@@ -109,7 +107,7 @@ agentform/
 └── docs/adr/                      # architecture decision records
 ```
 
-`core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, `planner`, `compiler`, `runtime`, `evaluator`, `plugin-sdk`, and all six `adapter-*` packages have real implementations, and `apps/cli` has nine working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), [`docs/policy-reference.md`](docs/policy-reference.md), [`docs/state-reference.md`](docs/state-reference.md), [`docs/planner-reference.md`](docs/planner-reference.md), [`docs/compiler-reference.md`](docs/compiler-reference.md), [`docs/evaluation-reference.md`](docs/evaluation-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). Every other package under `packages/` (`observability`, `state-postgres`, `secrets-env`, `test-utils`, `create-agentform`) is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
+`core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, `planner`, `compiler`, `runtime`, `evaluator`, `plugin-sdk`, and all six `adapter-*` packages have real implementations, and `apps/cli` has fourteen working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), [`docs/policy-reference.md`](docs/policy-reference.md), [`docs/state-reference.md`](docs/state-reference.md), [`docs/planner-reference.md`](docs/planner-reference.md), [`docs/compiler-reference.md`](docs/compiler-reference.md), [`docs/evaluation-reference.md`](docs/evaluation-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). Every other package under `packages/` (`observability`, `state-postgres`, `secrets-env`, `test-utils`, `create-agentform`) is still a minimal, buildable skeleton (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
 
 ## Development
 

@@ -66,8 +66,12 @@ function reasonsFor(
  * Compares `options.ir`'s desired resources against `options.currentResourceStates`,
  * producing one `PlanItem` per resource on either side, dependency-ordered
  * (`order.ts`). `IMPORT`/`READ` are part of `PlanOperation`'s type but
- * never produced here — they belong to the future `agentform import`
- * command (Phase 11), not desired-vs-current comparison.
+ * never produced here, and never will be by this function: Phase 11's
+ * `agentform import` (§15.12) recognizes a raw external project and
+ * produces a candidate *specification file* for a human to review, never
+ * a `PlanItem` — it has no `ResourceState` to compare against (the whole
+ * point is that nothing has been tracked yet) and never touches state at
+ * all. `IMPORT`/`READ` remain unused by any command as of Phase 11.
  */
 export function comparePlan(options: ComparePlanOptions): readonly PlanItem[] {
   const desiredResources = collectDesiredResources(options.ir);

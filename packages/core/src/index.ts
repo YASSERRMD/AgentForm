@@ -1,4 +1,5 @@
 export { resolvePathWithinRoot, resolvePathRelativeToFile, UnsafePathError } from './safe-path.js';
+export { parseDurationMs } from './duration.js';
 export {
   reachableNodes,
   sinkNodes,

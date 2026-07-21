@@ -44,6 +44,9 @@ export interface StateBackend {
   /** Acquires, runs `fn`, and always releases afterward — including when `fn` throws. */
   withLock<T>(fn: () => Promise<T> | T, options?: LockOptions): Promise<T>;
 
+  /** Runs `fn` inside a single atomic transaction — every write `fn` makes commits together, or (if `fn` throws) none of them do. §10 "Atomic transactions" / the Phase 11 acceptance criterion "Apply cannot partially corrupt state": `agentform apply`'s final state-persistence step (writing every changed `ResourceState`, the new `ApplicationState`, and finishing the apply-history record) runs inside one call to this. */
+  withTransaction<T>(fn: () => Promise<T> | T): Promise<T>;
+
   getApplicationState(): Promise<ApplicationState | undefined>;
   putApplicationState(state: ApplicationState): Promise<void>;
 

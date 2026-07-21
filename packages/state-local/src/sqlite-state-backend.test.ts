@@ -171,6 +171,61 @@ describe('SqliteStateBackend', () => {
     await backend.close();
   });
 
+  it('withTransaction commits every write together', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await backend.withTransaction(async () => {
+      await backend.putResourceState({
+        address: 'model.primary',
+        kind: 'model',
+        contentHash: 'h',
+        identityHash: 'h',
+        dependsOn: [],
+        lastAppliedAt: '2026-01-01T00:00:00.000Z',
+      });
+      await backend.putResourceState({
+        address: 'agent.intake',
+        kind: 'agent',
+        contentHash: 'h',
+        identityHash: 'h',
+        dependsOn: ['model.primary'],
+        lastAppliedAt: '2026-01-01T00:00:00.000Z',
+      });
+    });
+    const states = await backend.listResourceStates();
+    expect(states.map((s) => s.address)).toEqual(['agent.intake', 'model.primary']);
+    await backend.close();
+  });
+
+  it('withTransaction rolls back every write when fn throws, leaving nothing committed', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await expect(
+      backend.withTransaction(async () => {
+        await backend.putResourceState({
+          address: 'model.primary',
+          kind: 'model',
+          contentHash: 'h',
+          identityHash: 'h',
+          dependsOn: [],
+          lastAppliedAt: '2026-01-01T00:00:00.000Z',
+        });
+        throw new Error('simulated failure mid-transaction');
+      }),
+    ).rejects.toThrow('simulated failure mid-transaction');
+
+    expect(await backend.listResourceStates()).toEqual([]);
+    await backend.close();
+  });
+
+  it('withTransaction returns fn’s result', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    const result = await backend.withTransaction(() => 42);
+    expect(result).toBe(42);
+    await backend.close();
+  });
+
   it('lists backups through the backend', async () => {
     const backend = new SqliteStateBackend({ stateDir });
     await backend.open();

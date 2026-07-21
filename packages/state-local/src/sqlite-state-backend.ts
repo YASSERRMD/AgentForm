@@ -170,6 +170,18 @@ export class SqliteStateBackend implements StateBackend {
     }
   }
 
+  async withTransaction<T>(fn: () => Promise<T> | T): Promise<T> {
+    this.database.exec('BEGIN');
+    try {
+      const result = await fn();
+      this.database.exec('COMMIT');
+      return result;
+    } catch (error) {
+      this.database.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
   async getApplicationState(): Promise<ApplicationState | undefined> {
     const row = this.database
       .prepare('SELECT * FROM application_state WHERE id = 1')

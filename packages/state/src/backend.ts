@@ -2,6 +2,8 @@ import type {
   ApplicationState,
   ApplyHistoryEntry,
   ApplyOperationStatus,
+  BackupInfo,
+  DriftStatus,
   ResourceState,
 } from './types.js';
 
@@ -55,6 +57,13 @@ export interface StateBackend {
   recordApplyFinish(id: string, status: ApplyOperationStatus, summary?: string): Promise<void>;
   listApplyHistory(limit?: number): Promise<readonly ApplyHistoryEntry[]>;
 
+  /** Updates only `driftStatus`/`driftCheckedAt` on the application-state row, leaving every other field untouched — the narrow mutation `agentform drift` uses, as opposed to `putApplicationState`'s full-record upsert. Throws if no application state exists yet (nothing has ever been applied). */
+  recordDriftStatus(status: DriftStatus, checkedAt: string): Promise<void>;
+
   /** Snapshots the current state to a backup, returning an identifier a future restore/rollback can reference. */
   createBackup(): Promise<string>;
+  /** Lists every backup this state directory has, newest first. */
+  listBackups(): Promise<readonly BackupInfo[]>;
+  /** Restores the database to exactly the snapshot `backupId` names, discarding everything written since. Throws if `backupId` doesn't exist. The backend remains open and usable immediately afterward — callers do not need to reopen it. */
+  restoreBackup(backupId: string): Promise<void>;
 }

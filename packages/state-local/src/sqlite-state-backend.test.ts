@@ -43,6 +43,7 @@ describe('SqliteStateBackend', () => {
       adapterVersions: { openai: '1.0.0' },
       deploymentIdentifiers: { region: 'us-east-1' },
       lastAppliedAt: '2026-01-01T00:00:00.000Z',
+      driftStatus: 'unknown' as const,
     };
     await backend.putApplicationState(state);
     expect(await backend.getApplicationState()).toEqual(state);
@@ -60,6 +61,7 @@ describe('SqliteStateBackend', () => {
       schemaVersion: '1',
       adapterVersions: {},
       deploymentIdentifiers: {},
+      driftStatus: 'unknown' as const,
     };
     await backend.putApplicationState(base);
     await backend.putApplicationState({ ...base, specificationHash: 'h2' });
@@ -166,6 +168,118 @@ describe('SqliteStateBackend', () => {
     await backend.open();
     const id = await backend.createBackup();
     expect(existsSync(path.join(stateDir, 'backups', id))).toBe(true);
+    await backend.close();
+  });
+
+  it('lists backups through the backend', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    expect(await backend.listBackups()).toEqual([]);
+    const id = await backend.createBackup();
+    const backups = await backend.listBackups();
+    expect(backups).toHaveLength(1);
+    expect(backups[0]?.id).toBe(id);
+    await backend.close();
+  });
+
+  it('restoreBackup discards writes made after the backup and remains open and usable', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    const before = {
+      applicationName: 'before-backup',
+      environment: 'dev',
+      specificationHash: 'h1',
+      irHash: 'h1',
+      schemaVersion: '1',
+      adapterVersions: {},
+      deploymentIdentifiers: {},
+      driftStatus: 'unknown' as const,
+    };
+    await backend.putApplicationState(before);
+    const backupId = await backend.createBackup();
+
+    await backend.putApplicationState({ ...before, applicationName: 'after-backup' });
+    expect((await backend.getApplicationState())?.applicationName).toBe('after-backup');
+
+    await backend.restoreBackup(backupId);
+    expect((await backend.getApplicationState())?.applicationName).toBe('before-backup');
+
+    // the backend is immediately usable afterward, without the caller reopening it
+    await backend.putResourceState({
+      address: 'agent.intake',
+      kind: 'agent',
+      contentHash: 'h',
+      identityHash: 'h',
+      dependsOn: [],
+      lastAppliedAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(await backend.getResourceState('agent.intake')).toBeDefined();
+    await backend.close();
+  });
+
+  it('restoreBackup throws for an unknown backup id', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await expect(backend.restoreBackup('does-not-exist.db')).rejects.toThrow(/does not exist/);
+    await backend.close();
+  });
+
+  it('recordDriftStatus updates only the drift fields, leaving the rest of the application state untouched', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await backend.putApplicationState({
+      applicationName: 'app',
+      environment: 'production',
+      specificationHash: 'spec-hash',
+      irHash: 'ir-hash',
+      schemaVersion: '1',
+      adapterVersions: {},
+      deploymentIdentifiers: {},
+      driftStatus: 'unknown',
+    });
+
+    await backend.recordDriftStatus('drifted', '2026-02-01T00:00:00.000Z');
+
+    const state = await backend.getApplicationState();
+    expect(state).toMatchObject({
+      applicationName: 'app',
+      specificationHash: 'spec-hash',
+      driftStatus: 'drifted',
+      driftCheckedAt: '2026-02-01T00:00:00.000Z',
+    });
+    await backend.close();
+  });
+
+  it('recordDriftStatus throws when no application state exists yet', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await expect(backend.recordDriftStatus('in_sync', '2026-01-01T00:00:00.000Z')).rejects.toThrow(
+      /no application state/,
+    );
+    await backend.close();
+  });
+
+  it('putApplicationState resets drift fields to whatever is passed, even on an update', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    const base = {
+      applicationName: 'app',
+      environment: 'dev',
+      specificationHash: 'h1',
+      irHash: 'h1',
+      schemaVersion: '1',
+      adapterVersions: {},
+      deploymentIdentifiers: {},
+    };
+    await backend.putApplicationState({ ...base, driftStatus: 'in_sync' as const });
+    await backend.recordDriftStatus('drifted', '2026-01-01T00:00:00.000Z');
+    expect((await backend.getApplicationState())?.driftStatus).toBe('drifted');
+
+    // a fresh apply (putApplicationState) invalidates the prior drift computation
+    await backend.putApplicationState({ ...base, specificationHash: 'h2', driftStatus: 'unknown' });
+    const state = await backend.getApplicationState();
+    expect(state?.driftStatus).toBe('unknown');
+    expect(state?.driftCheckedAt).toBeUndefined();
     await backend.close();
   });
 

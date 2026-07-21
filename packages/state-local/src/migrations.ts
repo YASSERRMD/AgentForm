@@ -53,6 +53,17 @@ export const MIGRATIONS: readonly Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    description:
+      'add drift_status/drift_checked_at to application_state (Phase 11: agentform drift)',
+    up: (db) => {
+      db.exec(`
+        ALTER TABLE application_state ADD COLUMN drift_status TEXT NOT NULL DEFAULT 'unknown';
+        ALTER TABLE application_state ADD COLUMN drift_checked_at TEXT;
+      `);
+    },
+  },
 ];
 
 function ensureMigrationsTable(db: DatabaseSync): void {

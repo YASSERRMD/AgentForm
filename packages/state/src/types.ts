@@ -36,6 +36,18 @@ export interface ApplicationState {
   readonly adapterVersions: Readonly<Record<string, string>>;
   readonly deploymentIdentifiers: Readonly<Record<string, string>>;
   readonly lastAppliedAt?: string;
+  /**
+   * The result of the most recent `agentform drift` check — `'unknown'`
+   * (the literal stored value, not an absent field) until one has ever
+   * run. `putApplicationState` always resets both drift fields (to
+   * `'unknown'`/`undefined`) on every call, since a fresh apply
+   * invalidates any prior drift computation: the newly-applied state *is*
+   * the new baseline, so drift status must be recomputed after every
+   * apply. `recordDriftStatus` is the narrow mutation `agentform drift`
+   * itself uses instead, touching only these two fields.
+   */
+  readonly driftStatus: DriftStatus;
+  readonly driftCheckedAt?: string;
 }
 
 export type ApplyOperationStatus = 'in_progress' | 'succeeded' | 'failed' | 'interrupted';
@@ -58,6 +70,13 @@ export interface ApplyHistoryEntry {
 }
 
 export type DriftStatus = 'unknown' | 'in_sync' | 'drifted';
+
+/** One entry from `StateBackend.listBackups()` — `id` is what `restoreBackup(id)`/`ApplyHistoryEntry.backupId` both reference. */
+export interface BackupInfo {
+  readonly id: string;
+  readonly createdAt: string;
+  readonly sizeBytes: number;
+}
 
 export interface LockInfo {
   /** `pid@hostname`, or another backend-specific holder identity. */

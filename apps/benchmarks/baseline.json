@@ -1,0 +1,111 @@
+{
+  "recordedAt": "2026-07-21T12:15:59.139Z",
+  "node": "v24.11.1",
+  "platform": "darwin/arm64",
+  "warmupIterations": 5,
+  "measuredIterations": 25,
+  "results": [
+    {
+      "name": "small",
+      "agentCount": 5,
+      "stages": {
+        "parse": {
+          "iterations": 25,
+          "minMs": 0.482208,
+          "maxMs": 2.191208,
+          "meanMs": 0.6745666000000001,
+          "medianMs": 0.592125
+        },
+        "validate": {
+          "iterations": 25,
+          "minMs": 0.093375,
+          "maxMs": 0.639917,
+          "meanMs": 0.14481839999999996,
+          "medianMs": 0.115625
+        },
+        "plan": {
+          "iterations": 25,
+          "minMs": 0.039375,
+          "maxMs": 0.074708,
+          "meanMs": 0.05488996,
+          "medianMs": 0.052
+        },
+        "compile": {
+          "iterations": 25,
+          "minMs": 0.027083,
+          "maxMs": 0.055375,
+          "meanMs": 0.03702496,
+          "medianMs": 0.038084
+        }
+      }
+    },
+    {
+      "name": "medium",
+      "agentCount": 25,
+      "stages": {
+        "parse": {
+          "iterations": 25,
+          "minMs": 1.956667,
+          "maxMs": 2.725042,
+          "meanMs": 2.21913836,
+          "medianMs": 2.201708
+        },
+        "validate": {
+          "iterations": 25,
+          "minMs": 0.275041,
+          "maxMs": 0.656125,
+          "meanMs": 0.35672503999999994,
+          "medianMs": 0.344083
+        },
+        "plan": {
+          "iterations": 25,
+          "minMs": 0.148,
+          "maxMs": 0.417917,
+          "meanMs": 0.17947004,
+          "medianMs": 0.171292
+        },
+        "compile": {
+          "iterations": 25,
+          "minMs": 0.080458,
+          "maxMs": 0.287125,
+          "meanMs": 0.10466676000000001,
+          "medianMs": 0.098958
+        }
+      }
+    },
+    {
+      "name": "large",
+      "agentCount": 100,
+      "stages": {
+        "parse": {
+          "iterations": 25,
+          "minMs": 8.240458,
+          "maxMs": 11.608417,
+          "meanMs": 9.05539848,
+          "medianMs": 8.841667
+        },
+        "validate": {
+          "iterations": 25,
+          "minMs": 0.957083,
+          "maxMs": 1.470083,
+          "meanMs": 1.04468496,
+          "medianMs": 1.002542
+        },
+        "plan": {
+          "iterations": 25,
+          "minMs": 0.518292,
+          "maxMs": 1.413709,
+          "meanMs": 0.6024166400000001,
+          "medianMs": 0.589833
+        },
+        "compile": {
+          "iterations": 25,
+          "minMs": 0.256167,
+          "maxMs": 0.307166,
+          "meanMs": 0.27007656,
+          "medianMs": 0.268125
+        }
+      }
+    }
+  ]
+}

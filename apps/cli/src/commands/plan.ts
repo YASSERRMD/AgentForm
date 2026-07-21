@@ -1,9 +1,17 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import type { Diagnostic } from '@agentform/diagnostics';
+import { checkEvaluationGateStatus, parseTestResultsRecord } from '@agentform/evaluator';
 import { comparePlan, createPlanFile, serializePlanFile, type PlanItem } from '@agentform/planner';
-import { BUILTIN_POLICIES, evaluatePolicies, type PolicyResult } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  isProductionEnvironment,
+  type PolicyResult,
+} from '@agentform/policy';
+import { testResultsPathFor } from './test.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
+import { evaluationGateStatusToDiagnostics } from '../lib/evaluation-gate-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { formatPlanForHumans } from '../lib/plan-output.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
@@ -61,6 +69,22 @@ export function registerPlanCommand(program: Command): void {
         }
       } finally {
         await backend.close();
+      }
+
+      const evaluations = result.ir.evaluations;
+      const hasEvaluationsDeclared =
+        (evaluations?.datasets?.length ?? 0) > 0 ||
+        Object.keys(evaluations?.thresholds ?? {}).length > 0;
+      if (
+        isProductionEnvironment(result.application.spec.runtime.environment) &&
+        hasEvaluationsDeclared
+      ) {
+        const resultsPath = testResultsPathFor(globalOptions.cwd);
+        const resultsFile = existsSync(resultsPath)
+          ? parseTestResultsRecord(readFileSync(resultsPath, 'utf-8'))
+          : undefined;
+        const gateStatus = checkEvaluationGateStatus(result.ir.contentHash, resultsFile);
+        diagnostics = [...diagnostics, ...evaluationGateStatusToDiagnostics(gateStatus)];
       }
 
       const policyFailed = exitCodeForDiagnostics(diagnostics) === EXIT_CODES.POLICY_FAILURE;

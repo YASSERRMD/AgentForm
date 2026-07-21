@@ -57,11 +57,16 @@ describe('agentform status', () => {
     expect(result.stdout).toContain('Resources:     0 tracked');
   });
 
-  it('honestly reports drift and evaluation as not yet implemented', () => {
+  it('honestly reports drift as not yet implemented', () => {
     project = createFixtureProject(VALID_PROJECT);
     const result = runCli(['status'], project.dir);
     expect(result.stdout).toContain('Drift:         unknown');
-    expect(result.stdout).toContain('Evaluation:    unknown');
+  });
+
+  it('reports evaluation as not applicable when no datasets or thresholds are declared', () => {
+    project = createFixtureProject(VALID_PROJECT);
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Evaluation:    not applicable');
   });
 
   it('reports policy status PASSED for a clean project', () => {
@@ -94,5 +99,90 @@ describe('agentform status', () => {
     project = createFixtureProject(VALID_PROJECT);
     const result = runCli(['status', '--help'], project.dir);
     expect(result.exitCode).toBe(0);
+  });
+});
+
+function projectWithDataset(datasetContent: string): Record<string, string> {
+  return {
+    'agentform.yaml': [
+      'apiVersion: agentform.dev/v1alpha1',
+      'kind: AgenticApplication',
+      'metadata:',
+      '  name: fixture-app',
+      '  version: 1.0.0',
+      'spec:',
+      '  runtime:',
+      '    target: openai',
+      '    environment: development',
+      '  models:',
+      '    primary:',
+      '      provider: openai',
+      '      model: gpt-5',
+      '  agents:',
+      '    intake:',
+      '      model: primary',
+      '      role: intake',
+      '      instructions:',
+      '        text: Triage the request.',
+      '  workflows:',
+      '    main:',
+      '      entrypoint: intake',
+      '      nodes:',
+      '        intake:',
+      '          type: agent',
+      '          agent: intake',
+      '        done:',
+      '          type: terminate',
+      '          reason: complete',
+      '      edges:',
+      '        - from: intake',
+      '          to: done',
+      '  evaluations:',
+      '    datasets:',
+      '      - tests/basic.jsonl',
+      '',
+    ].join('\n'),
+    'tests/basic.jsonl': datasetContent,
+  };
+}
+
+const PASSING_DATASET = JSON.stringify({
+  name: 'reaches the terminal node',
+  workflow: 'main',
+  assertions: [{ type: 'terminationReason', equals: 'complete' }],
+});
+
+const FAILING_DATASET = JSON.stringify({
+  name: 'expects the wrong termination reason',
+  workflow: 'main',
+  assertions: [{ type: 'terminationReason', equals: 'something-else' }],
+});
+
+describe('agentform status — evaluation gate reporting', () => {
+  it('reports never run when evaluations are declared but agentform test has never run', () => {
+    project = createFixtureProject(projectWithDataset(PASSING_DATASET));
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Evaluation:    never run');
+  });
+
+  it('reports PASSED once agentform test has run and passed for the current specification', () => {
+    project = createFixtureProject(projectWithDataset(PASSING_DATASET));
+    expect(runCli(['test'], project.dir).exitCode).toBe(0);
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Evaluation:    PASSED');
+  });
+
+  it('reports FAILED when the most recent run for the current specification did not pass', () => {
+    project = createFixtureProject(projectWithDataset(FAILING_DATASET));
+    expect(runCli(['test'], project.dir).exitCode).toBe(9);
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Evaluation:    FAILED');
+  });
+
+  it('produces a parseable evaluationStatus field in --json output', () => {
+    project = createFixtureProject(projectWithDataset(PASSING_DATASET));
+    const result = runCli(['status', '--json'], project.dir);
+    const parsed = JSON.parse(result.stdout) as { status: { evaluationStatus: string } };
+    expect(parsed.status.evaluationStatus).toContain('never run');
   });
 });

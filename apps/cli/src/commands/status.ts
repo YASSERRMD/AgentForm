@@ -1,11 +1,41 @@
+import { existsSync, readFileSync } from 'node:fs';
 import type { Command } from 'commander';
+import { checkEvaluationGateStatus, parseTestResultsRecord } from '@agentform/evaluator';
+import type { AgentformIR } from '@agentform/ir';
 import { BUILTIN_POLICIES, evaluatePolicies, hasPolicyFailures } from '@agentform/policy';
+import { testResultsPathFor } from './test.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { loadPolicyConfig } from '../lib/policy-config.js';
 import { openStateBackend } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
+
+function describeEvaluationStatus(ir: AgentformIR, rootDir: string): string {
+  const evaluations = ir.evaluations;
+  const hasEvaluationsDeclared =
+    (evaluations?.datasets?.length ?? 0) > 0 ||
+    Object.keys(evaluations?.thresholds ?? {}).length > 0;
+  if (!hasEvaluationsDeclared) {
+    return 'not applicable (spec.evaluations declares no datasets or thresholds)';
+  }
+
+  const resultsPath = testResultsPathFor(rootDir);
+  const resultsFile = existsSync(resultsPath)
+    ? parseTestResultsRecord(readFileSync(resultsPath, 'utf-8'))
+    : undefined;
+  const gateStatus = checkEvaluationGateStatus(ir.contentHash, resultsFile);
+  switch (gateStatus.kind) {
+    case 'never-run':
+      return 'never run (run "agentform test")';
+    case 'stale':
+      return 'stale (specification changed since agentform test last ran)';
+    case 'failed':
+      return `FAILED (${gateStatus.record.passedTests}/${gateStatus.record.totalTests} passed at ${gateStatus.record.ranAt})`;
+    case 'passed':
+      return `PASSED (${gateStatus.record.passedTests}/${gateStatus.record.totalTests} at ${gateStatus.record.ranAt})`;
+  }
+}
 
 interface StatusCommandOptions {
   readonly environment?: string;
@@ -75,7 +105,7 @@ export function registerStatusCommand(program: Command): void {
         adapterVersions: applicationState?.adapterVersions ?? {},
         stateBackend: backend.kind,
         driftStatus: 'unknown (drift detection is not implemented until a later phase)',
-        evaluationStatus: 'unknown (the evaluation engine is not implemented until a later phase)',
+        evaluationStatus: describeEvaluationStatus(result.ir, globalOptions.cwd),
         policyStatus,
       };
 

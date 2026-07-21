@@ -1,6 +1,7 @@
 import type { Command } from 'commander';
 import { registerApplyCommand } from './apply.js';
 import { registerCompileCommand } from './compile.js';
+import { registerDriftCommand } from './drift.js';
 import { registerFormatCommand } from './format.js';
 import { registerGraphCommand } from './graph.js';
 import { registerInitCommand } from './init.js';
@@ -21,4 +22,5 @@ export function registerCommands(program: Command): void {
   registerCompileCommand(program);
   registerTestCommand(program);
   registerApplyCommand(program);
+  registerDriftCommand(program);
 }

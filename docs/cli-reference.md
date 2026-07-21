@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy,state,planner,compiler}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph`/`plan`/`status`/`compile` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate`/`plan`/`status` additionally run `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds; `plan`/`status` also open the local state backend (`@agentform/state-local`) under `.agentform/`; `compile` runs `@agentform/compiler` against a `FrameworkAdapter` — see their own sections below.
+`agentform` is the user-facing entry point to the pipeline documented across `docs/{schema,parser,ir,policy,state,planner,compiler,evaluation}-reference.md`: `init` scaffolds a project, `validate`/`inspect`/`graph`/`plan`/`status`/`compile`/`test` all run the same `loadProject → buildIR` pipeline (`apps/cli/src/lib/pipeline.ts`) and differ only in what they do with a successful result, and `format` normalizes source file style independently of that pipeline. `validate`/`plan`/`status`/`test` additionally run `@agentform/policy`'s built-in policy pack once the pipeline itself succeeds; `plan`/`status` also open the local state backend (`@agentform/state-local`) under `.agentform/`; `compile` runs `@agentform/compiler` against a `FrameworkAdapter`; `test` runs `@agentform/evaluator`/`@agentform/runtime` against the specification's declared evaluation datasets — see their own sections below.
 
 ## Global options
 
@@ -22,18 +22,19 @@ Every command accepts these (defined once on the root program):
 
 Every command sets `process.exitCode` (never calls `process.exit()` directly mid-command, so pending output always flushes first) to one of the stable codes from §14:
 
-| Code | Meaning                     | Where it comes from                                                                                                                                                                            |
-| ---- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Success                     |                                                                                                                                                                                                |
-| 1    | General failure             | e.g. `format --check` finding an unformatted file; a file that can't be read                                                                                                                   |
-| 2    | Invalid command usage       | Unknown flag/command/argument (remapped from Commander's own default of `1` — see ADR-0006), an unknown `--format`/`--template`/`--target` value, an `inspect` address that doesn't resolve    |
-| 3    | Source parsing failure      | Any `AGF1xxx` error from `@agentform/parser`                                                                                                                                                   |
-| 4    | Schema validation failure   | Any `AGF2xxx` error from `@agentform/schema`                                                                                                                                                   |
-| 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                       |
-| 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate`/`plan` |
-| 7    | Unapproved critical change  | `agentform plan` produced at least one `PlanItem` with `risk: 'CRITICAL'` (`requiresApproval: true`) — `@agentform/planner`, `plan` only                                                       |
-| 8    | Compilation failure         | An `AGF5xxx` error from `@agentform/compiler` other than `AGF5001` (e.g. `AGF5003`, a blocked secret leak) — `compile` only                                                                    |
-| 13   | Unsupported target feature  | `AGF5001` — the project uses a node/tool type the target adapter has no generator for (`docs/compiler-reference.md`) — `compile` only                                                          |
+| Code | Meaning                     | Where it comes from                                                                                                                                                                                                                                |
+| ---- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Success                     |                                                                                                                                                                                                                                                    |
+| 1    | General failure             | e.g. `format --check` finding an unformatted file; a file that can't be read                                                                                                                                                                       |
+| 2    | Invalid command usage       | Unknown flag/command/argument (remapped from Commander's own default of `1` — see ADR-0006), an unknown `--format`/`--template`/`--target` value, an `inspect` address that doesn't resolve                                                        |
+| 3    | Source parsing failure      | Any `AGF1xxx` error from `@agentform/parser`                                                                                                                                                                                                       |
+| 4    | Schema validation failure   | Any `AGF2xxx` error from `@agentform/schema`                                                                                                                                                                                                       |
+| 5    | Semantic validation failure | Any `AGF3xxx` error from `@agentform/ir`                                                                                                                                                                                                           |
+| 6    | Policy failure              | Any built-in policy ID (`AF001`-`AF015`) reported as `fail`, or an `AGF4xxx` policy-configuration problem (e.g. a rejected mandatory-policy override) — `@agentform/policy`, `validate`/`plan`                                                     |
+| 7    | Unapproved critical change  | `agentform plan` produced at least one `PlanItem` with `risk: 'CRITICAL'` (`requiresApproval: true`) — `@agentform/planner`, `plan` only                                                                                                           |
+| 8    | Compilation failure         | An `AGF5xxx` error from `@agentform/compiler` other than `AGF5001` (e.g. `AGF5003`, a blocked secret leak) — `compile` only                                                                                                                        |
+| 9    | Evaluation failure          | At least one dataset test case failed its assertions, or a recognized threshold gate failed, or dataset loading itself errored (a missing file, invalid JSON/YAML, a test case that fails schema validation) — `@agentform/evaluator`, `test` only |
+| 13   | Unsupported target feature  | `AGF5001` — the project uses a node/tool type the target adapter has no generator for (`docs/compiler-reference.md`) — `compile` only                                                                                                              |
 
 `lib/exit-codes.ts`'s `exitCodeForDiagnostics()` picks the code for the _earliest_ pipeline stage with an error, since that's the one whose fix actually unblocks the rest — a document that fails parsing produces exit 3 even if, hypothetically, it would also have failed schema validation (or policy checks, which don't even run until parsing/schema/semantic validation all succeed). `plan`'s own exit code layers on top: policy failure (6) takes priority over an unapproved critical change (7) — a plan with pending, non-critical, policy-clean changes exits 0, same as Terraform's `plan` treating "there are changes" as success on its own.
 
@@ -145,16 +146,38 @@ Runs the full pipeline, opens the local state backend (`@agentform/state-local`,
 
 `--out <file>` additionally saves the plan as a tamper-evident `.afplan` file (`docs/planner-reference.md`) — JSON with a content hash covering everything in it, so editing the file afterward is detectable. `--json` output includes the full `items` array (every `PlanItem`, including `NO_OP`s) alongside `policyResults`, mirroring `validate`'s `--json` shape.
 
+In a production-labeled `runtime.environment` that also declares at least one evaluation dataset or threshold, `plan` additionally reads back `.agentform/test-results.json` (written by `agentform test`) and surfaces `AGF6001`/`AGF6002`/`AGF6003` — evaluation gates never run, stale (the specification changed since the last run), or failed, respectively — as `warning` diagnostics (`docs/evaluation-reference.md`). These are always warnings: there is no `agentform apply` yet (Phase 11) to actually block on them, so they never change `plan`'s exit code.
+
 ### `agentform status`
 
-Shows the application, deployed state, and policy status (§15.10).
+Shows the application, deployed state, policy status, and evaluation gate status (§15.10).
 
 ```bash
 agentform status
 agentform --json status
 ```
 
-Always exits 0 once the pipeline itself succeeds — like `inspect`, this is a read-only reporting command, not a pass/fail gate. `Policy:` reflects a real `evaluatePolicies` run against the current specification (`PASSED`/`PASSED (with warnings)`/`FAILED`); `Drift:` and `Evaluation:` honestly report `unknown (... not implemented until a later phase)` rather than fabricating data — no drift detection (`agentform drift`) or evaluation engine exists yet to produce a real answer for either.
+Always exits 0 once the pipeline itself succeeds — like `inspect`, this is a read-only reporting command, not a pass/fail gate. `Policy:` reflects a real `evaluatePolicies` run against the current specification (`PASSED`/`PASSED (with warnings)`/`FAILED`); `Evaluation:` reflects the same gate status `plan` computes (`docs/evaluation-reference.md`) regardless of environment — `never run`, `stale (...)`, `FAILED (n/m passed at <timestamp>)`, `PASSED (n/m at <timestamp>)`, or `not applicable (...)` when the specification declares no datasets or thresholds at all. `Drift:` still honestly reports `unknown (drift detection is not implemented until a later phase)` — no `agentform drift` exists yet to produce a real answer.
+
+### `agentform test`
+
+Runs the specification's evaluation datasets against the deterministic mock execution engine (`docs/evaluation-reference.md`).
+
+```bash
+agentform test
+agentform test --environment production
+agentform test --junit results.xml            # also write a JUnit XML report
+agentform --json test
+agentform test --live                          # rejected — not yet implemented
+```
+
+Runs the full pipeline, then policy once (`policyResult` assertions and the `policyViolations` threshold read this same evaluation), then loads every dataset `spec.evaluations.datasets` names (`docs/evaluation-reference.md`'s dataset format) and runs each test case through `@agentform/runtime`'s deterministic engine. A dataset-loading error (missing file, invalid JSON/YAML/JSONL, a test case that fails schema validation) exits 9 immediately, naming the problem, the same way a broken specification exits 4/5/6 rather than crashing.
+
+Every run — pass or fail — writes `.agentform/test-results.json`, a tamper-evident record `agentform plan`/`agentform status` read back (`docs/evaluation-reference.md`'s Tamper-evident results record section).
+
+`--junit <file>` additionally writes a standard JUnit XML report. Console, `--json`, and JUnit output are all passed through the same secret-redaction pass before being written anywhere — see Security implications below.
+
+`--live` exists as a recognized flag but is rejected immediately (exit 2, a clear message) rather than silently behaving like its absence — there is no live-provider execution engine yet (`docs/evaluation-reference.md`'s Scope section).
 
 ### `agentform compile`
 
@@ -176,10 +199,10 @@ Compilation never deploys anything — `compile` only ever calls an adapter's `v
 
 ## Security implications
 
-- `init`/`format` are the only commands that write to disk unconditionally, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file). `plan --out <file>` also writes, but only the file the user explicitly named. `compile` writes an entire generated project, but only under `<output>/<target>/`, and only `--clean` ever deletes anything (scoped to that one subdirectory).
-- `plan`/`status` never store raw resource values in `.agentform/state.db` — see `docs/state-reference.md`.
-- No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution; `compile`'s generated files are written to disk, never executed by `agentform` itself.
-- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first. `compile` additionally blocks on any generated file that looks like it contains a secret — see `docs/compiler-reference.md`.
+- `init`/`format` are the only commands that write to disk unconditionally, and both are conservative: `init` refuses to overwrite an existing entry file; `format` only ever rewrites the exact file it was asked to format (never walks the project writing to files the user didn't name or that weren't already the discovered entry file). `plan --out <file>` also writes, but only the file the user explicitly named. `compile` writes an entire generated project, but only under `<output>/<target>/`, and only `--clean` ever deletes anything (scoped to that one subdirectory). `test` writes `.agentform/test-results.json` on every run, plus `--junit <file>` if given.
+- `plan`/`status`/`test` never store raw resource values in `.agentform/state.db` — see `docs/state-reference.md`. `.agentform/test-results.json` similarly stores only pass/fail counts and content hashes, never test-case content.
+- No command executes generated or user-supplied code — `graph`'s Mermaid/DOT/JSON output is text generation from the already-validated IR, not template execution; `compile`'s generated files are written to disk, never executed by `agentform` itself; `test`'s deterministic mock engine never calls a real model, tool, HTTP endpoint, or subprocess (`docs/evaluation-reference.md`).
+- Diagnostics never include secret values — they come from `@agentform/parser`/`@agentform/schema`/`@agentform/ir`/`@agentform/policy`, none of which read or echo secret material (§3.5, §18); a policy message that names a detected secret runs it through `redactSecretValue` first. `compile` additionally blocks on any generated file that looks like it contains a secret — see `docs/compiler-reference.md`. `test`'s console/`--json`/`--junit` output is separately passed through the same secret-pattern redaction before being written anywhere, since a dataset's mocked tool call content is author-controlled test-fixture data `AF001` never scans (`docs/evaluation-reference.md`).
 - **Mandatory policies cannot be bypassed with CLI flags** (§16's own acceptance criterion): there is no `--no-policy`/`--skip-policy` flag, no way to pass overrides inline on the command line, and no flag to point `agentform.policy.yaml` at a different file. The _only_ lever is the fixed-filename config file, and even that file cannot change a mandatory policy's severity — `evaluatePolicies` rejects the attempt regardless of what the config says.
 
 ## Troubleshooting
@@ -192,4 +215,7 @@ Compilation never deploys anything — `compile` only ever calls an adapter's `v
 - **`agentform plan` exits 7**: at least one plan item is `CRITICAL` risk — check `docs/planner-reference.md`'s risk classification section for what triggers it (deleting a workflow, or a workflow with an ungated destructive-tool call).
 - **`agentform plan`/`agentform status` seem to hang or a `.agentform/` directory unexpectedly appears**: both commands create `.agentform/state.db` on first run (SQLite's default behavior for a database file that doesn't exist yet) — this is expected, not an error; see `docs/state-reference.md`.
 - **`agentform compile` exits 13**: the project uses a node/tool type the target adapter has no generator for — the diagnostic names the specific feature and target. See `docs/compiler-reference.md`'s tables for what each adapter currently supports.
+- **`agentform test` exits 9**: either a dataset test case failed one of its assertions (named in the console/`--junit` output), a recognized threshold gate failed, or the dataset itself failed to load (a missing file, invalid JSON/YAML/JSONL, or a test case that doesn't match the schema) — the error message names which. See `docs/evaluation-reference.md`.
+- **`agentform test --live` refuses to run**: expected — there is no live-provider execution engine yet. Remove `--live` to run the deterministic mock suite.
+- **`agentform plan` shows an `AGF6001`/`AGF6002`/`AGF6003` warning**: your production specification declares evaluation datasets or thresholds, but `agentform test` has never run for the current specification, ran against an earlier version of it, or last failed, respectively. Run (or re-run) `agentform test`. These are warnings, not blockers — see `docs/evaluation-reference.md`'s Scope section for why nothing blocks on them yet.
 - **Generated code throws/raises the moment you run it**: expected — Agentform generates a project's interface (agents, tools, graph wiring), never its business logic. See the `TODO` in the specific file the error names.

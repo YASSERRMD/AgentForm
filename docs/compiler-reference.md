@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`@agentform/compiler` orchestrates turning a validated `AgentformIR` (`docs/ir-reference.md`) into a real, runnable project for a target framework. It never contains framework-specific logic itself — that lives in one `FrameworkAdapter` package per framework (`@agentform/plugin-sdk`'s interface, §12). Phase 8 implements two: `@agentform/adapter-openai` (OpenAI Agents SDK, TypeScript) and `@agentform/adapter-langgraph` (LangGraph, Python). `agentform compile` (`docs/cli-reference.md`) is the only current caller.
+`@agentform/compiler` orchestrates turning a validated `AgentformIR` (`docs/ir-reference.md`) into a real, runnable project for a target framework. It never contains framework-specific logic itself — that lives in one `FrameworkAdapter` package per framework (`@agentform/plugin-sdk`'s interface, §12). All six §4 targets have an adapter as of Phase 9: `@agentform/adapter-openai` (OpenAI Agents SDK, TypeScript), `@agentform/adapter-langgraph` (LangGraph, Python), `@agentform/adapter-microsoft` (Microsoft Agent Framework, C#), `@agentform/adapter-google-adk` (Google Agent Development Kit, Python), `@agentform/adapter-autogen` (AutoGen, Python), and `@agentform/adapter-crewai` (CrewAI, Python). `agentform compile` (`docs/cli-reference.md`) is the only current caller.
 
 ## Minimal example
 
@@ -38,7 +38,7 @@ Every `unsupported` compatibility entry becomes an error diagnostic (`AGF5001`, 
 
 ## `CompatibilityReport`
 
-Each `FeatureSupportEntry` has a `level`: `supported`, `partial`, `emulated`, or `unsupported`. Both adapters report every workflow node type and tool type in the IR, plus adapter-wide concerns (e.g. LangGraph's checkpointing is always `emulated` — an in-memory `MemorySaver`, not a persistent store). `hasBlockingIncompatibility` is `true` the moment any entry is `unsupported`.
+Each `FeatureSupportEntry` has a `level`: `supported`, `partial`, `emulated`, or `unsupported`. Every adapter reports every workflow node type and tool type in the IR, plus adapter-wide concerns (e.g. LangGraph's checkpointing is always `emulated` — an in-memory `MemorySaver`, not a persistent store). `hasBlockingIncompatibility` is `true` the moment any entry is `unsupported` — see the cross-adapter compatibility matrix below for what each of the six targets actually supports.
 
 ## `GeneratedManifest`
 
@@ -85,6 +85,33 @@ LangGraph's `langgraph.prebuilt.create_react_agent(model=..., tools=...)` would 
 ### Verified, not assumed
 
 Every construct above was checked against the real installed `langgraph==0.6.11` package in a real virtualenv (`inspect.signature` against `StateGraph`/`add_conditional_edges`/`interrupt`/`MemorySaver`/`ToolNode`, not training-data recall). Beyond the required "passes syntax checks" bar (a real `python3 -c "import ast; ast.parse(...)"` subprocess check, `isSyntacticallyValidPython`, run in every generator's test suite — the Python counterpart of the OpenAI adapter's real-TypeScript-compiler syntax check), a full generated project was `pip install`ed and actually run end-to-end: `build_graph().compile(checkpointer=MemorySaver())` produced a real `CompiledStateGraph`, and `python -m src.main` executed the graph through to the entrypoint agent's honest `NotImplementedError` — proving the graph wiring, checkpointing, and execution path are all genuinely functional. This caught a real bug before it shipped: `graph.invoke()` with a checkpointer attached requires a `thread_id` in the call's config or LangGraph raises immediately — fixed by generating a fresh `uuid4()` thread id per run in `main.py`.
+
+## Cross-adapter compatibility matrix
+
+Transcribed directly from each adapter's own `compatibility.ts` (`NODE_TYPE_LEVELS`/`SUPPORTED_NODE_TYPES`), not hand-guessed — a cross-target test (`apps/cli/src/cross-target.test.ts`) compiles a real spec against all six real adapters and asserts zero blocking diagnostics for the row every column marks `supported`, so this table can't silently drift from the code.
+
+| Workflow node type                                                      | openai                                                                                                                                          | langgraph | microsoft   | google-adk  | autogen     | crewai      |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------- | ----------- | ----------- | ----------- | ----------- |
+| `agent`                                                                 | supported                                                                                                                                       | supported | supported   | supported   | supported   | supported   |
+| `terminate`                                                             | supported                                                                                                                                       | supported | supported   | supported   | supported   | supported   |
+| `tool`                                                                  | supported                                                                                                                                       | supported | unsupported | unsupported | unsupported | unsupported |
+| `humanApproval`                                                         | unsupported                                                                                                                                     | supported | unsupported | unsupported | emulated    | unsupported |
+| `loop`                                                                  | unsupported                                                                                                                                     | supported | unsupported | unsupported | unsupported | unsupported |
+| `router`                                                                | unsupported                                                                                                                                     | supported | unsupported | unsupported | unsupported | unsupported |
+| `parallel`/`join`/`delay`/`event`/`subworkflow`/`transform`/`condition` | unsupported everywhere — no adapter targets full workflow-graph fidelity yet (see each adapter's own "well-scoped basic translation" reasoning) |           |             |             |             |             |
+
+Only `agent`/`terminate` are `supported` by every target — that's the portable baseline the cross-target test exercises. `tool` as its own _workflow node_ is an OpenAI/LangGraph-only concept: the four Phase 9 targets (Microsoft, ADK, AutoGen, CrewAI) all wire tools onto agents directly (`agent.tools`) rather than as a separate graph node, so a `tool`-type node has no representation there regardless of the underlying tool _type_ — every adapter can generate a stub for all nine IR tool types (`function`/`http`/`openapi`/`mcp`/`database`/`queue`/`agent`/`humanApproval`/`customPlugin`) identically; it's the node-graph placement that differs, not tool-generation capability.
+
+**Agent delegation** (`agent.delegation.allowedAgents`) isn't a workflow node, so it doesn't fit the table above — and it's the dimension where the six targets diverge the most, each shaped by a real, verified constraint of its underlying framework:
+
+- **openai**: real SDK `handoffs` — every declared target becomes a first-class handoff, no known structural hazard.
+- **microsoft**: real `HandoffWorkflowBuilder.WithHandoffs(...)` edges — the _most_ precise match of any target (a genuine per-agent allowlist, no sharing restriction), but gated on a verified reachability requirement: every handoff source must be reachable from the workflow's entrypoint or `Build()` throws a real `InvalidOperationException` — `agentform compile` detects and blocks this before it would happen.
+- **autogen**: real `handoffs=` on `AssistantAgent`, `emulated` only in the sense that AutoGen's own compatibility report classifies its `humanApproval` mapping that way, not delegation itself.
+- **google-adk**: real `sub_agents` — but ADK enforces a single-parent tree; two agents naming the same delegate is a real `pydantic.ValidationError`, caught and blocked before generation.
+- **crewai**: real `allow_delegation=True` — but CrewAI's delegation tool is crew-wide, not scoped to the declared allowlist; every agent with delegation enabled can reach every other crew member, reported `partial`, not blocking.
+- **langgraph**: documented only — `delegation.allowedAgents` appears in the generated agent's docstring as a hint, but isn't wired into real conditional routing in this adapter's current scope (its routing is driven by the workflow's own graph edges, not agent-declared delegation).
+
+**Adapter-wide entries** beyond node/tool/delegation support: OpenAI reports `sessions`/`tracing hooks`/`tool restrictions` as `partial` (not yet generated, but real SDK features); LangGraph reports `checkpointing` as `emulated` (a real, working `MemorySaver`, but in-memory only — swap in a persistent checkpointer for production).
 
 ## `agentform compile`
 

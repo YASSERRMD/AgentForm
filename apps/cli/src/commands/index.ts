@@ -5,6 +5,7 @@ import { registerDestroyCommand } from './destroy.js';
 import { registerDriftCommand } from './drift.js';
 import { registerFormatCommand } from './format.js';
 import { registerGraphCommand } from './graph.js';
+import { registerImportCommand } from './import.js';
 import { registerInitCommand } from './init.js';
 import { registerInspectCommand } from './inspect.js';
 import { registerPlanCommand } from './plan.js';
@@ -27,4 +28,5 @@ export function registerCommands(program: Command): void {
   registerDriftCommand(program);
   registerRollbackCommand(program);
   registerDestroyCommand(program);
+  registerImportCommand(program);
 }

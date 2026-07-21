@@ -170,6 +170,9 @@ importers:
       '@agentform/compiler':
         specifier: workspace:*
         version: link:../compiler
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
       '@agentform/ir':
         specifier: workspace:*
         version: link:../ir
@@ -202,6 +205,9 @@ importers:
       '@agentform/compiler':
         specifier: workspace:*
         version: link:../compiler
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
       '@agentform/ir':
         specifier: workspace:*
         version: link:../ir

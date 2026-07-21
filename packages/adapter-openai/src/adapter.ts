@@ -7,6 +7,8 @@ import type {
   GeneratedFile,
   GeneratedProject,
   GenerationContext,
+  ImportContext,
+  ImportInspection,
 } from '@agentform/plugin-sdk';
 import { validateOpenAiCompatibility } from './compatibility.js';
 import { generateAgentFile } from './generate-agent.js';
@@ -22,6 +24,7 @@ import {
 } from './generate-project-files.js';
 import { generateToolFile } from './generate-tool.js';
 import { generateWorkflowFile } from './generate-workflow.js';
+import { inspectOpenAiAgentsProject } from './inspect-existing.js';
 
 export const OPENAI_ADAPTER_MANIFEST: AgentformPluginManifest = {
   name: '@agentform/adapter-openai',
@@ -113,5 +116,9 @@ export const openAiAdapter: FrameworkAdapter = {
     });
 
     return { target: 'openai', files, manifest };
+  },
+
+  async inspectExisting(context: ImportContext): Promise<ImportInspection> {
+    return inspectOpenAiAgentsProject(context);
   },
 };

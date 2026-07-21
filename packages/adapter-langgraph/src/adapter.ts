@@ -7,6 +7,8 @@ import type {
   GeneratedFile,
   GeneratedProject,
   GenerationContext,
+  ImportContext,
+  ImportInspection,
 } from '@agentform/plugin-sdk';
 import { validateLangGraphCompatibility } from './compatibility.js';
 import { generateAgentFile } from './generate-agent.js';
@@ -19,6 +21,7 @@ import {
 import { generateStateFile } from './generate-state.js';
 import { generateToolFile } from './generate-tool.js';
 import { generateWorkflowFile } from './generate-workflow.js';
+import { inspectLangGraphProject } from './inspect-existing.js';
 
 export const LANGGRAPH_ADAPTER_MANIFEST: AgentformPluginManifest = {
   name: '@agentform/adapter-langgraph',
@@ -105,5 +108,9 @@ export const langGraphAdapter: FrameworkAdapter = {
     });
 
     return { target: 'langgraph', files, manifest };
+  },
+
+  async inspectExisting(context: ImportContext): Promise<ImportInspection> {
+    return inspectLangGraphProject(context);
   },
 };

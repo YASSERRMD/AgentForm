@@ -10,6 +10,13 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default: this workflow only checks out code and runs local
+# verification (lint/typecheck/test/build) — it never pushes, comments, or
+# otherwise writes back to the repository or any GitHub API, so the default
+# GITHUB_TOKEN needs read access only.
+permissions:
+  contents: read
+
 env:
   TURBO_TELEMETRY_DISABLED: '1'
 

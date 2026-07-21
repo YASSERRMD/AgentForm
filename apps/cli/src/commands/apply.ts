@@ -19,7 +19,7 @@ import {
 } from '@agentform/planner';
 import { BUILTIN_POLICIES, evaluatePolicies } from '@agentform/policy';
 import { StateLockError } from '@agentform/state';
-import { confirmCriticalChanges } from '../lib/apply-confirm.js';
+import { confirmCriticalChanges } from '../lib/confirm-prompt.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY, generateArtifacts } from '../lib/generate-artifacts.js';

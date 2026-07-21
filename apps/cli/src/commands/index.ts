@@ -7,6 +7,7 @@ import { registerGraphCommand } from './graph.js';
 import { registerInitCommand } from './init.js';
 import { registerInspectCommand } from './inspect.js';
 import { registerPlanCommand } from './plan.js';
+import { registerRollbackCommand } from './rollback.js';
 import { registerStatusCommand } from './status.js';
 import { registerTestCommand } from './test.js';
 import { registerValidateCommand } from './validate.js';
@@ -23,4 +24,5 @@ export function registerCommands(program: Command): void {
   registerTestCommand(program);
   registerApplyCommand(program);
   registerDriftCommand(program);
+  registerRollbackCommand(program);
 }

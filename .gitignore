@@ -10,6 +10,12 @@ coverage/
 # Agentform local state and generated artifacts
 .agentform/
 *.afplan
+generated/
+
+# Release artifacts (regenerated fresh per release, not committed — a
+# checked-in SBOM would silently drift from the dependency graph it's
+# supposed to describe the moment any dependency changes)
+/sbom.json
 
 # Environment variables
 .env

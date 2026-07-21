@@ -1,10 +1,13 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 import type { Command } from 'commander';
 import type { Diagnostic } from '@agentform/diagnostics';
 import {
+  createTestResultsRecord,
   evaluateThresholds,
   loadDatasets,
   runDataset,
+  serializeTestResultsRecord,
   type RunSummary,
   type TestCaseResult,
 } from '@agentform/evaluator';
@@ -16,8 +19,14 @@ import { formatJUnitXml } from '../lib/junit-output.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { loadPolicyConfig } from '../lib/policy-config.js';
 import { policyResultsToDiagnostics } from '../lib/policy-output.js';
+import { stateDirFor } from '../lib/state.js';
 import { formatTestResultsForHumans } from '../lib/test-output.js';
 import { getGlobalOptions } from '../program.js';
+
+/** `.agentform/test-results.json` — a tamper-evident record `agentform plan` reads to warn when a production environment's evaluation gates haven't actually been run (or passed) for the specification as it exists right now, not just declared (§10's `.agentform/` layout convention, extended the same way `state.db`/`lock` already live there). */
+export function testResultsPathFor(rootDir: string): string {
+  return path.join(stateDirFor(rootDir), 'test-results.json');
+}
 
 interface TestCommandOptions {
   readonly environment?: string;
@@ -108,6 +117,17 @@ export function registerTestCommand(program: Command): void {
         .filter((gate) => gate.recognized)
         .every((gate) => gate.passed);
       const success = allTestsPassed && allThresholdsPassed;
+
+      const resultsRecord = createTestResultsRecord({
+        ranAt: new Date().toISOString(),
+        irHash: result.ir.contentHash,
+        success,
+        totalTests: summary.totalTests,
+        passedTests: summary.passedTests,
+      });
+      const resultsPath = testResultsPathFor(globalOptions.cwd);
+      mkdirSync(path.dirname(resultsPath), { recursive: true });
+      writeFileSync(resultsPath, serializeTestResultsRecord(resultsRecord), 'utf-8');
 
       if (options.junit) {
         writeFileSync(options.junit, formatJUnitXml(results), 'utf-8');

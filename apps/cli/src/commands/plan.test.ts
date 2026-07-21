@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { createFixtureProject, runCli, type FixtureProject } from '../test-fixture-project.js';
@@ -81,6 +81,111 @@ const WITH_UNGATED_DESTRUCTIVE_TOOL = {
     '',
   ].join('\n'),
 };
+
+const VALID_PROJECT_PRODUCTION_NO_EVALUATIONS = {
+  'agentform.yaml': [
+    'apiVersion: agentform.dev/v1alpha1',
+    'kind: AgenticApplication',
+    'metadata:',
+    '  name: fixture-app',
+    '  version: 1.0.0',
+    'spec:',
+    '  runtime:',
+    '    target: openai',
+    '    environment: production',
+    '  models:',
+    '    primary:',
+    '      provider: openai',
+    '      model: gpt-5',
+    '      version: 2026-01-01',
+    '  agents:',
+    '    assistant:',
+    '      model: primary',
+    '      role: assistant',
+    '      instructions:',
+    '        text: You are a helpful assistant.',
+    '  workflows:',
+    '    main:',
+    '      entrypoint: assistant',
+    '      nodes:',
+    '        assistant:',
+    '          type: agent',
+    '          agent: assistant',
+    '',
+  ].join('\n'),
+};
+
+function evaluationsYaml(
+  environment: string,
+  instructionsText: string,
+  datasetFileName: string,
+): string {
+  return [
+    'apiVersion: agentform.dev/v1alpha1',
+    'kind: AgenticApplication',
+    'metadata:',
+    '  name: fixture-app',
+    '  version: 1.0.0',
+    'spec:',
+    '  runtime:',
+    '    target: openai',
+    `    environment: ${environment}`,
+    '  models:',
+    '    primary:',
+    '      provider: openai',
+    '      model: gpt-5',
+    '      version: 2026-01-01',
+    '  agents:',
+    '    intake:',
+    '      model: primary',
+    '      role: intake',
+    '      instructions:',
+    `        text: ${instructionsText}`,
+    '  workflows:',
+    '    main:',
+    '      entrypoint: intake',
+    '      nodes:',
+    '        intake:',
+    '          type: agent',
+    '          agent: intake',
+    '        done:',
+    '          type: terminate',
+    '          reason: complete',
+    '      edges:',
+    '        - from: intake',
+    '          to: done',
+    '  evaluations:',
+    '    datasets:',
+    `      - ${datasetFileName}`,
+    '    thresholds:',
+    '      taskSuccess: 0.5',
+    '',
+  ].join('\n');
+}
+
+function projectWithEvaluations(
+  environment: string,
+  instructionsText: string,
+  datasetFileName: string,
+  datasetContent: string,
+): Record<string, string> {
+  return {
+    'agentform.yaml': evaluationsYaml(environment, instructionsText, datasetFileName),
+    [datasetFileName]: datasetContent,
+  };
+}
+
+const PASSING_DATASET = JSON.stringify({
+  name: 'reaches the terminal node',
+  workflow: 'main',
+  assertions: [{ type: 'terminationReason', equals: 'complete' }],
+});
+
+const FAILING_DATASET = JSON.stringify({
+  name: 'expects the wrong termination reason',
+  workflow: 'main',
+  assertions: [{ type: 'terminationReason', equals: 'something-else' }],
+});
 
 let project: FixtureProject | undefined;
 
@@ -170,5 +275,110 @@ describe('agentform plan', () => {
     const result = runCli(['plan', '--help'], project.dir);
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain('--out');
+  });
+});
+
+describe('agentform plan — evaluation gate diagnostics', () => {
+  it('warns AGF6001 when a production environment declares evaluations but agentform test has never run', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'production',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        PASSING_DATASET,
+      ),
+    );
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('AGF6001');
+  });
+
+  it('reports nothing once agentform test has run and passed for the current specification', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'production',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        PASSING_DATASET,
+      ),
+    );
+    expect(runCli(['test'], project.dir).exitCode).toBe(0);
+
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('AGF6');
+  });
+
+  it('warns AGF6003 when the most recent run for the current specification did not pass', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'production',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        FAILING_DATASET,
+      ),
+    );
+    expect(runCli(['test'], project.dir).exitCode).toBe(9);
+
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('AGF6003');
+  });
+
+  it('warns AGF6002 when the specification has changed since agentform test last ran', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'production',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        PASSING_DATASET,
+      ),
+    );
+    expect(runCli(['test'], project.dir).exitCode).toBe(0);
+
+    const changedYaml = evaluationsYaml(
+      'production',
+      'Triage the request with extra care.',
+      'tests/basic.jsonl',
+    );
+    writeFileSync(path.join(project.dir, 'agentform.yaml'), changedYaml, 'utf-8');
+
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain('AGF6002');
+  });
+
+  it('never blocks the plan exit code — evaluation gate diagnostics are warnings, not errors', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'production',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        PASSING_DATASET,
+      ),
+    );
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+  });
+
+  it('stays silent in a non-production environment even when agentform test has never run', () => {
+    project = createFixtureProject(
+      projectWithEvaluations(
+        'development',
+        'Triage the request.',
+        'tests/basic.jsonl',
+        PASSING_DATASET,
+      ),
+    );
+    const result = runCli(['plan'], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).not.toContain('AGF6');
+  });
+
+  it('stays silent in production when no evaluations are declared at all (AF008 already covers that case)', () => {
+    project = createFixtureProject(VALID_PROJECT_PRODUCTION_NO_EVALUATIONS);
+    const result = runCli(['plan'], project.dir);
+    expect(result.stdout).toContain('AF008');
+    expect(result.stdout).not.toContain('AGF6');
   });
 });

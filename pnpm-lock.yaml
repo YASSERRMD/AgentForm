@@ -107,6 +107,9 @@ importers:
       '@agentform/state-local':
         specifier: workspace:*
         version: link:../../packages/state-local
+      '@agentform/state-postgres':
+        specifier: workspace:*
+        version: link:../../packages/state-postgres
       commander:
         specifier: ^15.0.0
         version: 15.0.0

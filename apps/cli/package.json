@@ -40,6 +40,7 @@
     "@agentform/schema": "workspace:*",
     "@agentform/state": "workspace:*",
     "@agentform/state-local": "workspace:*",
+    "@agentform/state-postgres": "workspace:*",
     "commander": "^15.0.0",
     "pino": "^10.3.1",
     "yaml": "^2.9.0"

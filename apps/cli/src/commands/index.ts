@@ -6,6 +6,7 @@ import { registerInitCommand } from './init.js';
 import { registerInspectCommand } from './inspect.js';
 import { registerPlanCommand } from './plan.js';
 import { registerStatusCommand } from './status.js';
+import { registerTestCommand } from './test.js';
 import { registerValidateCommand } from './validate.js';
 
 export function registerCommands(program: Command): void {
@@ -17,4 +18,5 @@ export function registerCommands(program: Command): void {
   registerPlanCommand(program);
   registerStatusCommand(program);
   registerCompileCommand(program);
+  registerTestCommand(program);
 }

@@ -77,6 +77,9 @@ importers:
       '@agentform/diagnostics':
         specifier: workspace:*
         version: link:../../packages/diagnostics
+      '@agentform/evaluator':
+        specifier: workspace:*
+        version: link:../../packages/evaluator
       '@agentform/ir':
         specifier: workspace:*
         version: link:../../packages/ir
@@ -92,6 +95,9 @@ importers:
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@agentform/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
       '@agentform/schema':
         specifier: workspace:*
         version: link:../../packages/schema

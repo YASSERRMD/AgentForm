@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { comparePlan } from './compare.js';
 import { createPlanFile, serializePlanFile, verifyPlanFile } from './plan-file.js';
+import { baseIR } from './test-fixtures.js';
 import type { PlanItem } from './types.js';
 
 const SAMPLE_ITEMS: readonly PlanItem[] = [
@@ -69,5 +71,18 @@ describe('createPlanFile / verifyPlanFile round trip', () => {
     const a = createPlanFile(SAMPLE_ITEMS, '2026-01-01T00:00:00.000Z');
     const b = createPlanFile(SAMPLE_ITEMS, '2026-01-01T00:00:00.000Z');
     expect(a.contentHash).toBe(b.contentHash);
+  });
+
+  it('round-trips real comparePlan() output, including a workflow item, without losing data or failing tamper-evidence (regression: a workflow’s Map-typed nodes/edges silently serialized as {} before flattening, causing a false-positive tamper mismatch)', () => {
+    const items = comparePlan({ ir: baseIR(), currentResourceStates: [] });
+    const planFile = createPlanFile(items, '2026-01-01T00:00:00.000Z');
+
+    const result = verifyPlanFile(serializePlanFile(planFile));
+    expect(result.valid).toBe(true);
+
+    const workflowItem = result.planFile?.items.find((item) => item.kind === 'workflow');
+    expect(workflowItem).toBeDefined();
+    const after = workflowItem?.after as { nodes: Record<string, unknown> } | undefined;
+    expect(after?.nodes).toEqual({ assistant: { type: 'agent', agent: 'assistant' } });
   });
 });

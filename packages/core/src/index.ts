@@ -1,5 +1,6 @@
 export { resolvePathWithinRoot, resolvePathRelativeToFile, UnsafePathError } from './safe-path.js';
 export { parseDurationMs } from './duration.js';
+export { flattenMaps } from './flatten-maps.js';
 export {
   reachableNodes,
   sinkNodes,

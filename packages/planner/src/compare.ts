@@ -1,4 +1,4 @@
-import type { DirectedGraph } from '@agentform/core';
+import { flattenMaps, type DirectedGraph } from '@agentform/core';
 import type { AgentformIR } from '@agentform/ir';
 import type { ResourceKind, ResourceState } from '@agentform/state';
 import { collectDesiredResources, type DesiredResource } from './desired-resources.js';
@@ -92,7 +92,25 @@ export function comparePlan(options: ComparePlanOptions): readonly PlanItem[] {
     };
 
     const risk = classifyRisk(withoutRisk, options.ir);
-    return { ...withoutRisk, risk, requiresApproval: risk === 'CRITICAL' };
+    return {
+      ...withoutRisk,
+      // Flattened only now, *after* `classifyRisk` has used the raw value
+      // (a workflow's `.nodes` is a real `Map`, which `classifyRisk`
+      // iterates directly) — every public `PlanItem` this function returns
+      // must be `JSON.stringify`-safe without data loss, since `agentform
+      // plan --json` serializes `after` directly and `createPlanFile`
+      // stores it into a `.afplan` file. Leaving a `Map` in `after` doesn't
+      // break exact `JSON.stringify(item.after)` output, but it does mean
+      // `JSON.stringify` silently drops it to `{}` — this is a real bug
+      // that was invisible until an `.afplan` was actually written and
+      // read back (`verifyPlanFile` sees `after` values that no longer
+      // match what `contentHash` was computed over inside `createPlanFile`,
+      // since that hash canonicalizes Maps correctly while a later plain
+      // `JSON.stringify` does not).
+      after: flattenMaps(withoutRisk.after),
+      risk,
+      requiresApproval: risk === 'CRITICAL',
+    };
   });
 
   const graph = buildDependencyGraph(desiredResources, options.currentResourceStates);

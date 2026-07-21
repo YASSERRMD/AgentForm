@@ -18,6 +18,15 @@
       "dependsOn": ["build"],
       "outputs": []
     },
+    "docs:build": {
+      "dependsOn": [],
+      "outputs": ["dist/**"]
+    },
+    "benchmark": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
+    },
     "clean": {
       "cache": false
     }

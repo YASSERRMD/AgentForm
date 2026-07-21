@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSyntacticallyValidPython } from './test-syntax-check.js';
+import { isSyntacticallyValidPython } from './test-syntax-check-python.js';
 
 describe('isSyntacticallyValidPython', () => {
   it('accepts valid Python source', () => {

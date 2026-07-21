@@ -219,6 +219,28 @@ describe('agentform rollback', () => {
     expect(result.stderr).toContain('does-not-exist');
   });
 
+  it('recovers cleanly from a real execution failure (an unreadable snapshot): no history entry is added, resources are untouched, and the lock is released', async () => {
+    fixture = createFixtureProject(project('v1'));
+    expect(runCli(['apply', '--auto-approve'], fixture.dir).exitCode).toBe(0);
+    const historyBefore = await readHistory(fixture.dir);
+
+    const result = runCli(
+      ['rollback', '--snapshot', 'state-backup-does-not-exist.db', '--auto-approve'],
+      fixture.dir,
+    );
+    expect(result.exitCode).toBe(15);
+    expect(result.stderr).toContain('Cannot read backup');
+
+    const status = runCli(['status'], fixture.dir);
+    expect(status.stdout).toContain('Resources:     3 tracked');
+    const historyAfter = await readHistory(fixture.dir);
+    expect(historyAfter).toEqual(historyBefore);
+
+    // the lock was released despite the failure — the next command isn't blocked
+    const nextRollback = runCli(['rollback', '--auto-approve'], fixture.dir);
+    expect(nextRollback.exitCode).toBe(0);
+  });
+
   it('rolls back to a specific snapshot with --snapshot', async () => {
     fixture = createFixtureProject(project('v1'));
     expect(runCli(['apply', '--auto-approve'], fixture.dir).exitCode).toBe(0);

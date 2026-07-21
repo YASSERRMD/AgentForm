@@ -1,6 +1,5 @@
-import { generatedFileHeader, toIdentifier } from '@agentform/compiler';
+import { generatedFileHeader, pythonStringLiteral, toIdentifier } from '@agentform/compiler';
 import { resourceAddress, type IRAgent } from '@agentform/ir';
-import { pythonStringLiteral } from './python-repr.js';
 
 /** `{file: ...}` instruction references are always pre-resolved to `{text: ...}` by IR time (see `@agentform/adapter-openai`'s equivalent helper). */
 function instructionsText(agent: IRAgent): string {

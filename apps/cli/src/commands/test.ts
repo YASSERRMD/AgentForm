@@ -19,6 +19,7 @@ import { formatJUnitXml } from '../lib/junit-output.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { loadPolicyConfig } from '../lib/policy-config.js';
 import { policyResultsToDiagnostics } from '../lib/policy-output.js';
+import { redactSecretsFromReport } from '../lib/report-redaction.js';
 import { stateDirFor } from '../lib/state.js';
 import { formatTestResultsForHumans } from '../lib/test-output.js';
 import { getGlobalOptions } from '../program.js';
@@ -130,29 +131,30 @@ export function registerTestCommand(program: Command): void {
       writeFileSync(resultsPath, serializeTestResultsRecord(resultsRecord), 'utf-8');
 
       if (options.junit) {
-        writeFileSync(options.junit, formatJUnitXml(results), 'utf-8');
+        writeFileSync(options.junit, redactSecretsFromReport(formatJUnitXml(results)), 'utf-8');
       }
 
       if (globalOptions.json) {
-        process.stdout.write(
-          `${JSON.stringify(
-            {
-              success,
-              results,
-              thresholds: thresholdResults,
-              policyDiagnostics: policyDiagnostics.map(diagnosticToJson),
-            },
-            null,
-            2,
-          )}\n`,
+        const json = JSON.stringify(
+          {
+            success,
+            results,
+            thresholds: thresholdResults,
+            policyDiagnostics: policyDiagnostics.map(diagnosticToJson),
+          },
+          null,
+          2,
         );
+        process.stdout.write(`${redactSecretsFromReport(json)}\n`);
       } else if (!globalOptions.quiet) {
         if (policyDiagnostics.length > 0) {
           process.stdout.write(
             `${formatDiagnosticsForHumans(policyDiagnostics, { color: globalOptions.color })}\n`,
           );
         }
-        process.stdout.write(formatTestResultsForHumans(results, thresholdResults));
+        process.stdout.write(
+          redactSecretsFromReport(formatTestResultsForHumans(results, thresholdResults)),
+        );
         if (options.junit) {
           process.stdout.write(`Wrote JUnit report to ${options.junit}\n`);
         }

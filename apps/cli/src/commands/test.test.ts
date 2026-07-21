@@ -234,3 +234,53 @@ describe('agentform test', () => {
     expect(result.stdout).toContain('--junit');
   });
 });
+
+const SECRET = 'sk-abcdefghijklmnopqrstuvwx';
+
+function projectWithSecretInMockedToolCall(): Record<string, string> {
+  return projectWithDataset(
+    'tests/basic.jsonl',
+    JSON.stringify({
+      name: 'echoes a mocked tool call argument in a failing assertion',
+      workflow: 'main',
+      nodes: {
+        intake: { toolCalls: [{ tool: 'search', args: { apiKey: SECRET } }] },
+      },
+      assertions: [
+        {
+          type: 'toolArgumentMatch',
+          tool: 'search',
+          argument: 'apiKey',
+          equals: 'not-the-real-value',
+        },
+      ],
+    }),
+  );
+}
+
+describe('agentform test — secret redaction', () => {
+  it('never prints a secret-shaped value from a mocked tool call in console output', () => {
+    project = createFixtureProject(projectWithSecretInMockedToolCall());
+    const result = runCli(['test'], project.dir);
+    expect(result.exitCode).toBe(9);
+    expect(result.stdout).toContain('toolArgumentMatch');
+    expect(result.stdout).not.toContain(SECRET);
+  });
+
+  it('never prints a secret-shaped value in --json output', () => {
+    project = createFixtureProject(projectWithSecretInMockedToolCall());
+    const result = runCli(['test', '--json'], project.dir);
+    expect(result.stdout).not.toContain(SECRET);
+    const parsed = JSON.parse(result.stdout) as { success: boolean };
+    expect(parsed.success).toBe(false);
+  });
+
+  it('never writes a secret-shaped value into the --junit report', () => {
+    project = createFixtureProject(projectWithSecretInMockedToolCall());
+    const junitPath = path.join(project.dir, 'results.xml');
+    runCli(['test', '--junit', junitPath], project.dir);
+    const xml = readFileSync(junitPath, 'utf-8');
+    expect(xml).not.toContain(SECRET);
+    expect(xml).toContain('toolArgumentMatch');
+  });
+});

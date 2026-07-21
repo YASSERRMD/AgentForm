@@ -63,7 +63,7 @@ The hash covers `application` metadata and every resource collection; it deliber
 
 - **`write-tool-without-permission` (`AGF3011`) is not the same thing as Phase 6's policy `AF003 write-tools-require-explicit-permission`.** This check only asks "does the tool declare a `permissions` list at all" — a structural completeness gate. The organizational policy engine (`@agentform/policy`, Phase 6) enforces the richer, configurable version of the same idea (who specifically is allowed, under what conditions).
 - **Output value references use an inferred convention, not a defined expression language.** The build spec doesn't define a syntax for `outputs.<name>.value`; `validateOutputReferences` recognizes the `<collection>.<identifier>...` pattern used in the product's own examples and validates against it when present, but doesn't invent stricter rules the spec doesn't ask for.
-- **The IR does not yet know about adapters.** `adapterRequirements` is always `[]` — no framework adapter exists until Phase 8, so there's nothing yet to require.
+- **The IR does not yet know about adapters.** `adapterRequirements` is always `[]` — `buildIR` runs before any target adapter is selected, so there's no adapter-specific requirement for it to populate yet, regardless of how many adapters exist (six, as of Phase 9).
 
 See `docs/adr/0005-ir-and-semantic-validation.md` for the reasoning behind these boundaries and the `@agentform/core` vs `@agentform/ir` split.
 

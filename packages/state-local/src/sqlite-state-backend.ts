@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type {
@@ -10,6 +11,7 @@ import type {
   MigrationResult,
   ResourceState,
   StateBackend,
+  StateSnapshot,
 } from '@agentform/state';
 import { acquireLock, releaseLock } from './lock.js';
 import { createBackup, listBackups, restoreBackup } from './backup.js';
@@ -319,5 +321,29 @@ export class SqliteStateBackend implements StateBackend {
     this.db = openDatabase(this.databasePath);
     runMigrations(this.db);
     recoverInterruptedOperations(this.db);
+  }
+
+  async readBackupSnapshot(backupId: string): Promise<StateSnapshot> {
+    const backupPath = path.join(this.backupsDir, backupId);
+    if (!existsSync(backupPath)) {
+      throw new Error(`Backup "${backupId}" does not exist in ${this.backupsDir}`);
+    }
+    // A read-only pass over the backup file itself — this never touches
+    // `this.db` (the live database), the same isolation `restoreBackup`'s
+    // own doc comment on `StateBackend` promises `agentform rollback`.
+    const db = openDatabase(backupPath);
+    try {
+      const appRow = db.prepare('SELECT * FROM application_state WHERE id = 1').get() as unknown as
+        ApplicationStateRow | undefined;
+      const resourceRows = db
+        .prepare('SELECT * FROM resource_states ORDER BY address')
+        .all() as unknown as ResourceStateRow[];
+      return {
+        applicationState: appRow ? rowToApplicationState(appRow) : undefined,
+        resourceStates: resourceRows.map(rowToResourceState),
+      };
+    } finally {
+      db.close();
+    }
   }
 }

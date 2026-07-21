@@ -279,6 +279,69 @@ describe('SqliteStateBackend', () => {
     await backend.close();
   });
 
+  it('readBackupSnapshot reads a backup’s content without touching the live database', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await backend.putApplicationState({
+      applicationName: 'before-backup',
+      environment: 'dev',
+      specificationHash: 'h1',
+      irHash: 'h1',
+      schemaVersion: '1',
+      adapterVersions: {},
+      deploymentIdentifiers: {},
+      driftStatus: 'unknown',
+    });
+    await backend.putResourceState({
+      address: 'agent.intake',
+      kind: 'agent',
+      contentHash: 'h',
+      identityHash: 'h',
+      dependsOn: [],
+      lastAppliedAt: '2026-01-01T00:00:00.000Z',
+    });
+    const backupId = await backend.createBackup();
+
+    // mutate the live database after the backup
+    await backend.putApplicationState({
+      applicationName: 'after-backup',
+      environment: 'dev',
+      specificationHash: 'h2',
+      irHash: 'h2',
+      schemaVersion: '1',
+      adapterVersions: {},
+      deploymentIdentifiers: {},
+      driftStatus: 'unknown',
+    });
+    await backend.deleteResourceState('agent.intake');
+
+    const snapshot = await backend.readBackupSnapshot(backupId);
+    expect(snapshot.applicationState?.applicationName).toBe('before-backup');
+    expect(snapshot.resourceStates.map((r) => r.address)).toEqual(['agent.intake']);
+
+    // the live database is unaffected by reading the snapshot
+    expect((await backend.getApplicationState())?.applicationName).toBe('after-backup');
+    expect(await backend.listResourceStates()).toEqual([]);
+    await backend.close();
+  });
+
+  it('readBackupSnapshot reports no applicationState when the backup predates any apply', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    const backupId = await backend.createBackup();
+    const snapshot = await backend.readBackupSnapshot(backupId);
+    expect(snapshot.applicationState).toBeUndefined();
+    expect(snapshot.resourceStates).toEqual([]);
+    await backend.close();
+  });
+
+  it('readBackupSnapshot throws for an unknown backup id', async () => {
+    const backend = new SqliteStateBackend({ stateDir });
+    await backend.open();
+    await expect(backend.readBackupSnapshot('does-not-exist.db')).rejects.toThrow(/does not exist/);
+    await backend.close();
+  });
+
   it('recordDriftStatus updates only the drift fields, leaving the rest of the application state untouched', async () => {
     const backend = new SqliteStateBackend({ stateDir });
     await backend.open();

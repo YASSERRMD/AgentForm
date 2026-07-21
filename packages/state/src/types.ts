@@ -78,6 +78,12 @@ export interface BackupInfo {
   readonly sizeBytes: number;
 }
 
+/** The `application_state`/`resource_states` content of one backup, as read by `StateBackend.readBackupSnapshot` — everything `agentform rollback` needs to compute what changed, without ever touching apply history. */
+export interface StateSnapshot {
+  readonly applicationState?: ApplicationState;
+  readonly resourceStates: readonly ResourceState[];
+}
+
 export interface LockInfo {
   /** `pid@hostname`, or another backend-specific holder identity. */
   readonly holder: string;

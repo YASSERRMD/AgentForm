@@ -5,6 +5,7 @@ import type {
   BackupInfo,
   DriftStatus,
   ResourceState,
+  StateSnapshot,
 } from './types.js';
 
 export interface LockOptions {
@@ -67,6 +68,20 @@ export interface StateBackend {
   createBackup(): Promise<string>;
   /** Lists every backup this state directory has, newest first. */
   listBackups(): Promise<readonly BackupInfo[]>;
-  /** Restores the database to exactly the snapshot `backupId` names, discarding everything written since. Throws if `backupId` doesn't exist. The backend remains open and usable immediately afterward — callers do not need to reopen it. */
+  /**
+   * Restores the database to exactly the snapshot `backupId` names,
+   * discarding everything written since — **including apply history**,
+   * since this replaces the entire database file. This is a disaster-
+   * recovery primitive ("state.db is corrupted or unusable, restore the
+   * last known-good snapshot wholesale"), not what `agentform rollback`
+   * uses — rollback must never erase audit history (§15.13 acceptance
+   * criterion), so it reads a snapshot's resource/application state via
+   * `readBackupSnapshot` and applies just that, appending a new history
+   * record rather than replacing the file. Throws if `backupId` doesn't
+   * exist. The backend remains open and usable immediately afterward —
+   * callers do not need to reopen it.
+   */
   restoreBackup(backupId: string): Promise<void>;
+  /** Reads a backup's `application_state`/`resource_states` content without touching the live database at all — the read side `agentform rollback` uses to compute what to restore, leaving the live apply-history table (and everything else) untouched. Throws if `backupId` doesn't exist. */
+  readBackupSnapshot(backupId: string): Promise<StateSnapshot>;
 }

@@ -6,6 +6,7 @@ export type {
   ApplyHistoryEntry,
   DriftStatus,
   BackupInfo,
+  StateSnapshot,
   LockInfo,
 } from './types.js';
 export { StateLockError, StateMigrationError } from './errors.js';

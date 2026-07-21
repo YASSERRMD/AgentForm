@@ -56,6 +56,11 @@ function makeResource(
   return {
     address: resourceAddress(kind, id),
     kind,
+    // Deliberately the raw IR value, Map(s) and all — a workflow's `.nodes`
+    // is a real `ReadonlyMap`, and `classifyRisk` (`risk.ts`) needs to
+    // iterate it directly. `compare.ts` flattens `PlanItem.after` for
+    // public consumption *after* risk classification has already used the
+    // raw value — see its own comment for why.
     value,
     contentHash: computeContentHash(value),
     identityHash: computeContentHash(identityFingerprint(kind, value)),

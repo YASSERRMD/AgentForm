@@ -1,16 +1,20 @@
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import type {
   ApplicationState,
   ApplyHistoryEntry,
   ApplyOperationStatus,
+  BackupInfo,
+  DriftStatus,
   LockOptions,
   MigrationResult,
   ResourceState,
   StateBackend,
+  StateSnapshot,
 } from '@agentform/state';
 import { acquireLock, releaseLock } from './lock.js';
-import { createBackup } from './backup.js';
+import { createBackup, listBackups, restoreBackup } from './backup.js';
 import { openDatabase } from './database.js';
 import { currentSchemaVersion, runMigrations } from './migrations.js';
 import { recoverInterruptedOperations } from './recovery.js';
@@ -44,6 +48,8 @@ interface ApplicationStateRow {
   adapter_versions: string;
   deployment_identifiers: string;
   last_applied_at: string | null;
+  drift_status: string;
+  drift_checked_at: string | null;
 }
 
 interface ResourceStateRow {
@@ -75,6 +81,8 @@ function rowToApplicationState(row: ApplicationStateRow): ApplicationState {
     adapterVersions: fromJsonColumn(row.adapter_versions, {}),
     deploymentIdentifiers: fromJsonColumn(row.deployment_identifiers, {}),
     lastAppliedAt: row.last_applied_at ?? undefined,
+    driftStatus: row.drift_status as DriftStatus,
+    driftCheckedAt: row.drift_checked_at ?? undefined,
   };
 }
 
@@ -164,6 +172,18 @@ export class SqliteStateBackend implements StateBackend {
     }
   }
 
+  async withTransaction<T>(fn: () => Promise<T> | T): Promise<T> {
+    this.database.exec('BEGIN');
+    try {
+      const result = await fn();
+      this.database.exec('COMMIT');
+      return result;
+    } catch (error) {
+      this.database.exec('ROLLBACK');
+      throw error;
+    }
+  }
+
   async getApplicationState(): Promise<ApplicationState | undefined> {
     const row = this.database
       .prepare('SELECT * FROM application_state WHERE id = 1')
@@ -175,8 +195,8 @@ export class SqliteStateBackend implements StateBackend {
     this.database
       .prepare(
         `INSERT INTO application_state
-           (id, application_name, environment, specification_hash, ir_hash, schema_version, adapter_versions, deployment_identifiers, last_applied_at)
-         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
+           (id, application_name, environment, specification_hash, ir_hash, schema_version, adapter_versions, deployment_identifiers, last_applied_at, drift_status, drift_checked_at)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            application_name = excluded.application_name,
            environment = excluded.environment,
@@ -185,7 +205,9 @@ export class SqliteStateBackend implements StateBackend {
            schema_version = excluded.schema_version,
            adapter_versions = excluded.adapter_versions,
            deployment_identifiers = excluded.deployment_identifiers,
-           last_applied_at = excluded.last_applied_at`,
+           last_applied_at = excluded.last_applied_at,
+           drift_status = excluded.drift_status,
+           drift_checked_at = excluded.drift_checked_at`,
       )
       .run(
         state.applicationName,
@@ -196,7 +218,20 @@ export class SqliteStateBackend implements StateBackend {
         toJsonColumn(state.adapterVersions),
         toJsonColumn(state.deploymentIdentifiers),
         state.lastAppliedAt ?? null,
+        state.driftStatus,
+        state.driftCheckedAt ?? null,
       );
+  }
+
+  async recordDriftStatus(status: DriftStatus, checkedAt: string): Promise<void> {
+    const result = this.database
+      .prepare('UPDATE application_state SET drift_status = ?, drift_checked_at = ? WHERE id = 1')
+      .run(status, checkedAt);
+    if (Number(result.changes) === 0) {
+      throw new Error(
+        'Cannot record drift status: no application state exists yet (nothing has been applied)',
+      );
+    }
   }
 
   async listResourceStates(): Promise<readonly ResourceState[]> {
@@ -273,5 +308,42 @@ export class SqliteStateBackend implements StateBackend {
 
   async createBackup(): Promise<string> {
     return createBackup(this.database, this.databasePath, this.backupsDir);
+  }
+
+  async listBackups(): Promise<readonly BackupInfo[]> {
+    return listBackups(this.backupsDir);
+  }
+
+  async restoreBackup(backupId: string): Promise<void> {
+    this.db?.close();
+    this.db = undefined;
+    restoreBackup(this.databasePath, this.backupsDir, backupId);
+    this.db = openDatabase(this.databasePath);
+    runMigrations(this.db);
+    recoverInterruptedOperations(this.db);
+  }
+
+  async readBackupSnapshot(backupId: string): Promise<StateSnapshot> {
+    const backupPath = path.join(this.backupsDir, backupId);
+    if (!existsSync(backupPath)) {
+      throw new Error(`Backup "${backupId}" does not exist in ${this.backupsDir}`);
+    }
+    // A read-only pass over the backup file itself — this never touches
+    // `this.db` (the live database), the same isolation `restoreBackup`'s
+    // own doc comment on `StateBackend` promises `agentform rollback`.
+    const db = openDatabase(backupPath);
+    try {
+      const appRow = db.prepare('SELECT * FROM application_state WHERE id = 1').get() as unknown as
+        ApplicationStateRow | undefined;
+      const resourceRows = db
+        .prepare('SELECT * FROM resource_states ORDER BY address')
+        .all() as unknown as ResourceStateRow[];
+      return {
+        applicationState: appRow ? rowToApplicationState(appRow) : undefined,
+        resourceStates: resourceRows.map(rowToResourceState),
+      };
+    } finally {
+      db.close();
+    }
   }
 }

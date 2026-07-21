@@ -10,6 +10,7 @@ export type {
   GenerationContext,
   ImportContext,
   ImportCandidate,
+  ImportInspection,
   DeploymentContext,
   DeploymentResult,
   AdapterDeploymentState,

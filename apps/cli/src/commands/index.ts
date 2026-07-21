@@ -1,10 +1,15 @@
 import type { Command } from 'commander';
+import { registerApplyCommand } from './apply.js';
 import { registerCompileCommand } from './compile.js';
+import { registerDestroyCommand } from './destroy.js';
+import { registerDriftCommand } from './drift.js';
 import { registerFormatCommand } from './format.js';
 import { registerGraphCommand } from './graph.js';
+import { registerImportCommand } from './import.js';
 import { registerInitCommand } from './init.js';
 import { registerInspectCommand } from './inspect.js';
 import { registerPlanCommand } from './plan.js';
+import { registerRollbackCommand } from './rollback.js';
 import { registerStatusCommand } from './status.js';
 import { registerTestCommand } from './test.js';
 import { registerValidateCommand } from './validate.js';
@@ -19,4 +24,9 @@ export function registerCommands(program: Command): void {
   registerStatusCommand(program);
   registerCompileCommand(program);
   registerTestCommand(program);
+  registerApplyCommand(program);
+  registerDriftCommand(program);
+  registerRollbackCommand(program);
+  registerDestroyCommand(program);
+  registerImportCommand(program);
 }

@@ -57,10 +57,10 @@ describe('agentform status', () => {
     expect(result.stdout).toContain('Resources:     0 tracked');
   });
 
-  it('honestly reports drift as not yet implemented', () => {
+  it('reports drift as unknown before anything has been applied', () => {
     project = createFixtureProject(VALID_PROJECT);
     const result = runCli(['status'], project.dir);
-    expect(result.stdout).toContain('Drift:         unknown');
+    expect(result.stdout).toContain('Drift:         unknown (nothing has been applied yet)');
   });
 
   it('reports evaluation as not applicable when no datasets or thresholds are declared', () => {
@@ -184,5 +184,22 @@ describe('agentform status — evaluation gate reporting', () => {
     const result = runCli(['status', '--json'], project.dir);
     const parsed = JSON.parse(result.stdout) as { status: { evaluationStatus: string } };
     expect(parsed.status.evaluationStatus).toContain('never run');
+  });
+});
+
+describe('agentform status — drift reporting', () => {
+  it('reports never checked immediately after an apply, before agentform drift has ever run', () => {
+    project = createFixtureProject(VALID_PROJECT);
+    expect(runCli(['apply', '--auto-approve'], project.dir).exitCode).toBe(0);
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Drift:         never checked (run "agentform drift")');
+  });
+
+  it('reports in sync after agentform drift finds no drift', () => {
+    project = createFixtureProject(VALID_PROJECT);
+    expect(runCli(['apply', '--auto-approve'], project.dir).exitCode).toBe(0);
+    expect(runCli(['drift'], project.dir).exitCode).toBe(0);
+    const result = runCli(['status'], project.dir);
+    expect(result.stdout).toContain('Drift:         in sync (checked at');
   });
 });

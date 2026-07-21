@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@agentform/compiler": "workspace:*",
+    "@agentform/core": "workspace:*",
     "@agentform/ir": "workspace:*",
     "@agentform/plugin-sdk": "workspace:*"
   },

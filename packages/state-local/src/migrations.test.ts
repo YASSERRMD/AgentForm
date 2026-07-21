@@ -61,4 +61,17 @@ describe('runMigrations', () => {
     expect(currentSchemaVersion(second)).toBe(MIGRATIONS[MIGRATIONS.length - 1]?.version);
     second.close();
   });
+
+  it("migration 2 adds drift_status (defaulting to 'unknown') and drift_checked_at to application_state", () => {
+    const db = openDatabase(path.join(dir, 'state.db'));
+    runMigrations(db);
+    db.prepare(
+      "INSERT INTO application_state (id, application_name, environment, specification_hash, ir_hash, schema_version, adapter_versions, deployment_identifiers) VALUES (1, 'app', 'dev', 'spec', 'ir', '1', '{}', '{}')",
+    ).run();
+    const row = db
+      .prepare('SELECT drift_status, drift_checked_at FROM application_state WHERE id = 1')
+      .get();
+    expect(row).toEqual({ drift_status: 'unknown', drift_checked_at: null });
+    db.close();
+  });
 });

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`@agentform/planner` compares a desired `AgentformIR` against stored `ResourceState`s (`@agentform/state`), producing an ordered list of `PlanItem`s — what would be created, updated, replaced, or destroyed, with a risk classification for each. `agentform plan` (`docs/cli-reference.md`) is the current consumer.
+`@agentform/planner` compares a desired `AgentformIR` against stored `ResourceState`s (`@agentform/state`), producing an ordered list of `PlanItem`s — what would be created, updated, replaced, or destroyed, with a risk classification for each. `agentform plan`/`agentform apply` are the current consumers of `comparePlan`; `agentform destroy` (Phase 11) uses the separate `planDestroy` (see below).
 
 ## Minimal example
 
@@ -36,9 +36,13 @@ writeFileSync('plan.afplan', serializePlanFile(planFile));
 | Both present, `contentHash` differs, `identityHash` the same | `UPDATE`  |
 | Both present, `identityHash` differs                         | `REPLACE` |
 
-`IMPORT`/`READ` are part of `PlanOperation`'s type (matching §9) but never produced by `comparePlan` — they belong to the future `agentform import` command (Phase 11).
+`IMPORT`/`READ` are part of `PlanOperation`'s type (matching §9) but never produced by `comparePlan`, and remain unused as of Phase 11: `agentform import` (§15.12) recognizes a raw external project and produces a candidate _specification file_, never a `PlanItem` — it has no tracked state to compare against at all (`docs/cli-reference.md`'s `agentform import` section).
 
 Items are ordered by `orderPlanItems`: non-delete items in forward dependency order (a dependency before whatever depends on it), delete items in reverse (a dependent before whatever it depends on), batched rather than deeply interleaved — see ADR-0008 for why batching is the right level of complexity here.
+
+## Destroy plans
+
+`planDestroy(currentResourceStates)` (Phase 11, ADR-0013) is a separate, simpler sibling to `comparePlan` for `agentform destroy`: every currently-tracked resource becomes a `DELETE` item, independent of what — if anything — the current specification declares. It reimplements `classifyRisk`'s `DELETE` rule directly (workflow → `CRITICAL`, else `HIGH`) rather than calling it, since `classifyRisk` requires a full `AgentformIR` a destroy plan has no other reason to load, and reuses `orderPlanItems` for the same reverse-dependency-order guarantee `comparePlan`'s own `DELETE` group gets.
 
 ## Risk classification
 
@@ -51,7 +55,9 @@ Items are ordered by `orderPlanItems`: non-delete items in forward dependency or
 
 ## Plan files
 
-`.afplan` files are tamper-evident JSON: `createPlanFile(items, createdAt)` builds a `PlanFile` with a `contentHash` over `formatVersion`/`createdAt`/`items`, computed with the same canonicalization `@agentform/ir`'s `computeContentHash` already uses. `verifyPlanFile(serialized)` re-parses and recomputes that hash, returning `{ valid: false, error }` (never throwing) for malformed JSON, a shape mismatch, or a hash that no longer matches — the tamper-evidence check. File I/O is deliberately not this package's job (mirrors `@agentform/policy`'s config schema staying fs-free) — `agentform plan --out`/a future `agentform apply plan.afplan` do the actual read/write.
+`.afplan` files are tamper-evident JSON: `createPlanFile(items, createdAt)` builds a `PlanFile` with a `contentHash` over `formatVersion`/`createdAt`/`items`, computed with the same canonicalization `@agentform/ir`'s `computeContentHash` already uses. `verifyPlanFile(serialized)` re-parses and recomputes that hash, returning `{ valid: false, error }` (never throwing) for malformed JSON, a shape mismatch, or a hash that no longer matches — the tamper-evidence check. File I/O is deliberately not this package's job (mirrors `@agentform/policy`'s config schema staying fs-free) — `agentform plan --out`/`agentform apply plan.afplan` do the actual read/write.
+
+**`PlanItem.after` is always plain-`JSON.stringify`-safe.** `comparePlan` flattens any `Map`-typed field (a workflow resource's `.nodes`) via `@agentform/core`'s `flattenMaps` — but only _after_ `classifyRisk` has already used the raw value (`hasUngatedDestructiveTool` needs to iterate a real `Map` directly). This ordering matters: a Phase 11 bug (found via `agentform apply` end-to-end testing, fixed alongside it) had a workflow resource's `after.nodes` silently becoming `{}` on every `.afplan` write, since `computeContentHash`'s canonicalizer correctly handles `Map`→object conversion internally while a later plain `JSON.stringify` call did not — the hash and the written file diverged the moment a workflow was involved, and `verifyPlanFile` reported every such plan as tampered even when it wasn't. `packages/planner/src/plan-file.test.ts` now proves a real `comparePlan()` round-trip through `createPlanFile`→`serializePlanFile`→`verifyPlanFile` preserves a workflow item's `after.nodes` with real content.
 
 ## Scope
 

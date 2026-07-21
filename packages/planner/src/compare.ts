@@ -1,4 +1,4 @@
-import type { DirectedGraph } from '@agentform/core';
+import { flattenMaps, type DirectedGraph } from '@agentform/core';
 import type { AgentformIR } from '@agentform/ir';
 import type { ResourceKind, ResourceState } from '@agentform/state';
 import { collectDesiredResources, type DesiredResource } from './desired-resources.js';
@@ -66,8 +66,12 @@ function reasonsFor(
  * Compares `options.ir`'s desired resources against `options.currentResourceStates`,
  * producing one `PlanItem` per resource on either side, dependency-ordered
  * (`order.ts`). `IMPORT`/`READ` are part of `PlanOperation`'s type but
- * never produced here — they belong to the future `agentform import`
- * command (Phase 11), not desired-vs-current comparison.
+ * never produced here, and never will be by this function: Phase 11's
+ * `agentform import` (§15.12) recognizes a raw external project and
+ * produces a candidate *specification file* for a human to review, never
+ * a `PlanItem` — it has no `ResourceState` to compare against (the whole
+ * point is that nothing has been tracked yet) and never touches state at
+ * all. `IMPORT`/`READ` remain unused by any command as of Phase 11.
  */
 export function comparePlan(options: ComparePlanOptions): readonly PlanItem[] {
   const desiredResources = collectDesiredResources(options.ir);
@@ -92,7 +96,25 @@ export function comparePlan(options: ComparePlanOptions): readonly PlanItem[] {
     };
 
     const risk = classifyRisk(withoutRisk, options.ir);
-    return { ...withoutRisk, risk, requiresApproval: risk === 'CRITICAL' };
+    return {
+      ...withoutRisk,
+      // Flattened only now, *after* `classifyRisk` has used the raw value
+      // (a workflow's `.nodes` is a real `Map`, which `classifyRisk`
+      // iterates directly) — every public `PlanItem` this function returns
+      // must be `JSON.stringify`-safe without data loss, since `agentform
+      // plan --json` serializes `after` directly and `createPlanFile`
+      // stores it into a `.afplan` file. Leaving a `Map` in `after` doesn't
+      // break exact `JSON.stringify(item.after)` output, but it does mean
+      // `JSON.stringify` silently drops it to `{}` — this is a real bug
+      // that was invisible until an `.afplan` was actually written and
+      // read back (`verifyPlanFile` sees `after` values that no longer
+      // match what `contentHash` was computed over inside `createPlanFile`,
+      // since that hash canonicalizes Maps correctly while a later plain
+      // `JSON.stringify` does not).
+      after: flattenMaps(withoutRisk.after),
+      risk,
+      requiresApproval: risk === 'CRITICAL',
+    };
   });
 
   const graph = buildDependencyGraph(desiredResources, options.currentResourceStates);

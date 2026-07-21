@@ -3,6 +3,7 @@ import type { Command } from 'commander';
 import { checkEvaluationGateStatus, parseTestResultsRecord } from '@agentform/evaluator';
 import type { AgentformIR } from '@agentform/ir';
 import { BUILTIN_POLICIES, evaluatePolicies, hasPolicyFailures } from '@agentform/policy';
+import type { ApplicationState } from '@agentform/state';
 import { testResultsPathFor } from './test.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
@@ -10,6 +11,27 @@ import { loadAndBuildIR } from '../lib/pipeline.js';
 import { loadPolicyConfig } from '../lib/policy-config.js';
 import { openStateBackend } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
+
+/**
+ * Reads back the drift status `agentform drift` last computed and cached
+ * on `ApplicationState` — never recomputed here, since a real drift check
+ * needs the full pipeline, state, and a policy run (the same cost as
+ * `agentform drift` itself), which would make a "quick overview" command
+ * as expensive as the command it's supposed to summarize.
+ */
+function describeDriftStatus(applicationState: ApplicationState | undefined): string {
+  if (!applicationState) {
+    return 'unknown (nothing has been applied yet)';
+  }
+  switch (applicationState.driftStatus) {
+    case 'unknown':
+      return 'never checked (run "agentform drift")';
+    case 'in_sync':
+      return `in sync (checked at ${applicationState.driftCheckedAt})`;
+    case 'drifted':
+      return `DRIFTED (checked at ${applicationState.driftCheckedAt}) — run "agentform drift" for details`;
+  }
+}
 
 function describeEvaluationStatus(ir: AgentformIR, rootDir: string): string {
   const evaluations = ir.evaluations;
@@ -104,7 +126,7 @@ export function registerStatusCommand(program: Command): void {
         resourceCount: resourceStates.length,
         adapterVersions: applicationState?.adapterVersions ?? {},
         stateBackend: backend.kind,
-        driftStatus: 'unknown (drift detection is not implemented until a later phase)',
+        driftStatus: describeDriftStatus(applicationState),
         evaluationStatus: describeEvaluationStatus(result.ir, globalOptions.cwd),
         policyStatus,
       };

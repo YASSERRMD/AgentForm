@@ -23,23 +23,44 @@ export interface GenerationContext {
   readonly sourceHash?: string;
 }
 
-/**
- * Forward-looking placeholder shapes for `FrameworkAdapter`'s optional
- * `inspectExisting`/`deploy`/`destroy` members — §12 declares these on the
- * interface, but nothing calls them until `agentform import`/`apply`/
- * `destroy` exist (Phase 11). Kept deliberately minimal rather than
- * fleshed out now: designing their real shape ahead of the phase that
- * actually implements deploy/destroy risks guessing wrong and having to
- * break it later.
- */
 export interface ImportContext {
   readonly rootDir: string;
 }
 
+/**
+ * One resource `agentform import` was able to reconstruct (fully or
+ * partially) from an existing project. `value` is always a best-effort
+ * fragment, never asserted to be schema-valid on its own — `agentform
+ * import`'s report and `manualActions` are what carry "here's what's
+ * still missing," not this type. `confidence` must never be fabricated
+ * as `1` for anything recovered by heuristic source scanning; only an
+ * adapter-agnostic recognizer reading Agentform's own generated-file
+ * headers (a format the adapter itself controls) can honestly claim
+ * that.
+ */
 export interface ImportCandidate {
   readonly resourceAddress: string;
   readonly kind: string;
+  readonly value: Readonly<Record<string, unknown>>;
+  /** `0` (pure guess) to `1` (exact). */
+  readonly confidence: number;
   readonly detail?: string;
+}
+
+/**
+ * What `FrameworkAdapter.inspectExisting` returns — §15.12's four
+ * required import outputs (candidate resources, unsupported constructs,
+ * manual follow-up actions), scoped to what one adapter recognized in
+ * its own framework's raw project shape. `recognized: false` means this
+ * adapter found no trace of its own framework at all — a normal,
+ * expected outcome (`agentform import` tries every adapter that
+ * implements this hook and moves on), not an error.
+ */
+export interface ImportInspection {
+  readonly recognized: boolean;
+  readonly candidates: readonly ImportCandidate[];
+  readonly unsupportedConstructs: readonly string[];
+  readonly manualActions: readonly string[];
 }
 
 export interface DeploymentContext {
@@ -64,11 +85,14 @@ export interface DestroyResult {
 }
 
 /**
- * The contract every framework adapter implements (§12). Only
- * `validateCompatibility`/`generate` are implemented by any adapter as of
- * Phase 8 — `inspectExisting`/`deploy`/`destroy` stay optional and
- * unimplemented until the phases that need them (§12's own interface
- * already marks them `?`).
+ * The contract every framework adapter implements (§12).
+ * `validateCompatibility`/`generate` are implemented by every adapter
+ * (Phase 8/9); `inspectExisting` (raw-project recognition for `agentform
+ * import`, Phase 11) is implemented only by `adapter-openai` and
+ * `adapter-langgraph` per §15.12's limited initial scope — `deploy`/
+ * `destroy` stay optional and unimplemented by every adapter until a
+ * later phase actually pushes to a live target (§12's interface already
+ * marks all three `?`).
  */
 export interface FrameworkAdapter {
   readonly manifest: AgentformPluginManifest;
@@ -77,7 +101,7 @@ export interface FrameworkAdapter {
 
   generate(ir: AgentformIR, context: GenerationContext): Promise<GeneratedProject>;
 
-  inspectExisting?(context: ImportContext): Promise<ImportCandidate>;
+  inspectExisting?(context: ImportContext): Promise<ImportInspection>;
 
   deploy?(project: GeneratedProject, context: DeploymentContext): Promise<DeploymentResult>;
 

@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@agentform/core": "workspace:*",
+    "@agentform/diagnostics": "workspace:*",
     "@agentform/ir": "workspace:*",
     "@agentform/parser": "workspace:*",
     "@agentform/runtime": "workspace:*",

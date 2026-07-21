@@ -250,6 +250,9 @@ importers:
       '@agentform/core':
         specifier: workspace:*
         version: link:../core
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
       '@agentform/ir':
         specifier: workspace:*
         version: link:../ir

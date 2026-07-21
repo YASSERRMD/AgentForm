@@ -1,0 +1,170 @@
+apiVersion: agentform.dev/v1alpha1
+kind: AgenticApplication
+
+metadata:
+  name: government-workflow
+  version: 1.0.0
+  description: Municipal code-enforcement complaint intake with mandatory supervisor sign-off before any citation is issued.
+  labels:
+    domain: government
+    data-classification: confidential
+
+spec:
+  runtime:
+    target: langgraph
+    environment: staging
+
+  models:
+    intakeModel:
+      provider: openai
+      model: gpt-5
+      temperature: 0
+      responseFormat:
+        schemaRef: schemas/classification.json
+      dataResidency: us
+      costMetadata:
+        inputPer1MTokensUsd: 2.50
+        outputPer1MTokensUsd: 10.00
+
+  tools:
+    parcelLookup:
+      type: mcp
+      server: gis-services
+      operation: parcel.lookup
+      sideEffect: read
+      timeout: 10s
+
+    complaintRegistry:
+      type: http
+      baseUrl: https://api.city.example.gov
+      operations:
+        search:
+          method: GET
+          path: /complaints
+        create:
+          method: POST
+          path: /complaints
+      sideEffect: write
+      permissions:
+        - complaints:write
+      networkDestination: api.city.example.gov
+      dataClassification: confidential
+      timeout: 15s
+
+    citationRegistry:
+      type: http
+      baseUrl: https://api.city.example.gov
+      operations:
+        create:
+          method: POST
+          path: /citations
+      sideEffect: destructive
+      permissions:
+        - citations:write
+      idempotencyStrategy: Citation requests carry a client-generated idempotency key; a replay with the same key returns the original citation instead of creating a second one.
+      networkDestination: api.city.example.gov
+      dataClassification: confidential
+      auditRequired: true
+      timeout: 15s
+
+  agents:
+    intake:
+      model: intakeModel
+      role: complaint-intake
+      description: Classifies incoming citizen complaints and recommends whether a code-enforcement citation is warranted.
+      instructions:
+        file: prompts/intake.md
+      tools:
+        - parcelLookup
+        - complaintRegistry
+      memory:
+        ref: intakeSession
+      limits:
+        maxSteps: 8
+        timeout: 30s
+        maxCostUsd: 0.15
+      retry:
+        maxAttempts: 2
+        backoff: exponential
+
+  memory:
+    intakeSession:
+      type: session
+      scope: session
+      retention: 24h
+      dataClassification: confidential
+      permissions:
+        - read
+        - write
+      eviction: ttl
+
+  workflows:
+    main:
+      entrypoint: intake
+      nodes:
+        intake:
+          type: agent
+          agent: intake
+
+        citationApproval:
+          type: humanApproval
+          approvers:
+            - code-enforcement-supervisor
+          timeout: 24h
+
+        issueCitation:
+          type: tool
+          tool: citationRegistry.create
+
+        logComplaint:
+          type: tool
+          tool: complaintRegistry.create
+
+        closed:
+          type: terminate
+          reason: complaint resolved
+
+        citationDenied:
+          type: terminate
+          reason: supervisor declined the citation
+
+      edges:
+        - from: intake
+          to: citationApproval
+          when: output.recommendation == "citation"
+        - from: intake
+          to: logComplaint
+          when: output.recommendation == "log-only"
+        - from: citationApproval
+          to: issueCitation
+          when: approval.status == "approved"
+        - from: citationApproval
+          to: citationDenied
+          when: approval.status == "rejected"
+        - from: issueCitation
+          to: closed
+        - from: logComplaint
+          to: closed
+
+  policies:
+    - human-approval-before-citation
+    - restrict-complaint-data-residency
+
+  evaluations:
+    datasets:
+      - tests/complaints.jsonl
+    thresholds:
+      taskSuccess: 0.9
+      policyViolations: 0
+      maximumAverageCostUsd: 0.12
+
+  observability:
+    tracing:
+      provider: opentelemetry
+    recordPrompts: false
+    recordToolCalls: true
+
+  outputs:
+    citationEndpoint:
+      value: tools.citationRegistry.baseUrl
+      description: Base URL of the citation-issuing system this workflow calls after supervisor approval.

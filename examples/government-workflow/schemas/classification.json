@@ -1,0 +1,15 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["category", "confidence", "recommendation", "locationId"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "enum": ["noise", "junk-vehicle", "illegal-dumping", "unpermitted-construction", "other"]
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "recommendation": { "type": "string", "enum": ["citation", "log-only"] },
+    "locationId": { "type": "string" },
+    "summary": { "type": "string" }
+  }
+}

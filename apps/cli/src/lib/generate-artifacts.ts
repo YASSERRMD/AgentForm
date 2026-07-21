@@ -9,7 +9,7 @@ import { openAiAdapter } from '@agentform/adapter-openai';
 import { compile as compileForTarget } from '@agentform/compiler';
 import type { Diagnostic } from '@agentform/diagnostics';
 import type { AgentformIR } from '@agentform/ir';
-import type { FrameworkAdapter, GeneratedManifest } from '@agentform/plugin-sdk';
+import type { FrameworkAdapter, GeneratedManifest, GeneratedProject } from '@agentform/plugin-sdk';
 
 /** Every framework `@agentform/schema`'s `runtime.target` enum allows — all six now have a registered adapter (Phase 9 completed the last four). Shared by `agentform compile` and `agentform apply`: both write the exact same generated-project shape to disk, `apply` just does it as one step of a larger flow. */
 export const ADAPTER_REGISTRY: Readonly<Record<string, FrameworkAdapter>> = {
@@ -27,6 +27,8 @@ export interface GenerateArtifactsResult {
   readonly filesWritten: number;
   readonly manifest?: GeneratedManifest;
   readonly diagnostics: readonly Diagnostic[];
+  /** The full generated project (same as `manifest`, just not narrowed to only the manifest) — `agentform apply`'s "deploy" step needs this to hand to `adapter.deploy?.()`; `compile`'s own output doesn't need it beyond what's already written to disk. */
+  readonly project?: GeneratedProject;
 }
 
 /** Compiles `ir` for `target` and writes the resulting project to `outputRoot/target/`, alongside a `manifest.json` (§22's exact shape — written once here, not by any adapter, since it's metadata about the generation rather than part of the generated application itself). `clean` removes that one target subdirectory first; nothing else is ever touched. */
@@ -66,5 +68,6 @@ export async function generateArtifacts(
     filesWritten: result.project.files.length,
     manifest: result.project.manifest,
     diagnostics: result.diagnostics,
+    project: result.project,
   };
 }

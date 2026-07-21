@@ -18,5 +18,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/core": "workspace:*",
+    "@agentform/ir": "workspace:*",
+    "@agentform/parser": "workspace:*",
+    "@agentform/runtime": "workspace:*",
+    "ajv": "^8.20.0",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
   }
 }

@@ -27,6 +27,16 @@ export type ExitCode = (typeof EXIT_CODES)[keyof typeof EXIT_CODES];
  * policy ID like `AF003`, or `AGF4xxx` for a rejected policy override) —
  * since that's the stage whose fix actually unblocks the rest. Returns
  * `SUCCESS` if there are no error diagnostics at all.
+ *
+ * `AGF6xxx` (evaluator) and `AGF7xxx` (registry, Phase 12) have no
+ * dedicated branch and fall through to `SEMANTIC_VALIDATION_FAILURE`
+ * deliberately, not by omission — §14's exit-code table is closed at 15
+ * (`ROLLBACK_FAILURE`) with no code reserved for either, the same
+ * "the spec's table is a closed contract" reasoning ADR-0013 applies to
+ * destroy failures reusing `APPLY_FAILURE`. A module or evaluation-gate
+ * resolution failure is, at the level this function cares about, still
+ * "the specification did not fully resolve" — the same bucket a semantic
+ * validation failure belongs to.
  */
 export function exitCodeForDiagnostics(
   diagnostics: readonly { code: string; severity: string }[],

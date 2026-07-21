@@ -107,6 +107,19 @@ describe('agentform compile', () => {
     expect(existsSync(path.join(outputDir, 'openai'))).toBe(false);
   });
 
+  it.each([
+    ['microsoft', ['Agents', 'AssistantAgent.cs']],
+    ['google-adk', ['src', 'agents', 'assistant.py']],
+    ['autogen', ['src', 'agents', 'assistant.py']],
+    ['crewai', ['src', 'agents', 'assistant.py']],
+  ] as const)('compiles to the Phase 9 --target %s', (target, expectedFile) => {
+    project = createFixtureProject({ 'agentform.yaml': basicProject('openai') });
+    const outputDir = path.join(project.dir, 'generated');
+    const result = runCli(['compile', '--target', target, '--output', outputDir], project.dir);
+    expect(result.exitCode).toBe(0);
+    expect(existsSync(path.join(outputDir, target, ...expectedFile))).toBe(true);
+  });
+
   it('writes a manifest.json alongside the generated project, with generatedAt: null', () => {
     project = createFixtureProject({ 'agentform.yaml': basicProject('openai') });
     const outputDir = path.join(project.dir, 'generated');
@@ -121,16 +134,14 @@ describe('agentform compile', () => {
     expect(manifest.irHash).toMatch(/^sha256:/);
   });
 
-  it('compiles for every currently-supported target with --all, and reports skipped targets', () => {
+  it('compiles for all six framework targets with --all', () => {
     project = createFixtureProject({ 'agentform.yaml': basicProject('openai') });
     const outputDir = path.join(project.dir, 'generated');
     const result = runCli(['compile', '--all', '--output', outputDir], project.dir);
     expect(result.exitCode).toBe(0);
-    expect(existsSync(path.join(outputDir, 'openai', 'manifest.json'))).toBe(true);
-    expect(existsSync(path.join(outputDir, 'langgraph', 'manifest.json'))).toBe(true);
-    expect(result.stdout).toContain(
-      'Skipped (not yet supported): microsoft, google-adk, autogen, crewai',
-    );
+    for (const target of ['openai', 'langgraph', 'microsoft', 'google-adk', 'autogen', 'crewai']) {
+      expect(existsSync(path.join(outputDir, target, 'manifest.json'))).toBe(true);
+    }
   });
 
   it('rejects using --target and --all together with INVALID_USAGE (2)', () => {
@@ -143,13 +154,6 @@ describe('agentform compile', () => {
     project = createFixtureProject({ 'agentform.yaml': basicProject('openai') });
     const result = runCli(['compile', '--target', 'not-a-real-framework'], project.dir);
     expect(result.exitCode).toBe(2);
-  });
-
-  it('rejects a schema-valid but not-yet-implemented target with INVALID_USAGE (2)', () => {
-    project = createFixtureProject({ 'agentform.yaml': basicProject('openai') });
-    const result = runCli(['compile', '--target', 'microsoft'], project.dir);
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain('not yet supported');
   });
 
   it('fails with UNSUPPORTED_TARGET_FEATURE (13) when the project uses a node type the target cannot generate', () => {

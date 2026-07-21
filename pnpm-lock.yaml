@@ -50,9 +50,21 @@ importers:
 
   apps/cli:
     dependencies:
+      '@agentform/adapter-autogen':
+        specifier: workspace:*
+        version: link:../../packages/adapter-autogen
+      '@agentform/adapter-crewai':
+        specifier: workspace:*
+        version: link:../../packages/adapter-crewai
+      '@agentform/adapter-google-adk':
+        specifier: workspace:*
+        version: link:../../packages/adapter-google-adk
       '@agentform/adapter-langgraph':
         specifier: workspace:*
         version: link:../../packages/adapter-langgraph
+      '@agentform/adapter-microsoft':
+        specifier: workspace:*
+        version: link:../../packages/adapter-microsoft
       '@agentform/adapter-openai':
         specifier: workspace:*
         version: link:../../packages/adapter-openai

@@ -92,7 +92,7 @@ See `docs/cli-reference.md`'s `agentform compile` section for the CLI flags (`--
 
 ## Scope
 
-- Only OpenAI and LangGraph have adapters. `microsoft`/`google-adk`/`autogen`/`crewai` are valid `runtime.target` schema values (Phase 9 will add adapters for them) — requesting one from `agentform compile` today gives a clear "not yet supported" error, not a silent no-op or a crash.
+- All six `runtime.target` schema values (`openai`, `langgraph`, `microsoft`, `google-adk`, `autogen`, `crewai`) have adapters as of Phase 9 — see each adapter's own package for its verified construct-by-construct mapping.
 - No `deploy()`/`destroy()`/`inspectExisting()` implementation yet — `FrameworkAdapter`'s optional members (§12) stay unimplemented until `agentform apply`/`import`/`destroy` exist (Phase 11).
 - No expression evaluator for workflow edge `when` conditions — every conditional-routing function either adapter generates is a stub for this reason, not a missed feature.
 - `${env.*}` references are already fully resolved into the IR by the time the compiler sees it (Phase 3's interpolation runs before schema validation) — the compiler has no visibility into which IR fields originated from an environment variable. This is why "never embed credentials" is enforced by (a) adapters never emitting an IR field's literal value into a place a real credential would end up, relying on the target SDK's own env-var conventions instead, plus (b) the secret-leak scan as a structural safety net, not by env-reference tracking through the pipeline.

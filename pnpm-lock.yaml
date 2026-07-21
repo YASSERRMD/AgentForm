@@ -99,11 +99,53 @@ importers:
         specifier: ^2.9.0
         version: 2.9.0
 
-  packages/adapter-autogen: {}
+  packages/adapter-autogen:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
-  packages/adapter-crewai: {}
+  packages/adapter-crewai:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
-  packages/adapter-google-adk: {}
+  packages/adapter-google-adk:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/adapter-langgraph:
     dependencies:
@@ -121,7 +163,21 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
 
-  packages/adapter-microsoft: {}
+  packages/adapter-microsoft:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/adapter-openai:
     dependencies:

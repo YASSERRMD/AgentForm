@@ -320,7 +320,11 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
 
-  packages/runtime: {}
+  packages/runtime:
+    dependencies:
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
 
   packages/schema:
     dependencies:

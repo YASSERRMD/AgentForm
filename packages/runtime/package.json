@@ -18,5 +18,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/ir": "workspace:*"
   }
 }

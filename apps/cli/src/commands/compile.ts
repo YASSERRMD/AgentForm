@@ -20,7 +20,7 @@ export function registerCompileCommand(program: Command): void {
     .description('Generate a target-framework project from the Agentform specification')
     .option(
       '--target <name>',
-      "openai, langgraph, microsoft, google-adk, autogen, or crewai (default: the project's declared runtime.target)",
+      "openai, langgraph, microsoft, google-adk, autogen, crewai, or agno (default: the project's declared runtime.target)",
     )
     .option('--all', 'compile for every framework this build of Agentform supports', false)
     .option('--output <dir>', 'directory to write generated projects into', './generated')
@@ -68,9 +68,9 @@ export function registerCompileCommand(program: Command): void {
       }
 
       // `result.ir.application.runtime.target` is schema-validated against
-      // the same six-value enum `ADAPTER_REGISTRY` now fully covers, and an
-      // explicit `--target` was already validated above — every requested
-      // target is guaranteed to resolve to a real adapter below.
+      // the same enum `ADAPTER_REGISTRY` now fully covers, and an explicit
+      // `--target` was already validated above — every requested target is
+      // guaranteed to resolve to a real adapter below.
       const requestedTargets = options.all
         ? Object.keys(ADAPTER_REGISTRY)
         : [options.target ?? result.ir.application.runtime.target];

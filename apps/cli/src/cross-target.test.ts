@@ -1,3 +1,4 @@
+import { agnoAdapter } from '@agentform/adapter-agno';
 import { autoGenAdapter } from '@agentform/adapter-autogen';
 import { crewAiAdapter } from '@agentform/adapter-crewai';
 import { googleAdkAdapter } from '@agentform/adapter-google-adk';
@@ -16,11 +17,12 @@ const ADAPTERS: readonly (readonly [string, FrameworkAdapter])[] = [
   ['google-adk', googleAdkAdapter],
   ['autogen', autoGenAdapter],
   ['crewai', crewAiAdapter],
+  ['agno', agnoAdapter],
 ];
 
 /**
  * `agent`/`terminate` workflow nodes plus a `function` tool are the one
- * combination every one of the six adapters' `compatibility.ts` marks
+ * combination every one of these adapters' `compatibility.ts` marks
  * `supported` (see `docs/compiler-reference.md`'s cross-adapter matrix) —
  * this is the portable baseline a real specification can target across
  * every Agentform framework without a single `--target`-specific
@@ -107,6 +109,7 @@ describe('cross-target portability', () => {
       'google-adk',
       'autogen',
       'crewai',
+      'agno',
     ]);
   });
 });

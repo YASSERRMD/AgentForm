@@ -21,6 +21,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@agentform/adapter-agno": "workspace:*",
     "@agentform/adapter-autogen": "workspace:*",
     "@agentform/adapter-crewai": "workspace:*",
     "@agentform/adapter-google-adk": "workspace:*",

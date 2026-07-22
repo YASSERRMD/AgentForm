@@ -58,7 +58,8 @@
                 "microsoft",
                 "google-adk",
                 "autogen",
-                "crewai"
+                "crewai",
+                "agno"
               ]
             },
             "environment": {

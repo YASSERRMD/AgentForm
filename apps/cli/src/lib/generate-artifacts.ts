@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { agnoAdapter } from '@agentform/adapter-agno';
 import { autoGenAdapter } from '@agentform/adapter-autogen';
 import { crewAiAdapter } from '@agentform/adapter-crewai';
 import { googleAdkAdapter } from '@agentform/adapter-google-adk';
@@ -11,7 +12,7 @@ import type { Diagnostic } from '@agentform/diagnostics';
 import type { AgentformIR } from '@agentform/ir';
 import type { FrameworkAdapter, GeneratedManifest, GeneratedProject } from '@agentform/plugin-sdk';
 
-/** Every framework `@agentform/schema`'s `runtime.target` enum allows — all six now have a registered adapter (Phase 9 completed the last four). Shared by `agentform compile` and `agentform apply`: both write the exact same generated-project shape to disk, `apply` just does it as one step of a larger flow. */
+/** Every framework `@agentform/schema`'s `runtime.target` enum allows — six shipped in the initial release (Phase 9 completed the last four), `agno` added post-v1. Shared by `agentform compile` and `agentform apply`: both write the exact same generated-project shape to disk, `apply` just does it as one step of a larger flow. */
 export const ADAPTER_REGISTRY: Readonly<Record<string, FrameworkAdapter>> = {
   openai: openAiAdapter,
   langgraph: langGraphAdapter,
@@ -19,6 +20,7 @@ export const ADAPTER_REGISTRY: Readonly<Record<string, FrameworkAdapter>> = {
   'google-adk': googleAdkAdapter,
   autogen: autoGenAdapter,
   crewai: crewAiAdapter,
+  agno: agnoAdapter,
 };
 
 export interface GenerateArtifactsResult {

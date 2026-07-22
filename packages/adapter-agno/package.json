@@ -1,0 +1,31 @@
+{
+  "name": "@agentform/adapter-agno",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentform framework adapter for Agno.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/compiler": "workspace:*",
+    "@agentform/core": "workspace:*",
+    "@agentform/ir": "workspace:*",
+    "@agentform/plugin-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}

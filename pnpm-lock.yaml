@@ -71,6 +71,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@agentform/adapter-agno':
+        specifier: workspace:*
+        version: link:../../packages/adapter-agno
       '@agentform/adapter-autogen':
         specifier: workspace:*
         version: link:../../packages/adapter-autogen
@@ -149,6 +152,25 @@ importers:
       marked:
         specifier: ^18.0.7
         version: 18.0.7
+
+  packages/adapter-agno:
+    dependencies:
+      '@agentform/compiler':
+        specifier: workspace:*
+        version: link:../compiler
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../core
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/plugin-sdk':
+        specifier: workspace:*
+        version: link:../plugin-sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
 
   packages/adapter-autogen:
     dependencies:

@@ -72,6 +72,7 @@ const SECTIONS = [
       page('Google ADK', 'tutorials/google-adk.md'),
       page('AutoGen', 'tutorials/autogen.md'),
       page('CrewAI', 'tutorials/crewai.md'),
+      page('Agno', 'tutorials/agno.md'),
     ],
   },
   {
@@ -103,6 +104,7 @@ const SECTIONS = [
       page('0012 — Apply & Drift Architecture', 'adr/0012-apply-and-drift-architecture.md'),
       page('0013 — Rollback & Destroy Behavior', 'adr/0013-rollback-and-destroy-behavior.md'),
       page('0014 — Module Registry Architecture', 'adr/0014-module-registry-architecture.md'),
+      page('0015 — Agno Adapter', 'adr/0015-agno-adapter.md'),
     ],
   },
 ];

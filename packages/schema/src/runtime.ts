@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** The six frameworks Agentform targets in its initial release. */
+/** The frameworks Agentform can compile a specification into. Six shipped in the initial release; 'agno' followed post-v1. */
 export const frameworkTargetSchema = z.enum([
   'openai',
   'langgraph',
@@ -8,6 +8,7 @@ export const frameworkTargetSchema = z.enum([
   'google-adk',
   'autogen',
   'crewai',
+  'agno',
 ]);
 
 export type FrameworkTarget = z.infer<typeof frameworkTargetSchema>;

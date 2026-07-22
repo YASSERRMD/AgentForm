@@ -21,6 +21,7 @@ const VALID_TARGETS = [
   'google-adk',
   'autogen',
   'crewai',
+  'agno',
 ] as const;
 const ENTRY_FILENAMES = ['agentform.yaml', 'agentform.yml', 'agentform.json'];
 

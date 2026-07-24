@@ -13,6 +13,7 @@ export {
   type SpecPatchOperation,
   type SpecPatchOperationType,
 } from './patch.js';
+export { diagnosticSchema, healthResponseSchema, specDocumentResponseSchema } from './http-contracts.js';
 
 export const PACKAGE_NAME = '@agentform/studio-core';
 export const PACKAGE_VERSION = '0.1.0';

@@ -6,6 +6,7 @@ dist/
 build/
 .turbo/
 coverage/
+*.tsbuildinfo
 
 # Agentform local state and generated artifacts
 .agentform/

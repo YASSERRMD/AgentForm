@@ -1,0 +1,29 @@
+{
+  "name": "@agentform/studio-web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentform Studio frontend — a read-only (for now) view over a local project's spec and diagnostics, with a form/canvas/chat editor arriving in later phases.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/studio-core": "workspace:*",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "jsdom": "^29.1.1",
+    "vite": "^8.1.5"
+  }
+}

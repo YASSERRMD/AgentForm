@@ -1,6 +1,8 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import importX from 'eslint-plugin-import-x';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
 import prettierConfig from 'eslint-config-prettier';
 import globals from 'globals';
 
@@ -45,6 +47,22 @@ export default tseslint.config(
     files: ['**/*.{js,mjs,cjs}'],
     languageOptions: {
       globals: globals.node,
+    },
+  },
+  // apps/studio-web is the repo's first browser code — scoped so the
+  // rest of the monorepo's lint behavior stays exactly as it was.
+  {
+    files: ['apps/studio-web/**/*.{ts,tsx}'],
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    languageOptions: {
+      globals: globals.browser,
+    },
+    rules: {
+      ...reactHooks.configs['recommended-latest'].rules,
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
     },
   },
   prettierConfig,

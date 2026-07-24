@@ -1,0 +1,39 @@
+import { agenticApplicationSchema } from '@agentform/schema';
+import { z } from 'zod';
+import type { Diagnostic, HealthResponse, SpecDocumentResponse } from './types.js';
+
+const sourceLocationSchema = z.object({
+  file: z.string(),
+  line: z.number(),
+  column: z.number(),
+});
+
+// Hand-written to mirror `Diagnostic` (`@agentform/diagnostics`) field
+// for field. `satisfies` (not `: z.ZodType<Diagnostic>`) so the schema
+// keeps its precise inferred type for `.parse()` callers while still
+// being checked for assignability against the real interface — any
+// future field added to `Diagnostic` and not mirrored here becomes a
+// compile error at this line, not a silent runtime gap.
+export const diagnosticSchema = z.object({
+  code: z.string(),
+  severity: z.enum(['error', 'warning', 'info']),
+  message: z.string(),
+  path: z.array(z.union([z.string(), z.number()])).optional(),
+  location: sourceLocationSchema.optional(),
+  relatedLocation: sourceLocationSchema.optional(),
+  suggestedFix: z.string().optional(),
+}) satisfies z.ZodType<Diagnostic>;
+
+export const healthResponseSchema = z.object({
+  status: z.literal('ok'),
+  rootDir: z.string(),
+}) satisfies z.ZodType<HealthResponse>;
+
+// `application` reuses the real `agenticApplicationSchema` directly
+// (not a hand-written mirror) — it's the single validation schema
+// already used everywhere else, so the HTTP contract can never drift
+// from what actually gets validated.
+export const specDocumentResponseSchema = z.object({
+  application: agenticApplicationSchema.optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<SpecDocumentResponse>;

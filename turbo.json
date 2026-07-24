@@ -27,6 +27,11 @@
       "outputs": [],
       "cache": false
     },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
     "clean": {
       "cache": false
     }

@@ -1,0 +1,31 @@
+{
+  "name": "@agentform/studio-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentform Studio — shared spec/diagnostics model, HTTP contracts, and patch engine used by studio-server and studio-web.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/diagnostics": "workspace:*",
+    "@agentform/ir": "workspace:*",
+    "@agentform/schema": "workspace:*",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}

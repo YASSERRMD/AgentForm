@@ -2,7 +2,7 @@ import { buildApp } from './app.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
-const app = buildApp({ rootDir: config.rootDir });
+const app = buildApp({ rootDir: config.rootDir, devOrigin: config.devOrigin });
 
 app
   .listen({ port: config.port, host: '127.0.0.1' })

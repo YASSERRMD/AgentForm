@@ -21,19 +21,21 @@ type SpecDocumentBody = z.infer<typeof specDocumentResponseSchema>;
  * carrying error-severity diagnostics as data, not a transport failure.
  */
 export function registerSpecRoute(app: FastifyInstance, options: RegisterSpecRouteOptions): void {
-  app.withTypeProvider<ZodTypeProvider>().get(
-    '/api/spec',
-    { schema: { response: { 200: specDocumentResponseSchema } } },
-    async (): Promise<SpecDocumentBody> => {
-      const document = loadSpecDocument({ rootDir: options.rootDir, fs: options.fs });
-      // SpecDocumentResponse's fields are deliberately `readonly`; Zod's
-      // inferred schema type is mutable by default. The two are
-      // behaviorally identical at runtime (studio-core's own
-      // http-contracts test proves real values parse against this exact
-      // schema) — this cast bridges the readonly/mutable mismatch at the
-      // one HTTP boundary where it matters, rather than loosening the
-      // shared domain type everywhere it's used.
-      return document as SpecDocumentBody;
-    },
-  );
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .get(
+      '/api/spec',
+      { schema: { response: { 200: specDocumentResponseSchema } } },
+      async (): Promise<SpecDocumentBody> => {
+        const document = loadSpecDocument({ rootDir: options.rootDir, fs: options.fs });
+        // SpecDocumentResponse's fields are deliberately `readonly`; Zod's
+        // inferred schema type is mutable by default. The two are
+        // behaviorally identical at runtime (studio-core's own
+        // http-contracts test proves real values parse against this exact
+        // schema) — this cast bridges the readonly/mutable mismatch at the
+        // one HTTP boundary where it matters, rather than loosening the
+        // shared domain type everywhere it's used.
+        return document as SpecDocumentBody;
+      },
+    );
 }

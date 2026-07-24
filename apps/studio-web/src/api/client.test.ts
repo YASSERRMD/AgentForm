@@ -31,9 +31,7 @@ describe('client', () => {
   });
 
   it('throws when the response is not ok', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
     vi.stubGlobal('fetch', mockFetch);
 
     await expect(getSpec()).rejects.toThrow('500');

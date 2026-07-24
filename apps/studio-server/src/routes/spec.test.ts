@@ -31,7 +31,10 @@ describe('GET /api/spec', () => {
     const response = await app.inject({ method: 'GET', url: '/api/spec' });
 
     expect(response.statusCode).toBe(200);
-    const body = response.json() as { application?: { metadata: { name: string } }; diagnostics: { severity: string }[] };
+    const body = response.json() as {
+      application?: { metadata: { name: string } };
+      diagnostics: { severity: string }[];
+    };
     expect(body.application?.metadata.name).toBe('studio-server-fixture');
     expect(body.diagnostics.some((d) => d.severity === 'error')).toBe(false);
   });

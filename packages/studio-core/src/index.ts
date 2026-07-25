@@ -68,6 +68,7 @@ export {
   specPatchOperationSchema,
 } from './http-contracts.js';
 export { findUngatedDestructiveToolNodes } from './workflow-risk.js';
+export { classifyPatchImpact, type PatchImpactLevel } from './patch-risk.js';
 
 export const PACKAGE_NAME = '@agentform/studio-core';
 export const PACKAGE_VERSION = '0.1.0';

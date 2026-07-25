@@ -18,6 +18,7 @@ import {
   setFieldWidget,
 } from '../../lib/form-layout-ops';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
+import { ProposalReview } from '../ProposalReview';
 
 export interface FormLayoutEditorProps {
   readonly agentId: string;
@@ -276,25 +277,23 @@ function GenerateLayoutPanel({
       </form>
       {state.status === 'error' && <p role="alert">{state.message}</p>}
       {state.status === 'proposed' && (
-        <div aria-label="Layout proposal">
-          <DiagnosticsPanel diagnostics={state.result.diagnostics} />
-          <button
-            type="button"
-            disabled={!canAccept}
-            onClick={() => {
-              if (proposedLayout) {
-                onAccept(proposedLayout);
-              }
-              setState({ status: 'idle' });
-              setPrompt('');
-            }}
-          >
-            Accept
-          </button>
-          <button type="button" onClick={() => setState({ status: 'idle' })}>
-            Reject
-          </button>
-        </div>
+        <ProposalReview
+          ariaLabel="Layout proposal"
+          // No `changes`/`impact` here — a layout is presentation-only
+          // (never touches spec.* behavior), so neither a patch-shaped
+          // diff nor classifyPatchImpact's signal applies to it.
+          diagnostics={state.result.diagnostics}
+          canAccept={canAccept}
+          acceptBusy={false}
+          onAccept={() => {
+            if (proposedLayout) {
+              onAccept(proposedLayout);
+            }
+            setState({ status: 'idle' });
+            setPrompt('');
+          }}
+          onReject={() => setState({ status: 'idle' })}
+        />
       )}
     </section>
   );

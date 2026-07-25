@@ -65,7 +65,7 @@ export function App() {
   return (
     <main>
       <h1>Agentform Studio</h1>
-      <GenerateSpecPanel onApplied={load} />
+      <GenerateSpecPanel application={state.document.application} onApplied={load} />
       {state.document.application && (
         <SpecViewer
           application={state.document.application}

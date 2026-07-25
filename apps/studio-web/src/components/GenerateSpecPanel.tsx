@@ -1,9 +1,12 @@
-import type { PromptToSpecResponse } from '@agentform/studio-core';
+import type { AgenticApplication, PromptToSpecResponse } from '@agentform/studio-core';
+import { classifyPatchImpact } from '@agentform/studio-core';
 import { useState } from 'react';
 import { patchSpec, promptToSpec } from '../api/client';
-import { DiagnosticsPanel } from './DiagnosticsPanel';
+import { ProposalReview } from './ProposalReview';
 
 export interface GenerateSpecPanelProps {
+  /** The currently-loaded, validated spec — feeds `classifyPatchImpact`'s destructive-tool check. Omit (e.g. nothing loaded yet) and the impact signal falls back to the patch's own operation types alone. */
+  readonly application?: AgenticApplication;
   /** Called after a proposal is accepted and successfully written — the caller reloads the spec, same as every other mutation in App.tsx. */
   readonly onApplied: () => void;
 }
@@ -23,7 +26,7 @@ type GenerateState =
  * ever writes directly; the server re-validates it fresh regardless of
  * what this preview already showed.
  */
-export function GenerateSpecPanel({ onApplied }: GenerateSpecPanelProps) {
+export function GenerateSpecPanel({ application, onApplied }: GenerateSpecPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [state, setState] = useState<GenerateState>({ status: 'idle' });
   const busy = state.status === 'generating' || state.status === 'applying';
@@ -98,34 +101,18 @@ export function GenerateSpecPanel({ onApplied }: GenerateSpecPanelProps) {
       </form>
       {state.status === 'error' && <p role="alert">{state.message}</p>}
       {proposal && (
-        <div aria-label="Proposal">
-          {proposal.summary && <p>{proposal.summary}</p>}
-          {proposal.patch && proposal.patch.length > 0 && (
-            <ul aria-label="Proposed changes">
-              {proposal.patch.map((op, index) => (
-                <li key={index}>
-                  {op.op} {op.path.join('.')}
-                </li>
-              ))}
-            </ul>
-          )}
-          {proposal.skipped && proposal.skipped.length > 0 && (
-            <ul aria-label="Skipped resources">
-              {proposal.skipped.map((skipped) => (
-                <li key={`${skipped.resourceType}.${skipped.resourceId}`}>
-                  {skipped.resourceType}.{skipped.resourceId}: {skipped.reason}
-                </li>
-              ))}
-            </ul>
-          )}
-          <DiagnosticsPanel diagnostics={proposal.diagnostics} />
-          <button type="button" onClick={() => void handleAccept(proposal)} disabled={!canAccept}>
-            {state.status === 'applying' ? 'Applying…' : 'Accept'}
-          </button>
-          <button type="button" onClick={() => setState({ status: 'idle' })} disabled={busy}>
-            Reject
-          </button>
-        </div>
+        <ProposalReview
+          ariaLabel="Proposal"
+          summary={proposal.summary}
+          changes={proposal.patch?.map((op) => ({ description: `${op.op} ${op.path.join('.')}` }))}
+          skipped={proposal.skipped}
+          impact={proposal.patch ? classifyPatchImpact(proposal.patch, application) : undefined}
+          diagnostics={proposal.diagnostics}
+          canAccept={canAccept}
+          acceptBusy={state.status === 'applying'}
+          onAccept={() => void handleAccept(proposal)}
+          onReject={() => setState({ status: 'idle' })}
+        />
       )}
     </section>
   );

@@ -8,6 +8,9 @@ import type {
   HealthResponse,
   PatchSpecRequest,
   PatchSpecResponse,
+  PromptToSpecRequest,
+  PromptToSpecResponse,
+  SkippedSpecResource,
   SpecDocumentResponse,
 } from './types.js';
 
@@ -66,6 +69,24 @@ export const patchSpecResponseSchema = z.object({
   application: agenticApplicationSchema.optional(),
   diagnostics: z.array(diagnosticSchema),
 }) satisfies z.ZodType<PatchSpecResponse>;
+
+export const promptToSpecRequestSchema = z.object({
+  prompt: z.string().min(1),
+}) satisfies z.ZodType<PromptToSpecRequest>;
+
+const skippedSpecResourceSchema = z.object({
+  resourceType: z.string(),
+  resourceId: z.string(),
+  reason: z.string(),
+}) satisfies z.ZodType<SkippedSpecResource>;
+
+export const promptToSpecResponseSchema = z.object({
+  success: z.boolean(),
+  summary: z.string().optional(),
+  patch: z.array(specPatchOperationSchema).optional(),
+  skipped: z.array(skippedSpecResourceSchema).optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<PromptToSpecResponse>;
 
 export const resourceFormSchemaSchema = z.object({
   resourceType: z.enum(RESOURCE_TYPES as [ResourceType, ...ResourceType[]]),

@@ -6,6 +6,8 @@ import type {
   FormLayout,
   GetDesignResponse,
   LayoutNode,
+  PromptToDesignRequest,
+  PromptToDesignResponse,
   PutDesignRequest,
   PutDesignResponse,
   ResourceBinding,
@@ -96,3 +98,14 @@ export const putDesignResponseSchema = z.object({
   design: designArtifactSchema.optional(),
   diagnostics: z.array(diagnosticSchema),
 }) satisfies z.ZodType<PutDesignResponse>;
+
+export const promptToDesignRequestSchema = z.object({
+  agentId: z.string().min(1),
+  prompt: z.string().min(1),
+}) satisfies z.ZodType<PromptToDesignRequest>;
+
+export const promptToDesignResponseSchema = z.object({
+  success: z.boolean(),
+  design: designArtifactSchema.optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<PromptToDesignResponse>;

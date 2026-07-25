@@ -182,6 +182,9 @@ importers:
       '@agentform/studio-design':
         specifier: workspace:*
         version: link:../../packages/studio-design
+      '@agentform/studio-genai':
+        specifier: workspace:*
+        version: link:../../packages/studio-genai
       '@fastify/cors':
         specifier: ^11.3.0
         version: 11.3.0

@@ -76,3 +76,22 @@ export interface PutDesignResponse {
   readonly design?: DesignArtifact;
   readonly diagnostics: readonly Diagnostic[];
 }
+
+/** Body of `POST /api/genai/prompt-to-design`. Scoped to a single agent's form layout — see ADR-0020 on why canvas positions aren't part of this. */
+export interface PromptToDesignRequest {
+  readonly agentId: string;
+  readonly prompt: string;
+}
+
+/**
+ * `success: false` means `design` (when present) isn't safe to accept as
+ * a preview — `diagnostics` explains why. Accepting a proposal never
+ * happens through this endpoint: the client re-submits `design` to the
+ * real `PUT /api/design/:resourceType/:resourceId`, which re-stamps and
+ * re-validates it itself rather than trusting this preview call.
+ */
+export interface PromptToDesignResponse {
+  readonly success: boolean;
+  readonly design?: DesignArtifact;
+  readonly diagnostics: readonly Diagnostic[];
+}

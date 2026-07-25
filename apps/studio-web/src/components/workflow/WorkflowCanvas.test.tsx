@@ -82,6 +82,26 @@ describe('WorkflowCanvas', () => {
     expect(screen.getByDisplayValue('assistant')).toBeInTheDocument();
   });
 
+  it('propagates a field edit made in the node editor back through onChange', async () => {
+    const onChange = vi.fn();
+    render(
+      <WorkflowCanvas
+        workflowId="main"
+        value={WORKFLOW}
+        onChange={onChange}
+        application={APPLICATION}
+      />,
+    );
+
+    fireEvent.click(await screen.findByLabelText('Workflow node assistant'));
+    const agentField = await screen.findByDisplayValue('assistant');
+    fireEvent.change(agentField, { target: { value: 'reviewer' } });
+
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const nextWorkflow = onChange.mock.calls.at(-1)?.[0] as Workflow;
+    expect(nextWorkflow.nodes.assistant).toEqual({ type: 'agent', agent: 'reviewer' });
+  });
+
   it('adds a new node with the chosen id and type, becoming editable immediately', async () => {
     const onChange = vi.fn();
     render(

@@ -1,10 +1,12 @@
 {
-  "name": "@agentform/studio-server",
+  "name": "@agentform/studio-genai",
   "version": "0.1.0",
   "private": true,
-  "description": "Agentform Studio backend — spec I/O, diagnostics, and (later) GenAI orchestration over a local project directory.",
+  "description": "Agentform Studio — provider-neutral GenAI generation (prompt-to-spec, prompt-to-design). Server-side only: no provider call ever reaches the browser.",
   "license": "Apache-2.0",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": "./dist/index.js"
   },
@@ -12,29 +14,22 @@
     "dist"
   ],
   "scripts": {
-    "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "dependencies": {
-    "@agentform/core": "workspace:*",
     "@agentform/diagnostics": "workspace:*",
-    "@agentform/parser": "workspace:*",
+    "@agentform/ir": "workspace:*",
     "@agentform/policy": "workspace:*",
     "@agentform/schema": "workspace:*",
     "@agentform/studio-core": "workspace:*",
     "@agentform/studio-design": "workspace:*",
-    "@agentform/studio-genai": "workspace:*",
-    "@fastify/cors": "^11.3.0",
-    "fastify": "^5.10.0",
-    "fastify-type-provider-zod": "^7.0.0",
-    "yaml": "^2.9.0",
+    "@anthropic-ai/sdk": "^0.115.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
-    "tsx": "^4.23.1"
+    "@types/node": "^26.1.1"
   }
 }

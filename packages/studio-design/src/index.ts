@@ -15,6 +15,8 @@ export type {
   LayoutNode,
   LayoutNodeType,
   LayoutWidget,
+  PromptToDesignRequest,
+  PromptToDesignResponse,
   PutDesignRequest,
   PutDesignResponse,
   ResourceBinding,
@@ -29,12 +31,16 @@ export { validateDesignArtifact } from './validate.js';
 export { renderDesignToHtml } from './render-html.js';
 
 export {
+  canvasPositionSchema,
   designArtifactSchema,
   designDraftSchema,
   formLayoutSchema,
   getDesignResponseSchema,
   layoutNodeSchema,
+  promptToDesignRequestSchema,
+  promptToDesignResponseSchema,
   putDesignRequestSchema,
   putDesignResponseSchema,
   resourceBindingSchema,
+  styleTokensSchema,
 } from './http-contracts.js';

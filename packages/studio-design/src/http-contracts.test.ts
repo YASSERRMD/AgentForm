@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   designArtifactSchema,
   getDesignResponseSchema,
+  promptToDesignRequestSchema,
+  promptToDesignResponseSchema,
   putDesignRequestSchema,
   putDesignResponseSchema,
 } from './http-contracts.js';
@@ -62,6 +64,38 @@ describe('http-contracts', () => {
   it('parses a real PutDesignResponse', () => {
     expect(() =>
       putDesignResponseSchema.parse({ success: true, design: ARTIFACT, diagnostics: [] }),
+    ).not.toThrow();
+  });
+});
+
+describe('promptToDesignRequestSchema', () => {
+  it('accepts an agentId and a non-empty prompt', () => {
+    expect(() =>
+      promptToDesignRequestSchema.parse({
+        agentId: 'assistant',
+        prompt: 'group urgency with question',
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects an empty prompt', () => {
+    expect(() => promptToDesignRequestSchema.parse({ agentId: 'assistant', prompt: '' })).toThrow();
+  });
+});
+
+describe('promptToDesignResponseSchema', () => {
+  it('accepts a successful preview carrying a stamped design artifact', () => {
+    expect(() =>
+      promptToDesignResponseSchema.parse({ success: true, design: ARTIFACT, diagnostics: [] }),
+    ).not.toThrow();
+  });
+
+  it('accepts a rejected preview carrying only diagnostics', () => {
+    expect(() =>
+      promptToDesignResponseSchema.parse({
+        success: false,
+        diagnostics: [{ code: 'AGF8006', severity: 'error', message: 'no API key configured' }],
+      }),
     ).not.toThrow();
   });
 });

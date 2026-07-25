@@ -1,6 +1,7 @@
 import type {
   HealthResponse,
   PatchSpecResponse,
+  PromptToSpecResponse,
   ResourceFormSchema,
   ResourceType,
   SpecDocumentResponse,
@@ -10,6 +11,7 @@ import type {
   DesignDraft,
   DesignResourceType,
   GetDesignResponse,
+  PromptToDesignResponse,
   PutDesignResponse,
 } from '@agentform/studio-design';
 
@@ -88,4 +90,20 @@ export function putDesign(
       design,
     },
   );
+}
+
+/**
+ * Preview-only: never writes anything itself. `success: false` is a real
+ * outcome (no provider configured, generation failed, or the proposed
+ * patch failed validation) — not an HTTP error. Accepting a proposal
+ * means re-submitting `patch` to the real `patchSpec` above, not calling
+ * anything special here.
+ */
+export function promptToSpec(prompt: string): Promise<PromptToSpecResponse> {
+  return postJson<PromptToSpecResponse>('/api/genai/prompt-to-spec', { prompt });
+}
+
+/** Preview-only, same contract as `promptToSpec`. Accepting a proposal means loading `design.layout` into the layout editor's own draft state, not calling anything special here — the editor's existing "Save layout" is still the only thing that persists it. */
+export function promptToDesign(agentId: string, prompt: string): Promise<PromptToDesignResponse> {
+  return postJson<PromptToDesignResponse>('/api/genai/prompt-to-design', { agentId, prompt });
 }

@@ -1,5 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getDesign, getFormSchemas, getHealth, getSpec, patchSpec, putDesign } from './client';
+import {
+  getDesign,
+  getFormSchemas,
+  getHealth,
+  getSpec,
+  patchSpec,
+  promptToDesign,
+  promptToSpec,
+  putDesign,
+} from './client';
 
 describe('client', () => {
   afterEach(() => {
@@ -116,5 +125,41 @@ describe('client', () => {
         binding: { resourceType: 'agents', resourceId: 'assistant' },
       }),
     ).rejects.toThrow('400');
+  });
+
+  it('promptToSpec() posts the prompt as a JSON body and returns the parsed response', async () => {
+    const body = {
+      success: true,
+      summary: 'Added a tool.',
+      patch: [],
+      skipped: [],
+      diagnostics: [],
+    };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await promptToSpec('add a lookup tool');
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/genai/prompt-to-spec', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: 'add a lookup tool' }),
+    });
+    expect(result).toEqual(body);
+  });
+
+  it('promptToDesign() posts the agentId and prompt as a JSON body and returns the parsed response', async () => {
+    const body = { success: true, diagnostics: [] };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await promptToDesign('assistant', 'group urgency with the question');
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/genai/prompt-to-design', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId: 'assistant', prompt: 'group urgency with the question' }),
+    });
+    expect(result).toEqual(body);
   });
 });

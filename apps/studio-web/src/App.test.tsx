@@ -81,4 +81,36 @@ describe('App', () => {
       expect(screen.queryByLabelText('Edit models.primary')).not.toBeInTheDocument(),
     );
   });
+
+  it('opens the real workflow canvas (not raw JSON) when a workflow resource is clicked', async () => {
+    vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getSpec').mockResolvedValue({
+      application: {
+        apiVersion: 'agentform.dev/v1alpha1',
+        kind: 'AgenticApplication',
+        metadata: { name: 'support-bot', version: '1.0.0' },
+        spec: {
+          runtime: { target: 'openai', environment: 'development' },
+          models: {},
+          agents: { assistant: { model: 'primary', role: 'assistant' } },
+          workflows: {
+            main: {
+              entrypoint: 'assistant',
+              nodes: { assistant: { type: 'agent', agent: 'assistant' } },
+            },
+          },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      diagnostics: [],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('main')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('main'));
+
+    expect(await screen.findByLabelText('Workflow node assistant')).toBeInTheDocument();
+    expect(screen.getByLabelText('New node id')).toBeInTheDocument();
+  });
 });

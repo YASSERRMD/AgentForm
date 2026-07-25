@@ -10,6 +10,7 @@
  * `apps/studio-server` alone. See ADR-0018.
  */
 export type {
+  Agent,
   AgenticApplication,
   Diagnostic,
   DiagnosticSeverity,

@@ -4,6 +4,7 @@ import type { SpecPatch } from './patch.js';
 
 export type { AgenticApplication } from '@agentform/schema';
 export type {
+  Agent,
   Tool,
   Workflow,
   WorkflowEdge,

@@ -116,3 +116,33 @@ export interface AuditEntry {
 export interface AuditListResponse {
   readonly entries: readonly AuditEntry[];
 }
+
+/** One prior turn of a multi-turn chat conversation. Mirrors `@agentform/studio-genai`'s `GenAIHistoryMessage` structurally, not by import — studio-genai already depends on studio-core. */
+export interface ChatHistoryMessage {
+  readonly role: 'user' | 'assistant';
+  readonly content: string;
+}
+
+/** Body of `POST /api/genai/chat/spec`. */
+export interface ChatSpecRequest {
+  readonly message: string;
+  /** Prior turns of this conversation, oldest first — omit for the first turn. */
+  readonly history?: readonly ChatHistoryMessage[];
+}
+
+/**
+ * Unlike `PromptToSpecResponse`, `message` is always present (a chat
+ * turn always has a reply, even just an explanation of why nothing was
+ * proposed) and `patch` is present only when the model actually proposed
+ * a change this turn — a plain conversational reply carries no patch at
+ * all. `success` describes the patch's own validity when one is present;
+ * with no patch there is nothing to validate, so `success` stays `true`.
+ * Same preview-only contract as `PromptToSpecResponse`: accepting a
+ * proposal means re-submitting `patch` to the real `POST /api/spec/patch`.
+ */
+export interface ChatSpecResponse {
+  readonly success: boolean;
+  readonly message: string;
+  readonly patch?: SpecPatch;
+  readonly diagnostics: readonly Diagnostic[];
+}

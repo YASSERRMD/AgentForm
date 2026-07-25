@@ -8,6 +8,9 @@ import type {
   AuditListResponse,
   AuditTarget,
   ChangeProvenance,
+  ChatHistoryMessage,
+  ChatSpecRequest,
+  ChatSpecResponse,
   Diagnostic,
   HealthResponse,
   PatchSpecRequest,
@@ -125,3 +128,20 @@ export const auditEntrySchema = z.object({
 export const auditListResponseSchema = z.object({
   entries: z.array(auditEntrySchema),
 }) satisfies z.ZodType<AuditListResponse>;
+
+const chatHistoryMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+}) satisfies z.ZodType<ChatHistoryMessage>;
+
+export const chatSpecRequestSchema = z.object({
+  message: z.string().min(1),
+  history: z.array(chatHistoryMessageSchema).optional(),
+}) satisfies z.ZodType<ChatSpecRequest>;
+
+export const chatSpecResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  patch: z.array(specPatchOperationSchema).optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<ChatSpecResponse>;

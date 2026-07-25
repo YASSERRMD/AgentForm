@@ -2,6 +2,9 @@ import { z } from 'zod';
 import type {
   CanvasPosition,
   ChangeProvenance,
+  ChatDesignRequest,
+  ChatDesignResponse,
+  ChatHistoryMessage,
   DesignArtifact,
   DesignDraft,
   FormLayout,
@@ -116,3 +119,21 @@ export const promptToDesignResponseSchema = z.object({
   design: designArtifactSchema.optional(),
   diagnostics: z.array(diagnosticSchema),
 }) satisfies z.ZodType<PromptToDesignResponse>;
+
+const chatHistoryMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+}) satisfies z.ZodType<ChatHistoryMessage>;
+
+export const chatDesignRequestSchema = z.object({
+  agentId: z.string().min(1),
+  message: z.string().min(1),
+  history: z.array(chatHistoryMessageSchema).optional(),
+}) satisfies z.ZodType<ChatDesignRequest>;
+
+export const chatDesignResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  design: designArtifactSchema.optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<ChatDesignResponse>;

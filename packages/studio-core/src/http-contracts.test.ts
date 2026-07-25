@@ -4,6 +4,8 @@ import {
   auditEntrySchema,
   auditListResponseSchema,
   changeProvenanceSchema,
+  chatSpecRequestSchema,
+  chatSpecResponseSchema,
   patchSpecRequestSchema,
   promptToSpecRequestSchema,
   promptToSpecResponseSchema,
@@ -164,5 +166,50 @@ describe('auditEntrySchema / auditListResponseSchema', () => {
 
   it('accepts an empty list', () => {
     expect(() => auditListResponseSchema.parse({ entries: [] })).not.toThrow();
+  });
+});
+
+describe('chatSpecRequestSchema', () => {
+  it('accepts a message with no history (a first turn)', () => {
+    expect(() => chatSpecRequestSchema.parse({ message: 'add a lookup tool' })).not.toThrow();
+  });
+
+  it('accepts a message with prior turns', () => {
+    expect(() =>
+      chatSpecRequestSchema.parse({
+        message: 'thanks',
+        history: [
+          { role: 'user', content: 'add a lookup tool' },
+          { role: 'assistant', content: "I've added a lookup tool." },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects an empty message', () => {
+    expect(() => chatSpecRequestSchema.parse({ message: '' })).toThrow();
+  });
+});
+
+describe('chatSpecResponseSchema', () => {
+  it('accepts a plain conversational reply with no patch', () => {
+    expect(() =>
+      chatSpecResponseSchema.parse({
+        success: true,
+        message: 'The assistant uses the primary model.',
+        diagnostics: [],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts a reply carrying a proposed patch', () => {
+    expect(() =>
+      chatSpecResponseSchema.parse({
+        success: true,
+        message: "I've added a lookup tool.",
+        patch: [{ op: 'add', path: ['spec', 'tools', 'lookup'], value: { type: 'function' } }],
+        diagnostics: [],
+      }),
+    ).not.toThrow();
   });
 });

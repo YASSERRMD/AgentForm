@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   changeProvenanceSchema,
+  chatDesignRequestSchema,
+  chatDesignResponseSchema,
   designArtifactSchema,
   getDesignResponseSchema,
   promptToDesignRequestSchema,
@@ -118,6 +120,54 @@ describe('promptToDesignResponseSchema', () => {
       promptToDesignResponseSchema.parse({
         success: false,
         diagnostics: [{ code: 'AGF8006', severity: 'error', message: 'no API key configured' }],
+      }),
+    ).not.toThrow();
+  });
+});
+
+describe('chatDesignRequestSchema', () => {
+  it('accepts an agentId, message, and no history (a first turn)', () => {
+    expect(() =>
+      chatDesignRequestSchema.parse({ agentId: 'assistant', message: 'lay it out' }),
+    ).not.toThrow();
+  });
+
+  it('accepts prior turns', () => {
+    expect(() =>
+      chatDesignRequestSchema.parse({
+        agentId: 'assistant',
+        message: 'thanks',
+        history: [
+          { role: 'user', content: 'lay it out' },
+          { role: 'assistant', content: 'Done.' },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects an empty message', () => {
+    expect(() => chatDesignRequestSchema.parse({ agentId: 'assistant', message: '' })).toThrow();
+  });
+});
+
+describe('chatDesignResponseSchema', () => {
+  it('accepts a plain conversational reply with no design', () => {
+    expect(() =>
+      chatDesignResponseSchema.parse({
+        success: true,
+        message: 'This agent has two input fields today.',
+        diagnostics: [],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts a reply carrying a proposed design', () => {
+    expect(() =>
+      chatDesignResponseSchema.parse({
+        success: true,
+        message: 'Grouped the question field.',
+        design: ARTIFACT,
+        diagnostics: [],
       }),
     ).not.toThrow();
   });

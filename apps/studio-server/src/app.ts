@@ -5,6 +5,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type { FileWriter } from './lib/file-writer.js';
 import { registerAuditRoute } from './routes/audit.js';
+import { registerChatRoute } from './routes/chat.js';
 import { registerDesignRoute } from './routes/design.js';
 import { registerFormSchemasRoute } from './routes/form-schemas.js';
 import { registerGenaiRoute } from './routes/genai.js';
@@ -54,6 +55,11 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
     fileWriter: options.fileWriter,
   });
   registerGenaiRoute(app, {
+    rootDir: options.rootDir,
+    fs: options.fs,
+    provider: options.genaiProvider,
+  });
+  registerChatRoute(app, {
     rootDir: options.rootDir,
     fs: options.fs,
     provider: options.genaiProvider,

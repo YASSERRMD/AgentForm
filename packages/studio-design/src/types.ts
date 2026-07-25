@@ -109,3 +109,30 @@ export interface PromptToDesignResponse {
   readonly design?: DesignArtifact;
   readonly diagnostics: readonly Diagnostic[];
 }
+
+/** One prior turn of a multi-turn chat conversation. Mirrors `@agentform/studio-core`'s `ChatHistoryMessage` structurally, not by import. */
+export interface ChatHistoryMessage {
+  readonly role: 'user' | 'assistant';
+  readonly content: string;
+}
+
+/** Body of `POST /api/genai/chat/design`. Scoped to a single agent's form layout, same as `PromptToDesignRequest`. */
+export interface ChatDesignRequest {
+  readonly agentId: string;
+  readonly message: string;
+  readonly history?: readonly ChatHistoryMessage[];
+}
+
+/**
+ * Unlike `PromptToDesignResponse`, `message` is always present and
+ * `design` is present only when the model actually proposed a layout
+ * this turn — a plain conversational reply carries no design at all.
+ * Same preview-only contract: accepting a proposal means re-submitting
+ * `design` to the real `PUT /api/design/:resourceType/:resourceId`.
+ */
+export interface ChatDesignResponse {
+  readonly success: boolean;
+  readonly message: string;
+  readonly design?: DesignArtifact;
+  readonly diagnostics: readonly Diagnostic[];
+}

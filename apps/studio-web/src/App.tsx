@@ -71,12 +71,13 @@ export function App() {
         />
       )}
       <DiagnosticsPanel diagnostics={state.document.diagnostics} />
-      {editing && (
+      {editing && state.document.application && (
         <ResourceEditor
           resourceType={editing.resourceType}
           resourceId={editing.resourceId}
           formSchema={state.formSchemas[editing.resourceType]}
           initialValue={resourceValue(state.document, editing)}
+          application={state.document.application}
           onSaved={() => {
             setEditing(undefined);
             load();

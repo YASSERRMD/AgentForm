@@ -1,4 +1,4 @@
-import { findCycle, type DirectedGraph } from '@agentform/core';
+import { findCycle, type DirectedGraph } from '@agentform/core/browser';
 import type { Diagnostic } from '@agentform/diagnostics';
 import type { AgenticApplication } from '@agentform/schema';
 import { SEMANTIC_DIAGNOSTIC_CODES } from '../codes.js';

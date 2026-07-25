@@ -1,4 +1,4 @@
-import type { ResourceFormSchema } from '@agentform/studio-core';
+import type { AgenticApplication, ResourceFormSchema } from '@agentform/studio-core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import * as client from '../api/client';
@@ -19,6 +19,19 @@ const TOOL_FORM_SCHEMA: ResourceFormSchema = {
   },
 };
 
+const APPLICATION: AgenticApplication = {
+  apiVersion: 'agentform.dev/v1alpha1',
+  kind: 'AgenticApplication',
+  metadata: { name: 'fixture', version: '1.0.0' },
+  spec: {
+    runtime: { target: 'openai', environment: 'development' },
+    models: {},
+    agents: {},
+    workflows: {},
+  },
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+} as any;
+
 describe('ResourceEditor', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -37,6 +50,7 @@ describe('ResourceEditor', () => {
         resourceId="primary"
         formSchema={MODEL_FORM_SCHEMA}
         initialValue={{ provider: 'openai' }}
+        application={APPLICATION}
         onSaved={onSaved}
         onCancel={vi.fn()}
       />,
@@ -61,6 +75,7 @@ describe('ResourceEditor', () => {
         resourceId="secondary"
         formSchema={MODEL_FORM_SCHEMA}
         initialValue={undefined}
+        application={APPLICATION}
         onSaved={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -87,6 +102,7 @@ describe('ResourceEditor', () => {
         resourceId="primary"
         formSchema={MODEL_FORM_SCHEMA}
         initialValue={{ provider: 'openai' }}
+        application={APPLICATION}
         onSaved={onSaved}
         onCancel={vi.fn()}
       />,
@@ -109,6 +125,7 @@ describe('ResourceEditor', () => {
         resourceId="lookup"
         formSchema={TOOL_FORM_SCHEMA}
         initialValue={{ type: 'function', handler: 'lookup.js' }}
+        application={APPLICATION}
         onSaved={vi.fn()}
         onCancel={vi.fn()}
       />,
@@ -138,6 +155,7 @@ describe('ResourceEditor', () => {
         resourceId="primary"
         formSchema={MODEL_FORM_SCHEMA}
         initialValue={{ provider: 'openai' }}
+        application={APPLICATION}
         onSaved={vi.fn()}
         onCancel={onCancel}
       />,

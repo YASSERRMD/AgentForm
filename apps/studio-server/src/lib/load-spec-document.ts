@@ -1,5 +1,6 @@
 import { loadProject, nodeFileSystem, type FileSystem } from '@agentform/parser';
-import { buildSpecDocument, type SpecDocumentResponse } from '@agentform/studio-core';
+import { buildSpecDocument } from '@agentform/studio-core/server';
+import type { SpecDocumentResponse } from '@agentform/studio-core';
 
 export interface LoadSpecDocumentOptions {
   readonly rootDir: string;

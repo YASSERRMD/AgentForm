@@ -1,4 +1,10 @@
-import { agentSchema, modelSchema, toolSchema, workflowSchema } from '@agentform/schema';
+import {
+  agentSchema,
+  modelSchema,
+  toolSchema,
+  workflowNodeSchema,
+  workflowSchema,
+} from '@agentform/schema';
 import { z } from 'zod';
 
 export type ResourceType = 'models' | 'tools' | 'agents' | 'workflows';
@@ -39,4 +45,20 @@ export function generateAllResourceFormSchemas(): Record<ResourceType, ResourceF
     (resourceType) => [resourceType, generateResourceFormSchema(resourceType)] as const,
   );
   return Object.fromEntries(entries) as Record<ResourceType, ResourceFormSchema>;
+}
+
+/**
+ * A real JSON Schema for a single workflow node — `workflowNodeSchema` is
+ * itself a `z.discriminatedUnion('type', [...])` over all 13 node types
+ * (same shape as `tools`, one level deeper), so this produces a top-level
+ * `oneOf` exactly like `generateResourceFormSchema('tools')` does. The
+ * canvas's node editor reuses the identical variant-picker-then-ResourceForm
+ * pattern `ResourceEditor` already established for `tools`, just applied
+ * one level deeper (workflow -> node -> node-type variant).
+ */
+export function generateWorkflowNodeFormSchema(): Record<string, unknown> {
+  return z.toJSONSchema(workflowNodeSchema, { target: 'draft-7', io: 'input' }) as Record<
+    string,
+    unknown
+  >;
 }

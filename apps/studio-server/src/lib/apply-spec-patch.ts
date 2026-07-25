@@ -1,17 +1,17 @@
 import path from 'node:path';
-import {
-  discoverEntryFile,
-  loadProject,
-  nodeFileSystem,
-  type FileSystem,
-} from '@agentform/parser';
+import { discoverEntryFile, loadProject, nodeFileSystem, type FileSystem } from '@agentform/parser';
 import {
   BUILTIN_POLICIES,
   evaluatePolicies,
   loadPolicyConfig,
   policyResultsToDiagnostics,
 } from '@agentform/policy';
-import { applyPatch, buildSpecDocument, type PatchSpecResponse, type SpecPatch } from '@agentform/studio-core';
+import {
+  applyPatch,
+  buildSpecDocument,
+  type PatchSpecResponse,
+  type SpecPatch,
+} from '@agentform/studio-core';
 import type { Diagnostic } from '@agentform/diagnostics';
 import { STUDIO_DIAGNOSTIC_CODES } from './codes.js';
 import { nodeFileWriter, type FileWriter } from './file-writer.js';

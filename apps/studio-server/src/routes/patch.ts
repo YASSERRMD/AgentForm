@@ -24,19 +24,21 @@ export function registerPatchSpecRoute(
   app: FastifyInstance,
   options: RegisterPatchSpecRouteOptions,
 ): void {
-  app.withTypeProvider<ZodTypeProvider>().post(
-    '/api/spec/patch',
-    { schema: { body: patchSpecRequestSchema, response: { 200: patchSpecResponseSchema } } },
-    async (request): Promise<PatchSpecBody> => {
-      const result = applySpecPatch({
-        rootDir: options.rootDir,
-        fs: options.fs,
-        fileWriter: options.fileWriter,
-        patch: request.body.patch,
-      });
-      // See routes/spec.ts for why this cast is safe: readonly domain
-      // type vs. Zod's mutable-by-default inference, not a real gap.
-      return result as PatchSpecBody;
-    },
-  );
+  app
+    .withTypeProvider<ZodTypeProvider>()
+    .post(
+      '/api/spec/patch',
+      { schema: { body: patchSpecRequestSchema, response: { 200: patchSpecResponseSchema } } },
+      async (request): Promise<PatchSpecBody> => {
+        const result = applySpecPatch({
+          rootDir: options.rootDir,
+          fs: options.fs,
+          fileWriter: options.fileWriter,
+          patch: request.body.patch,
+        });
+        // See routes/spec.ts for why this cast is safe: readonly domain
+        // type vs. Zod's mutable-by-default inference, not a real gap.
+        return result as PatchSpecBody;
+      },
+    );
 }

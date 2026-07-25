@@ -15,7 +15,13 @@ function isStringArray(value: unknown): value is readonly string[] {
 }
 
 /** A field the schema declares but this renderer can't render faithfully — a free-form record (no fixed `properties`), an array of objects, or anything without a plain `type`. Falls back to raw JSON rather than silently dropping or guessing at the field's shape. */
-function JsonField({ value, onChange }: { readonly value: unknown; readonly onChange: (value: unknown) => void }) {
+function JsonField({
+  value,
+  onChange,
+}: {
+  readonly value: unknown;
+  readonly onChange: (value: unknown) => void;
+}) {
   const [text, setText] = useState(() => JSON.stringify(value ?? null, null, 2));
   const [error, setError] = useState<string | undefined>(undefined);
 
@@ -55,7 +61,10 @@ function Field({ label, schema, required, value, onChange }: FieldProps) {
   const control = (() => {
     if (isStringArray(enumValues)) {
       return (
-        <select value={typeof value === 'string' ? value : ''} onChange={(e) => onChange(e.target.value)}>
+        <select
+          value={typeof value === 'string' ? value : ''}
+          onChange={(e) => onChange(e.target.value)}
+        >
           <option value="" disabled>
             Choose…
           </option>
@@ -140,7 +149,9 @@ function Field({ label, schema, required, value, onChange }: FieldProps) {
 }
 
 function propertiesOf(schema: Record<string, unknown>): Record<string, Record<string, unknown>> {
-  return isRecord(schema.properties) ? (schema.properties as Record<string, Record<string, unknown>>) : {};
+  return isRecord(schema.properties)
+    ? (schema.properties as Record<string, Record<string, unknown>>)
+    : {};
 }
 
 function requiredOf(schema: Record<string, unknown>): ReadonlySet<string> {

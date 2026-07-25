@@ -12,7 +12,9 @@ const MODEL_SCHEMA = {
 
 describe('ResourceForm', () => {
   it('renders a text input for a string field, pre-filled from value', () => {
-    render(<ResourceForm jsonSchema={MODEL_SCHEMA} value={{ provider: 'openai' }} onChange={vi.fn()} />);
+    render(
+      <ResourceForm jsonSchema={MODEL_SCHEMA} value={{ provider: 'openai' }} onChange={vi.fn()} />,
+    );
 
     expect(screen.getByDisplayValue('openai')).toBeInTheDocument();
   });

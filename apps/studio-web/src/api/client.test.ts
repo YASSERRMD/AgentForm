@@ -65,9 +65,7 @@ describe('client', () => {
   });
 
   it('patchSpec() throws on a malformed-request 400, not just non-2xx in general', async () => {
-    const mockFetch = vi
-      .fn()
-      .mockResolvedValue({ ok: false, status: 400, json: async () => ({}) });
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({}) });
     vi.stubGlobal('fetch', mockFetch);
 
     await expect(patchSpec([])).rejects.toThrow('400');

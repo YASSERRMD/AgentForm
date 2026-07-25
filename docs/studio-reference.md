@@ -8,9 +8,9 @@ This document covers what exists today. Studio is delivered across several phase
 
 - A view of one project's spec: metadata, and every model/agent/tool/workflow, listed by id.
 - Live diagnostics from the same schema/semantic validation pipeline `agentform validate` uses — an invalid spec renders its diagnostics instead of a spec view, exactly as it would in the CLI.
-- Click any resource id to open a real, schema-driven edit form; each section has an inline "add new" field too. Saving sends a patch to the server, which re-runs the *entire* validate → policy pipeline before writing anything — a rejected edit shows the real diagnostics inline, and nothing is written to disk.
+- Click any resource id to open a real, schema-driven edit form; each section has an inline "add new" field too. Saving sends a patch to the server, which re-runs the _entire_ validate → policy pipeline before writing anything — a rejected edit shows the real diagnostics inline, and nothing is written to disk.
 - The write is a real, lossless YAML round trip: comments, key order, and formatting survive untouched everywhere the edit didn't touch.
-- Only single-file projects are editable today — a project that auto-discovers resources from `agents/`/`tools/`/`workflows/` directories, or that uses `$ref`, can still be *viewed*, but a save is refused with a clear error rather than guessed at.
+- Only single-file projects are editable today — a project that auto-discovers resources from `agents/`/`tools/`/`workflows/` directories, or that uses `$ref`, can still be _viewed_, but a save is refused with a clear error rather than guessed at.
 - Still no canvas, no chat, no GenAI. Those arrive in Phases 15–18.
 
 ## Running it locally
@@ -52,7 +52,7 @@ Then open `http://localhost:5173`. `AGENTFORM_STUDIO_ROOT` defaults to the backe
 ## Roadmap
 
 | Phase         | Delivers                                        |
-| ------------- | ------------------------------------------------ |
+| ------------- | ----------------------------------------------- |
 | 13            | Studio foundation: read-only spec + diagnostics |
 | 14 (this one) | Schema-driven spec form builder                 |
 | 15            | Canvas: workflow graph editor                   |

@@ -6,7 +6,7 @@ import {
 } from './form-schema.js';
 
 describe('generateResourceFormSchema', () => {
-  it('generates a real JSON Schema with the model resource type\'s own real fields', () => {
+  it("generates a real JSON Schema with the model resource type's own real fields", () => {
     const result = generateResourceFormSchema('models');
 
     expect(result.resourceType).toBe('models');
@@ -40,7 +40,8 @@ describe('generateAllResourceFormSchemas', () => {
       // instead. A form renderer has to handle both shapes; this assertion
       // documents that difference rather than assuming it away.
       const jsonSchema = all[resourceType].jsonSchema;
-      const isFlatObject = jsonSchema.type === 'object' && typeof jsonSchema.properties === 'object';
+      const isFlatObject =
+        jsonSchema.type === 'object' && typeof jsonSchema.properties === 'object';
       const isDiscriminatedUnion = Array.isArray(jsonSchema.oneOf) && jsonSchema.oneOf.length > 0;
       expect(isFlatObject || isDiscriminatedUnion).toBe(true);
     }

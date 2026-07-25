@@ -1,4 +1,8 @@
-import type { ResourceFormSchema, ResourceType, SpecDocumentResponse } from '@agentform/studio-core';
+import type {
+  ResourceFormSchema,
+  ResourceType,
+  SpecDocumentResponse,
+} from '@agentform/studio-core';
 import { useEffect, useState } from 'react';
 import { getFormSchemas, getSpec } from './api/client';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
@@ -19,10 +23,7 @@ interface EditingTarget {
   readonly resourceId: string;
 }
 
-function resourceValue(
-  document: SpecDocumentResponse,
-  target: EditingTarget,
-): unknown {
+function resourceValue(document: SpecDocumentResponse, target: EditingTarget): unknown {
   const spec = document.application?.spec;
   if (!spec) {
     return undefined;

@@ -62,7 +62,10 @@ describe('POST /api/spec/patch', () => {
     });
 
     expect(response.statusCode).toBe(200);
-    const body = response.json() as { success: boolean; application?: { metadata: { version: string } } };
+    const body = response.json() as {
+      success: boolean;
+      application?: { metadata: { version: string } };
+    };
     expect(body.success).toBe(true);
     expect(body.application?.metadata.version).toBe('2.0.0');
   });

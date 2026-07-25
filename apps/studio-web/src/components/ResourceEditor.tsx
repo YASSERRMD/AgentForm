@@ -1,4 +1,9 @@
-import type { Diagnostic, ResourceFormSchema, ResourceType, SpecPatch } from '@agentform/studio-core';
+import type {
+  Diagnostic,
+  ResourceFormSchema,
+  ResourceType,
+  SpecPatch,
+} from '@agentform/studio-core';
 import { useState } from 'react';
 import { patchSpec } from '../api/client';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
@@ -65,7 +70,8 @@ export function ResourceEditor({
   async function handleSave() {
     setSaving(true);
     setDiagnostics([]);
-    const finalValue = variants && variantType ? { ...(isRecord(value) ? value : {}), type: variantType } : value;
+    const finalValue =
+      variants && variantType ? { ...(isRecord(value) ? value : {}), type: variantType } : value;
     const patch: SpecPatch = [
       {
         op: initialValue === undefined ? 'add' : 'replace',

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   generateAllResourceFormSchemas,
   generateResourceFormSchema,
+  generateWorkflowNodeFormSchema,
   RESOURCE_TYPES,
 } from './form-schema.js';
 
@@ -54,5 +55,36 @@ describe('generateAllResourceFormSchemas', () => {
     expect(Array.isArray(tools.jsonSchema.oneOf)).toBe(true);
     const variants = tools.jsonSchema.oneOf as Record<string, unknown>[];
     expect(variants.length).toBeGreaterThan(1);
+  });
+});
+
+describe('generateWorkflowNodeFormSchema', () => {
+  it('renders all 13 real workflow node types as a discriminated union', () => {
+    const jsonSchema = generateWorkflowNodeFormSchema();
+
+    expect(jsonSchema.type).toBeUndefined();
+    expect(Array.isArray(jsonSchema.oneOf)).toBe(true);
+    const variants = jsonSchema.oneOf as Record<string, unknown>[];
+    expect(variants).toHaveLength(13);
+  });
+
+  it("includes each real node type's own distinguishing fields", () => {
+    const variants = generateWorkflowNodeFormSchema().oneOf as Record<string, unknown>[];
+    const byType = new Map(
+      variants.map((variant) => {
+        const properties = variant.properties as Record<string, Record<string, unknown>>;
+        const nodeType = properties.type;
+        if (nodeType === undefined) {
+          throw new Error('every node variant must declare a "type" field');
+        }
+        return [nodeType.const as string, properties];
+      }),
+    );
+
+    expect(byType.get('agent')).toHaveProperty('agent');
+    expect(byType.get('tool')).toHaveProperty('tool');
+    expect(byType.get('loop')).toHaveProperty('maxIterations');
+    expect(byType.get('delay')).toHaveProperty('duration');
+    expect(byType.get('subworkflow')).toHaveProperty('workflow');
   });
 });

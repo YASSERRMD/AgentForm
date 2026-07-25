@@ -18,6 +18,7 @@ export {
 export {
   generateAllResourceFormSchemas,
   generateResourceFormSchema,
+  generateWorkflowNodeFormSchema,
   RESOURCE_TYPES,
   type ResourceFormSchema,
   type ResourceType,

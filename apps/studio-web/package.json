@@ -2,7 +2,7 @@
   "name": "@agentform/studio-web",
   "version": "0.1.0",
   "private": true,
-  "description": "Agentform Studio frontend — a read-only (for now) view over a local project's spec and diagnostics, with a form/canvas/chat editor arriving in later phases.",
+  "description": "Agentform Studio frontend — a schema-driven spec form editor and workflow canvas, with a form-layout/design layer, GenAI, and chat editing arriving in later phases.",
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
@@ -13,7 +13,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@agentform/ir": "workspace:*",
     "@agentform/studio-core": "workspace:*",
+    "@dagrejs/dagre": "^3.0.0",
+    "@xyflow/react": "^12.11.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

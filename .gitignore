@@ -41,3 +41,6 @@ temp/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Machine-specific local dev config (absolute scratchpad paths, lock files)
+/.claude/

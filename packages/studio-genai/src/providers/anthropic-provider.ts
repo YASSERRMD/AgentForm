@@ -37,7 +37,10 @@ export function createAnthropicProvider(options: AnthropicProviderOptions = {}):
         model: options.model ?? DEFAULT_MODEL,
         max_tokens: options.maxTokens ?? DEFAULT_MAX_TOKENS,
         system: request.systemPrompt,
-        messages: [{ role: 'user', content: request.userPrompt }],
+        messages: [
+          ...(request.history ?? []).map((turn) => ({ role: turn.role, content: turn.content })),
+          { role: 'user' as const, content: request.userPrompt },
+        ],
         output_config: { format: zodOutputFormat(request.schema) },
       });
       if (message.parsed_output === null) {

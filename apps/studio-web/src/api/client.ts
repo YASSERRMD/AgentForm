@@ -6,6 +6,12 @@ import type {
   SpecDocumentResponse,
   SpecPatch,
 } from '@agentform/studio-core';
+import type {
+  DesignDraft,
+  DesignResourceType,
+  GetDesignResponse,
+  PutDesignResponse,
+} from '@agentform/studio-design';
 
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
@@ -18,6 +24,18 @@ async function getJson<T>(path: string): Promise<T> {
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(`${path} responded with ${response.status}`);
+  }
+  return (await response.json()) as T;
+}
+
+async function putJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
@@ -47,4 +65,27 @@ export function getFormSchemas(): Promise<Record<ResourceType, ResourceFormSchem
  */
 export function patchSpec(patch: SpecPatch): Promise<PatchSpecResponse> {
   return postJson<PatchSpecResponse>('/api/spec/patch', { patch });
+}
+
+export function getDesign(
+  resourceType: DesignResourceType,
+  resourceId: string,
+): Promise<GetDesignResponse> {
+  return getJson<GetDesignResponse>(
+    `/api/design/${resourceType}/${encodeURIComponent(resourceId)}`,
+  );
+}
+
+/** `success: false` is a real, expected outcome (a dangling binding, a shape mismatch) — not an HTTP error. Only a malformed request or a transport failure throws. */
+export function putDesign(
+  resourceType: DesignResourceType,
+  resourceId: string,
+  design: DesignDraft,
+): Promise<PutDesignResponse> {
+  return putJson<PutDesignResponse>(
+    `/api/design/${resourceType}/${encodeURIComponent(resourceId)}`,
+    {
+      design,
+    },
+  );
 }

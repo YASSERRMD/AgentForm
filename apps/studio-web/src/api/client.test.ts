@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getFormSchemas, getHealth, getSpec, patchSpec } from './client';
+import { getDesign, getFormSchemas, getHealth, getSpec, patchSpec, putDesign } from './client';
 
 describe('client', () => {
   afterEach(() => {
@@ -69,5 +69,52 @@ describe('client', () => {
     vi.stubGlobal('fetch', mockFetch);
 
     await expect(patchSpec([])).rejects.toThrow('400');
+  });
+
+  it('getDesign() fetches /api/design/:resourceType/:resourceId and returns the parsed JSON', async () => {
+    const body = { design: null };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await getDesign('agents', 'assistant');
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/assistant');
+    expect(result).toEqual(body);
+  });
+
+  it('getDesign() URL-encodes the resourceId', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ design: null }) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await getDesign('agents', 'a/b');
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/a%2Fb');
+  });
+
+  it('putDesign() PUTs the draft as a JSON body and returns the parsed response', async () => {
+    const body = { success: true, diagnostics: [] };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    vi.stubGlobal('fetch', mockFetch);
+    const draft = { binding: { resourceType: 'agents' as const, resourceId: 'assistant' } };
+
+    const result = await putDesign('agents', 'assistant', draft);
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/assistant', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ design: draft }),
+    });
+    expect(result).toEqual(body);
+  });
+
+  it('putDesign() throws on a malformed-request 400', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 400, json: async () => ({}) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(
+      putDesign('agents', 'assistant', {
+        binding: { resourceType: 'agents', resourceId: 'assistant' },
+      }),
+    ).rejects.toThrow('400');
   });
 });

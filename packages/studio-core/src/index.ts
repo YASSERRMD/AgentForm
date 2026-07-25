@@ -12,6 +12,11 @@
 export type {
   Agent,
   AgenticApplication,
+  AuditEntry,
+  AuditListResponse,
+  AuditTarget,
+  ChangeProvenance,
+  ChangeSource,
   Diagnostic,
   DiagnosticSeverity,
   SourceLocation,
@@ -43,6 +48,9 @@ export {
   type ResourceType,
 } from './form-schema.js';
 export {
+  auditEntrySchema,
+  auditListResponseSchema,
+  changeProvenanceSchema,
   diagnosticSchema,
   formSchemasResponseSchema,
   healthResponseSchema,

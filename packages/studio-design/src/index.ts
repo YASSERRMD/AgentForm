@@ -7,6 +7,8 @@
  */
 export type {
   CanvasPosition,
+  ChangeProvenance,
+  ChangeSource,
   DesignArtifact,
   DesignDraft,
   DesignResourceType,
@@ -32,6 +34,7 @@ export { renderDesignToHtml } from './render-html.js';
 
 export {
   canvasPositionSchema,
+  changeProvenanceSchema,
   designArtifactSchema,
   designDraftSchema,
   formLayoutSchema,

@@ -69,7 +69,34 @@ describe('PUT /api/design/:resourceType/:resourceId', () => {
     const body = response.json() as { success: boolean; design?: { designVersion: string } };
     expect(body.success).toBe(true);
     expect(body.design?.designVersion).toBe('1');
-    expect(fileWriter.written.size).toBe(1);
+    // The design artifact itself, plus the audit-log entry (Phase 18).
+    expect(fileWriter.written.size).toBe(2);
+  });
+
+  it('records the request body provenance in the local audit log', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const fileWriter = createInMemoryFileWriter();
+    const app = buildApp({ rootDir: '/project', fs, fileWriter });
+
+    await app.inject({
+      method: 'PUT',
+      url: '/api/design/agents/assistant',
+      payload: {
+        design: {
+          binding: { resourceType: 'agents', resourceId: 'assistant' },
+          layout: { input: [{ id: 'f1', type: 'field', fieldPath: 'name', widget: 'text' }] },
+        },
+        provenance: { source: 'genai', summary: 'Grouped the name field.' },
+      },
+    });
+
+    const auditContent = [...fileWriter.written.entries()].find(([path]) =>
+      path.endsWith('.agentform/studio-audit.jsonl'),
+    )?.[1];
+    expect(JSON.parse(auditContent!.trim())).toMatchObject({
+      source: 'genai',
+      summary: 'Grouped the name field.',
+    });
   });
 
   it('rejects a dangling field-path binding with a 200 success:false, writing nothing', async () => {

@@ -67,8 +67,22 @@ export interface GetDesignResponse {
   readonly design: DesignArtifact | null;
 }
 
+/**
+ * Mirrors `@agentform/studio-core`'s `ChangeSource`/`ChangeProvenance`
+ * structurally rather than importing them — the two Studio packages
+ * never depend on each other, same as this file's own `Diagnostic`
+ * mirror in `http-contracts.ts`.
+ */
+export type ChangeSource = 'manual' | 'genai' | 'chat';
+
+export interface ChangeProvenance {
+  readonly source: ChangeSource;
+  readonly summary?: string;
+}
+
 export interface PutDesignRequest {
   readonly design: DesignDraft;
+  readonly provenance?: ChangeProvenance;
 }
 
 export interface PutDesignResponse {

@@ -30,9 +30,20 @@ export interface HealthResponse {
   readonly rootDir: string;
 }
 
+/** Where a change actually came from — a plain UI form/canvas edit, an accepted one-shot GenAI proposal (Phase 17), or an accepted multi-turn chat proposal (Phase 18). */
+export type ChangeSource = 'manual' | 'genai' | 'chat';
+
+/** Attached to a write request so the resulting audit-log entry (see `AuditEntry`) records where the change came from — optional, and defaults to `'manual'` server-side when omitted, so every pre-Phase-18 caller (a plain form Save) needs no change. */
+export interface ChangeProvenance {
+  readonly source: ChangeSource;
+  /** A short human-readable description, e.g. a GenAI/chat proposal's own summary. Server derives a generic one from the patch itself when omitted. */
+  readonly summary?: string;
+}
+
 /** Body of `POST /api/spec/patch` — a form/canvas/chat/GenAI edit, expressed as a structured patch, never a raw file write. */
 export interface PatchSpecRequest {
   readonly patch: SpecPatch;
+  readonly provenance?: ChangeProvenance;
 }
 
 /**
@@ -81,4 +92,27 @@ export interface PromptToSpecResponse {
   readonly patch?: SpecPatch;
   readonly skipped?: readonly SkippedSpecResource[];
   readonly diagnostics: readonly Diagnostic[];
+}
+
+export type AuditTarget =
+  | { readonly kind: 'spec' }
+  | { readonly kind: 'design'; readonly resourceType: string; readonly resourceId: string };
+
+/**
+ * One entry in Studio's local, append-only provenance log (Phase 18) —
+ * never a security control (unlike `@agentform/planner`'s hash-verified
+ * `.afplan` files), just operational visibility into what changed, from
+ * where, and when. Lives under `.agentform/` on the server, never
+ * committed to git or shared as a team artifact — see ADR-0021.
+ */
+export interface AuditEntry {
+  readonly timestamp: string;
+  readonly source: ChangeSource;
+  readonly summary: string;
+  readonly target: AuditTarget;
+}
+
+/** Body of `GET /api/audit`. Newest first. */
+export interface AuditListResponse {
+  readonly entries: readonly AuditEntry[];
 }

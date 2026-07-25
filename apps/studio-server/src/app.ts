@@ -4,6 +4,7 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type { FileWriter } from './lib/file-writer.js';
+import { registerAuditRoute } from './routes/audit.js';
 import { registerDesignRoute } from './routes/design.js';
 import { registerFormSchemasRoute } from './routes/form-schemas.js';
 import { registerGenaiRoute } from './routes/genai.js';
@@ -57,6 +58,7 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
     fs: options.fs,
     provider: options.genaiProvider,
   });
+  registerAuditRoute(app, { rootDir: options.rootDir, fs: options.fs });
 
   return app;
 }

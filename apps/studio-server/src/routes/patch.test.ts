@@ -8,6 +8,7 @@ import { createInMemoryFileWriter, type FileWriter } from '../lib/file-writer.js
 function createSharedInMemoryProject(initialFiles: Record<string, string>): {
   readonly fs: FileSystem;
   readonly fileWriter: FileWriter;
+  readonly files: Map<string, string>;
 } {
   const files = new Map(Object.entries(initialFiles));
   const fs: FileSystem = {
@@ -26,7 +27,7 @@ function createSharedInMemoryProject(initialFiles: Record<string, string>): {
       files.set(absolutePath, content);
     },
   };
-  return { fs, fileWriter };
+  return { fs, fileWriter, files };
 }
 
 const VALID_SPEC = {
@@ -85,5 +86,29 @@ describe('POST /api/spec/patch', () => {
 
     expect(response.statusCode).toBe(400);
     expect(fileWriter.written.size).toBe(0);
+  });
+
+  it('records the request body provenance in the local audit log', async () => {
+    const { fs, fileWriter, files } = createSharedInMemoryProject({
+      '/project/agentform.json': JSON.stringify(VALID_SPEC),
+    });
+    const app = buildApp({ rootDir: '/project', fs, fileWriter });
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/spec/patch',
+      payload: {
+        patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }],
+        provenance: { source: 'chat', summary: 'Bumped the version.' },
+      },
+    });
+
+    const auditContent = [...files.entries()].find(([path]) =>
+      path.endsWith('.agentform/studio-audit.jsonl'),
+    )?.[1];
+    expect(JSON.parse(auditContent!.trim())).toMatchObject({
+      source: 'chat',
+      summary: 'Bumped the version.',
+    });
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  changeProvenanceSchema,
   designArtifactSchema,
   getDesignResponseSchema,
   promptToDesignRequestSchema,
@@ -65,6 +66,28 @@ describe('http-contracts', () => {
     expect(() =>
       putDesignResponseSchema.parse({ success: true, design: ARTIFACT, diagnostics: [] }),
     ).not.toThrow();
+  });
+
+  it('accepts a PutDesignRequest carrying provenance', () => {
+    expect(() =>
+      putDesignRequestSchema.parse({
+        design: { binding: { resourceType: 'agents', resourceId: 'assistant' } },
+        provenance: { source: 'genai', summary: 'Grouped the question field.' },
+      }),
+    ).not.toThrow();
+  });
+});
+
+describe('changeProvenanceSchema', () => {
+  it('accepts each real source value, with and without a summary', () => {
+    expect(() => changeProvenanceSchema.parse({ source: 'manual' })).not.toThrow();
+    expect(() =>
+      changeProvenanceSchema.parse({ source: 'chat', summary: 'Grouped the question field.' }),
+    ).not.toThrow();
+  });
+
+  it('rejects an unrecognized source', () => {
+    expect(() => changeProvenanceSchema.parse({ source: 'bogus' })).toThrow();
   });
 });
 

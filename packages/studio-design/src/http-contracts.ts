@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type {
   CanvasPosition,
+  ChangeProvenance,
   DesignArtifact,
   DesignDraft,
   FormLayout,
@@ -89,8 +90,14 @@ export const getDesignResponseSchema = z.object({
   design: designArtifactSchema.nullable(),
 }) satisfies z.ZodType<GetDesignResponse>;
 
+export const changeProvenanceSchema = z.object({
+  source: z.enum(['manual', 'genai', 'chat']),
+  summary: z.string().optional(),
+}) satisfies z.ZodType<ChangeProvenance>;
+
 export const putDesignRequestSchema = z.object({
   design: designDraftSchema,
+  provenance: changeProvenanceSchema.optional(),
 }) satisfies z.ZodType<PutDesignRequest>;
 
 export const putDesignResponseSchema = z.object({

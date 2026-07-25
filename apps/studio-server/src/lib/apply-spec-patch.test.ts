@@ -170,4 +170,56 @@ describe('applySpecPatch', () => {
     expect(result.diagnostics[0]?.code).toBe('AGF8001');
     expect(fileWriter.written.size).toBe(0);
   });
+
+  it('records a manual-source audit entry with a derived summary when no provenance is given', () => {
+    const { fs, fileWriter, files } = createSharedInMemoryProject({ [ENTRY_PATH]: VALID_YAML });
+
+    applySpecPatch({
+      rootDir: '/project',
+      fs,
+      fileWriter,
+      patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }],
+    });
+
+    const auditContent = [...files.entries()].find(([path]) =>
+      path.endsWith('.agentform/studio-audit.jsonl'),
+    )?.[1];
+    expect(auditContent).toBeDefined();
+    const entry = JSON.parse(auditContent!.trim()) as { source: string; summary: string };
+    expect(entry.source).toBe('manual');
+    expect(entry.summary).toBe('replace metadata.version');
+  });
+
+  it('records the supplied provenance source and summary', () => {
+    const { fs, fileWriter, files } = createSharedInMemoryProject({ [ENTRY_PATH]: VALID_YAML });
+
+    applySpecPatch({
+      rootDir: '/project',
+      fs,
+      fileWriter,
+      patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }],
+      provenance: { source: 'genai', summary: 'Bumped the version.' },
+    });
+
+    const auditContent = [...files.entries()].find(([path]) =>
+      path.endsWith('.agentform/studio-audit.jsonl'),
+    )?.[1];
+    const entry = JSON.parse(auditContent!.trim()) as { source: string; summary: string };
+    expect(entry.source).toBe('genai');
+    expect(entry.summary).toBe('Bumped the version.');
+  });
+
+  it('never writes an audit entry when the write itself is rejected', () => {
+    const fs = createInMemoryFileSystem({ [ENTRY_PATH]: VALID_YAML });
+    const fileWriter = createInMemoryFileWriter();
+
+    applySpecPatch({
+      rootDir: '/project',
+      fs,
+      fileWriter,
+      patch: [{ op: 'remove', path: ['metadata', 'version'] }],
+    });
+
+    expect(fileWriter.written.size).toBe(0);
+  });
 });

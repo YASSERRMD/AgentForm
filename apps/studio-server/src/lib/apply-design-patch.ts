@@ -1,11 +1,13 @@
-import type { FileSystem } from '@agentform/parser';
+import { nodeFileSystem, type FileSystem } from '@agentform/parser';
 import {
   validateDesignArtifact,
+  type ChangeSource,
   type DesignDraft,
   type PutDesignResponse,
 } from '@agentform/studio-design';
 import { stampDesignArtifact } from '@agentform/studio-design/server';
 import type { Diagnostic } from '@agentform/diagnostics';
+import { appendAuditEntry } from './audit-log.js';
 import { nodeFileWriter, type FileWriter } from './file-writer.js';
 import { loadSpecDocument } from './load-spec-document.js';
 import { writeDesignFile } from './design-fs.js';
@@ -15,6 +17,8 @@ export interface ApplyDesignPatchOptions {
   readonly draft: DesignDraft;
   readonly fs?: FileSystem;
   readonly fileWriter?: FileWriter;
+  /** Where this draft actually came from — recorded in the local audit log (Phase 18). Defaults to `'manual'` when omitted. */
+  readonly provenance?: { readonly source: ChangeSource; readonly summary?: string };
 }
 
 function rejected(diagnostics: readonly Diagnostic[]): PutDesignResponse {
@@ -32,7 +36,7 @@ function rejected(diagnostics: readonly Diagnostic[]): PutDesignResponse {
  * only need referential integrity against the resources they bind to.
  */
 export function applyDesignPatch(options: ApplyDesignPatchOptions): PutDesignResponse {
-  const fs = options.fs;
+  const fs = options.fs ?? nodeFileSystem;
   const fileWriter = options.fileWriter ?? nodeFileWriter;
 
   const specDocument = loadSpecDocument({ rootDir: options.rootDir, fs });
@@ -47,6 +51,18 @@ export function applyDesignPatch(options: ApplyDesignPatchOptions): PutDesignRes
   }
 
   writeDesignFile(options.rootDir, fileWriter, stamped);
+
+  appendAuditEntry(options.rootDir, fs, fileWriter, {
+    source: options.provenance?.source ?? 'manual',
+    summary:
+      options.provenance?.summary ??
+      `Updated layout for ${stamped.binding.resourceType}.${stamped.binding.resourceId}`,
+    target: {
+      kind: 'design',
+      resourceType: stamped.binding.resourceType,
+      resourceId: stamped.binding.resourceId,
+    },
+  });
 
   return { success: true, design: stamped, diagnostics };
 }

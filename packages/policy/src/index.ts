@@ -20,6 +20,11 @@ export {
   validatePolicyEngineConfig,
   type PolicyConfigValidationResult,
 } from './config-schema.js';
+export {
+  loadPolicyConfig,
+  POLICY_CONFIG_FILENAME,
+  type LoadPolicyConfigResult,
+} from './config-loader.js';
 
 export const PACKAGE_NAME = '@agentform/policy';
 export const PACKAGE_VERSION = '0.1.0';

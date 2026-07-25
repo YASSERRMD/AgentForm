@@ -2,13 +2,17 @@ import { existsSync, readFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import { checkEvaluationGateStatus, parseTestResultsRecord } from '@agentform/evaluator';
 import type { AgentformIR } from '@agentform/ir';
-import { BUILTIN_POLICIES, evaluatePolicies, hasPolicyFailures } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  hasPolicyFailures,
+  loadPolicyConfig,
+} from '@agentform/policy';
 import type { ApplicationState } from '@agentform/state';
 import { testResultsPathFor } from './test.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { loadPolicyConfig } from '../lib/policy-config.js';
 import { openStateBackend } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
 

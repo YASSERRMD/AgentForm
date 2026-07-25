@@ -469,6 +469,9 @@ importers:
       '@agentform/diagnostics':
         specifier: workspace:*
         version: link:../diagnostics
+      '@agentform/parser':
+        specifier: workspace:*
+        version: link:../parser
       '@agentform/schema':
         specifier: workspace:*
         version: link:../schema

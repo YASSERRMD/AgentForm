@@ -12,12 +12,11 @@ import {
   type TestCaseResult,
 } from '@agentform/evaluator';
 import { nodeFileSystem } from '@agentform/parser';
-import { BUILTIN_POLICIES, evaluatePolicies } from '@agentform/policy';
+import { BUILTIN_POLICIES, evaluatePolicies, loadPolicyConfig } from '@agentform/policy';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { formatJUnitXml } from '../lib/junit-output.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { loadPolicyConfig } from '../lib/policy-config.js';
 import { policyResultsToDiagnostics } from '../lib/policy-output.js';
 import { redactSecretsFromReport } from '../lib/report-redaction.js';
 import { stateDirFor } from '../lib/state.js';

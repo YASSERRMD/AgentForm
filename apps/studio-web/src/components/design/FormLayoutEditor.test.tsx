@@ -125,10 +125,11 @@ describe('FormLayoutEditor', () => {
     expect(screen.queryByText('Layout saved.')).not.toBeInTheDocument();
   });
 
-  it('accepting a generated layout proposal loads it into the editable draft, without saving', async () => {
+  it('accepting a chat-proposed layout loads it into the editable draft, without saving', async () => {
     vi.spyOn(client, 'getDesign').mockResolvedValue({ design: null });
-    const promptToDesignMock = vi.spyOn(client, 'promptToDesign').mockResolvedValue({
+    const chatDesignMock = vi.spyOn(client, 'chatDesign').mockResolvedValue({
       success: true,
+      message: "I've laid out the name field.",
       design: {
         binding: { resourceType: 'agents', resourceId: 'assistant' },
         designVersion: '1',
@@ -142,13 +143,13 @@ describe('FormLayoutEditor', () => {
     render(<FormLayoutEditor agentId="assistant" agent={AGENT} />);
     await waitFor(() => expect(screen.queryByText('Loading layout…')).not.toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Prompt'), { target: { value: 'lay it out' } });
-    fireEvent.click(screen.getByText('Generate layout'));
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'lay it out' } });
+    fireEvent.click(screen.getByText('Send'));
     await screen.findByLabelText('Layout proposal');
 
     fireEvent.click(screen.getByText('Accept'));
 
-    expect(promptToDesignMock).toHaveBeenCalledWith('assistant', 'lay it out');
+    expect(chatDesignMock).toHaveBeenCalledWith('assistant', 'lay it out', []);
     expect(screen.getByLabelText('Layout field name')).toBeInTheDocument();
     expect(screen.queryByLabelText('Layout proposal')).not.toBeInTheDocument();
     expect(putDesignMock).not.toHaveBeenCalled();
@@ -156,15 +157,23 @@ describe('FormLayoutEditor', () => {
 
   it('disables Accept and shows diagnostics for a layout proposal that fails validation', async () => {
     vi.spyOn(client, 'getDesign').mockResolvedValue({ design: null });
-    vi.spyOn(client, 'promptToDesign').mockResolvedValue({
+    vi.spyOn(client, 'chatDesign').mockResolvedValue({
       success: false,
+      message: 'That field does not exist.',
+      design: {
+        binding: { resourceType: 'agents', resourceId: 'assistant' },
+        designVersion: '1',
+        specVersionTarget: 'sha256:aaa',
+        contentHash: 'sha256:bbb',
+        layout: { input: [{ id: 'x', type: 'field', fieldPath: 'not-declared' }] },
+      },
       diagnostics: [{ code: 'AGF8003', severity: 'error', message: 'Dangling field path.' }],
     });
     render(<FormLayoutEditor agentId="assistant" agent={AGENT} />);
     await waitFor(() => expect(screen.queryByText('Loading layout…')).not.toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Prompt'), { target: { value: 'lay it out' } });
-    fireEvent.click(screen.getByText('Generate layout'));
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'lay it out' } });
+    fireEvent.click(screen.getByText('Send'));
 
     expect(await screen.findByText('Dangling field path.')).toBeInTheDocument();
     const proposal = screen.getByLabelText('Layout proposal');
@@ -173,8 +182,9 @@ describe('FormLayoutEditor', () => {
 
   it('rejecting a layout proposal discards it, leaving the current draft untouched', async () => {
     vi.spyOn(client, 'getDesign').mockResolvedValue({ design: null });
-    vi.spyOn(client, 'promptToDesign').mockResolvedValue({
+    vi.spyOn(client, 'chatDesign').mockResolvedValue({
       success: true,
+      message: "I've laid out the name field.",
       design: {
         binding: { resourceType: 'agents', resourceId: 'assistant' },
         designVersion: '1',
@@ -187,8 +197,8 @@ describe('FormLayoutEditor', () => {
     render(<FormLayoutEditor agentId="assistant" agent={AGENT} />);
     await waitFor(() => expect(screen.queryByText('Loading layout…')).not.toBeInTheDocument());
 
-    fireEvent.change(screen.getByLabelText('Prompt'), { target: { value: 'lay it out' } });
-    fireEvent.click(screen.getByText('Generate layout'));
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'lay it out' } });
+    fireEvent.click(screen.getByText('Send'));
     await screen.findByLabelText('Layout proposal');
 
     fireEvent.click(screen.getByText('Reject'));

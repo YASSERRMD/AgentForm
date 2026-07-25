@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  chatDesign,
+  chatSpec,
   getDesign,
   getFormSchemas,
   getHealth,
   getSpec,
   patchSpec,
-  promptToDesign,
-  promptToSpec,
   putDesign,
 } from './client';
 
@@ -127,38 +127,37 @@ describe('client', () => {
     ).rejects.toThrow('400');
   });
 
-  it('promptToSpec() posts the prompt as a JSON body and returns the parsed response', async () => {
-    const body = {
-      success: true,
-      summary: 'Added a tool.',
-      patch: [],
-      skipped: [],
-      diagnostics: [],
-    };
+  it('chatSpec() posts the message and history as a JSON body and returns the parsed response', async () => {
+    const body = { success: true, message: "I've added a tool.", patch: [], diagnostics: [] };
     const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
     vi.stubGlobal('fetch', mockFetch);
+    const history = [{ role: 'user' as const, content: 'add a lookup tool' }];
 
-    const result = await promptToSpec('add a lookup tool');
+    const result = await chatSpec('thanks', history);
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/genai/prompt-to-spec', {
+    expect(mockFetch).toHaveBeenCalledWith('/api/genai/chat/spec', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: 'add a lookup tool' }),
+      body: JSON.stringify({ message: 'thanks', history }),
     });
     expect(result).toEqual(body);
   });
 
-  it('promptToDesign() posts the agentId and prompt as a JSON body and returns the parsed response', async () => {
-    const body = { success: true, diagnostics: [] };
+  it('chatDesign() posts the agentId, message, and history as a JSON body and returns the parsed response', async () => {
+    const body = { success: true, message: 'Grouped the question field.', diagnostics: [] };
     const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
     vi.stubGlobal('fetch', mockFetch);
 
-    const result = await promptToDesign('assistant', 'group urgency with the question');
+    const result = await chatDesign('assistant', 'group urgency with the question');
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/genai/prompt-to-design', {
+    expect(mockFetch).toHaveBeenCalledWith('/api/genai/chat/design', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ agentId: 'assistant', prompt: 'group urgency with the question' }),
+      body: JSON.stringify({
+        agentId: 'assistant',
+        message: 'group urgency with the question',
+        history: undefined,
+      }),
     });
     expect(result).toEqual(body);
   });

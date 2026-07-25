@@ -1,12 +1,7 @@
 import type { Agent, Diagnostic } from '@agentform/studio-core';
-import type {
-  FormLayout,
-  LayoutNode,
-  LayoutWidget,
-  PromptToDesignResponse,
-} from '@agentform/studio-design';
+import type { FormLayout, LayoutNode, LayoutWidget } from '@agentform/studio-design';
 import { useEffect, useState } from 'react';
-import { getDesign, promptToDesign, putDesign } from '../../api/client';
+import { getDesign, putDesign } from '../../api/client';
 import { extractSchemaFields } from '../../lib/extract-schema-fields';
 import {
   addContainer,
@@ -18,7 +13,7 @@ import {
   setFieldWidget,
 } from '../../lib/form-layout-ops';
 import { DiagnosticsPanel } from '../DiagnosticsPanel';
-import { ProposalReview } from '../ProposalReview';
+import { ChatDesignPanel } from './ChatDesignPanel';
 
 export interface FormLayoutEditorProps {
   readonly agentId: string;
@@ -208,97 +203,6 @@ function SectionEditor({
   );
 }
 
-type GenerateLayoutState =
-  | { readonly status: 'idle' }
-  | { readonly status: 'generating' }
-  | { readonly status: 'proposed'; readonly result: PromptToDesignResponse }
-  | { readonly status: 'error'; readonly message: string };
-
-/**
- * Prompt-to-design (§34.3, Phase 17), scoped to one agent's form layout.
- * Preview-only — Accept loads the proposed layout straight into this
- * editor's own draft state (the same `layout` the up/down/add-field
- * controls already mutate), it never calls `putDesign` itself. The
- * existing "Save layout" button below is still the only thing that
- * persists anything, so an accepted proposal can still be hand-tweaked
- * before it's ever written.
- */
-function GenerateLayoutPanel({
-  agentId,
-  onAccept,
-}: {
-  readonly agentId: string;
-  readonly onAccept: (layout: FormLayout) => void;
-}) {
-  const [prompt, setPrompt] = useState('');
-  const [state, setState] = useState<GenerateLayoutState>({ status: 'idle' });
-  const busy = state.status === 'generating';
-
-  async function handleGenerate() {
-    setState({ status: 'generating' });
-    try {
-      const result = await promptToDesign(agentId, prompt);
-      setState({ status: 'proposed', result });
-    } catch (error) {
-      setState({
-        status: 'error',
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-  }
-
-  const proposedLayout = state.status === 'proposed' ? state.result.design?.layout : undefined;
-  const canAccept =
-    state.status === 'proposed' && state.result.success && proposedLayout !== undefined;
-
-  return (
-    <section aria-label="Generate layout with AI">
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (prompt.trim().length > 0) {
-            void handleGenerate();
-          }
-        }}
-      >
-        <label>
-          <span>Prompt</span>
-          <input
-            type="text"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g. group urgency with the question"
-            disabled={busy}
-          />
-        </label>
-        <button type="submit" disabled={busy || prompt.trim().length === 0}>
-          {busy ? 'Generating…' : 'Generate layout'}
-        </button>
-      </form>
-      {state.status === 'error' && <p role="alert">{state.message}</p>}
-      {state.status === 'proposed' && (
-        <ProposalReview
-          ariaLabel="Layout proposal"
-          // No `changes`/`impact` here — a layout is presentation-only
-          // (never touches spec.* behavior), so neither a patch-shaped
-          // diff nor classifyPatchImpact's signal applies to it.
-          diagnostics={state.result.diagnostics}
-          canAccept={canAccept}
-          acceptBusy={false}
-          onAccept={() => {
-            if (proposedLayout) {
-              onAccept(proposedLayout);
-            }
-            setState({ status: 'idle' });
-            setPrompt('');
-          }}
-          onReject={() => setState({ status: 'idle' })}
-        />
-      )}
-    </section>
-  );
-}
-
 /**
  * Edits presentational layout for one agent's inputSchema/outputSchema
  * fields — never the schema content itself (see form-layout-ops.ts).
@@ -366,7 +270,7 @@ export function FormLayoutEditor({ agentId, agent }: FormLayoutEditorProps) {
 
   return (
     <section aria-label={`Form layout for agent ${agentId}`}>
-      <GenerateLayoutPanel
+      <ChatDesignPanel
         agentId={agentId}
         onAccept={(layout) => updateLayout(() => normalizeFormLayout(layout))}
       />

@@ -213,6 +213,9 @@ importers:
       '@agentform/studio-core':
         specifier: workspace:*
         version: link:../../packages/studio-core
+      '@agentform/studio-design':
+        specifier: workspace:*
+        version: link:../../packages/studio-design
       '@dagrejs/dagre':
         specifier: ^3.0.0
         version: 3.0.0

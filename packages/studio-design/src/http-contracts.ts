@@ -55,12 +55,12 @@ export const formLayoutSchema = z.object({
   output: z.array(layoutNodeSchema).optional(),
 }) satisfies z.ZodType<FormLayout>;
 
-const canvasPositionSchema = z.object({
+export const canvasPositionSchema = z.object({
   x: z.number(),
   y: z.number(),
 }) satisfies z.ZodType<CanvasPosition>;
 
-const styleTokensSchema = z.object({
+export const styleTokensSchema = z.object({
   spacing: z.record(z.string(), z.string()).optional(),
   color: z.record(z.string(), z.string()).optional(),
   typography: z.record(z.string(), z.string()).optional(),

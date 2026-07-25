@@ -29,6 +29,7 @@ export { validateDesignArtifact } from './validate.js';
 export { renderDesignToHtml } from './render-html.js';
 
 export {
+  canvasPositionSchema,
   designArtifactSchema,
   designDraftSchema,
   formLayoutSchema,
@@ -37,4 +38,5 @@ export {
   putDesignRequestSchema,
   putDesignResponseSchema,
   resourceBindingSchema,
+  styleTokensSchema,
 } from './http-contracts.js';

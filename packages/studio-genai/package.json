@@ -1,0 +1,35 @@
+{
+  "name": "@agentform/studio-genai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agentform Studio — provider-neutral GenAI generation (prompt-to-spec, prompt-to-design). Server-side only: no provider call ever reaches the browser.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@agentform/diagnostics": "workspace:*",
+    "@agentform/ir": "workspace:*",
+    "@agentform/policy": "workspace:*",
+    "@agentform/schema": "workspace:*",
+    "@agentform/studio-core": "workspace:*",
+    "@agentform/studio-design": "workspace:*",
+    "@anthropic-ai/sdk": "^0.115.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1"
+  }
+}

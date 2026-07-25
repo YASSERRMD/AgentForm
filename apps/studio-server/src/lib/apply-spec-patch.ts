@@ -6,12 +6,8 @@ import {
   loadPolicyConfig,
   policyResultsToDiagnostics,
 } from '@agentform/policy';
-import {
-  applyPatch,
-  buildSpecDocument,
-  type PatchSpecResponse,
-  type SpecPatch,
-} from '@agentform/studio-core';
+import { applyPatch, type PatchSpecResponse, type SpecPatch } from '@agentform/studio-core';
+import { buildSpecDocument } from '@agentform/studio-core/server';
 import type { Diagnostic } from '@agentform/diagnostics';
 import { STUDIO_DIAGNOSTIC_CODES } from './codes.js';
 import { nodeFileWriter, type FileWriter } from './file-writer.js';

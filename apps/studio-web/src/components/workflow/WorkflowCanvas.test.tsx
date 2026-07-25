@@ -1,7 +1,8 @@
 import type { AgenticApplication, Workflow } from '@agentform/studio-core';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as client from '../../api/client';
 import { WorkflowCanvas } from './WorkflowCanvas';
 
 /** WorkflowCanvas is fully controlled (parent owns `value`, reacts via `onChange`) — this wrapper behaves like a real parent so tests can observe post-edit UI state, not just the raw onChange payload. */
@@ -52,6 +53,49 @@ const WORKFLOW: Workflow = {
 };
 
 describe('WorkflowCanvas', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('loads saved canvas positions for this workflow on mount', async () => {
+    const getDesignMock = vi.spyOn(client, 'getDesign').mockResolvedValue({
+      design: {
+        binding: { resourceType: 'workflows', resourceId: 'main' },
+        designVersion: '1',
+        specVersionTarget: 'sha256:aaa',
+        contentHash: 'sha256:bbb',
+        positions: { assistant: { x: 500, y: 500 } },
+      },
+    });
+
+    render(
+      <WorkflowCanvas
+        workflowId="main"
+        value={WORKFLOW}
+        onChange={vi.fn()}
+        application={APPLICATION}
+      />,
+    );
+
+    await waitFor(() => expect(getDesignMock).toHaveBeenCalledWith('workflows', 'main'));
+    expect(await screen.findByLabelText('Workflow node assistant')).toBeInTheDocument();
+  });
+
+  it('renders normally (auto-layout) when the design fetch fails, never blocking the editor', async () => {
+    vi.spyOn(client, 'getDesign').mockRejectedValue(new Error('network error'));
+
+    render(
+      <WorkflowCanvas
+        workflowId="main"
+        value={WORKFLOW}
+        onChange={vi.fn()}
+        application={APPLICATION}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Workflow node assistant')).toBeInTheDocument();
+  });
+
   it('renders every workflow node id on the canvas', async () => {
     render(
       <WorkflowCanvas

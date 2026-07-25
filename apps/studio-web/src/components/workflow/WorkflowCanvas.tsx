@@ -7,6 +7,7 @@ import {
   type Workflow,
   type WorkflowNodeType,
 } from '@agentform/studio-core';
+import type { CanvasPosition } from '@agentform/studio-design';
 import {
   Background,
   Controls,
@@ -17,9 +18,11 @@ import {
   type Connection,
   type Edge,
   type OnConnect,
+  type OnNodeDrag,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { getDesign, putDesign } from '../../api/client';
 import {
   addNode,
   addWorkflowEdge,
@@ -42,6 +45,7 @@ import { WorkflowNodeShape } from './WorkflowNodeShape';
 
 const NODE_TYPES = { workflowNode: WorkflowNodeShape };
 const LIVE_VALIDATION_DEBOUNCE_MS = 300;
+const POSITION_SAVE_DEBOUNCE_MS = 500;
 
 const ALL_NODE_TYPES: readonly WorkflowNodeType[] = [
   'agent',
@@ -82,6 +86,31 @@ function WorkflowCanvasInner({ workflowId, value, onChange, application }: Workf
   const [newNodeId, setNewNodeId] = useState('');
   const [newNodeType, setNewNodeType] = useState<WorkflowNodeType>('agent');
   const [liveDiagnostics, setLiveDiagnostics] = useState<readonly Diagnostic[]>([]);
+  const [savedPositions, setSavedPositions] = useState<Readonly<Record<string, CanvasPosition>>>(
+    {},
+  );
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  // Loaded once per workflowId — see FormLayoutEditor for why this doesn't
+  // need a distinct "loading" reset step of its own (there's nothing here
+  // that renders differently before vs. after load; an empty {} just means
+  // "nothing saved yet, dagre lays out every node" either way).
+  useEffect(() => {
+    let cancelled = false;
+    getDesign('workflows', workflowId)
+      .then((response) => {
+        if (!cancelled) {
+          setSavedPositions(response.design?.positions ?? {});
+        }
+      })
+      .catch(() => {
+        // A failed load just means the canvas falls back to auto-layout —
+        // not a reason to block editing the workflow itself.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [workflowId]);
 
   const tools = useMemo(() => application.spec.tools ?? {}, [application.spec.tools]);
   const unsafeNodeIds = useMemo(
@@ -90,8 +119,8 @@ function WorkflowCanvasInner({ workflowId, value, onChange, application }: Workf
   );
 
   const flowNodes = useMemo(
-    () => buildFlowNodes(workflow, unsafeNodeIds),
-    [workflow, unsafeNodeIds],
+    () => buildFlowNodes(workflow, unsafeNodeIds, savedPositions),
+    [workflow, unsafeNodeIds, savedPositions],
   );
   const flowEdges = useMemo(() => buildFlowEdges(workflow), [workflow]);
 
@@ -99,12 +128,34 @@ function WorkflowCanvasInner({ workflowId, value, onChange, application }: Workf
   const [edges, setEdges, onEdgesChange] = useEdgesState<WorkflowFlowEdge>(flowEdges);
 
   // React Flow's local state (drag position, selection) is re-derived from
-  // the workflow's real structure whenever a node/edge is added or removed.
-  // Positions are never persisted (see workflow-layout.ts) — a structural
-  // change resets any manual dragging done since the last one, which is an
-  // accepted, documented limitation of this phase, not an oversight.
+  // the workflow's real structure (plus savedPositions/dagre) whenever a
+  // node/edge is added or removed. A drag itself doesn't change `workflow`
+  // or `savedPositions`, so it doesn't re-fire this effect mid-drag — see
+  // onNodeDragStop below for how a completed drag actually persists.
   useEffect(() => setNodes(flowNodes), [flowNodes, setNodes]);
   useEffect(() => setEdges(flowEdges), [flowEdges, setEdges]);
+
+  useEffect(() => {
+    return () => clearTimeout(saveTimerRef.current);
+  }, []);
+
+  // Reads from this component's own `nodes` state rather than the drag
+  // callback's own `nodes` argument — react-flow's docs don't pin down
+  // whether that argument is every node or just the dragged selection,
+  // and getting it wrong would silently drop every other node's position.
+  // `nodes` state is kept complete by onNodesChange regardless of how many
+  // nodes were part of this particular drag.
+  const onNodeDragStop: OnNodeDrag<WorkflowFlowNode> = () => {
+    const positions = Object.fromEntries(nodes.map((n) => [n.id, n.position]));
+    setSavedPositions(positions);
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      void putDesign('workflows', workflowId, {
+        binding: { resourceType: 'workflows', resourceId: workflowId },
+        positions,
+      });
+    }, POSITION_SAVE_DEBOUNCE_MS);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -165,6 +216,7 @@ function WorkflowCanvasInner({ workflowId, value, onChange, application }: Workf
           onConnect={onConnect}
           onNodeClick={handleNodeClick}
           onEdgeClick={handleEdgeClick}
+          onNodeDragStop={onNodeDragStop}
           fitView
         >
           <Background />

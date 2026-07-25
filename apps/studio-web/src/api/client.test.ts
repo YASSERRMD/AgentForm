@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   chatDesign,
   chatSpec,
+  getAudit,
   getDesign,
   getFormSchemas,
   getHealth,
@@ -159,6 +160,26 @@ describe('client', () => {
         history: undefined,
       }),
     });
+    expect(result).toEqual(body);
+  });
+
+  it('getAudit() fetches /api/audit and returns the parsed JSON', async () => {
+    const body = {
+      entries: [
+        {
+          timestamp: '2026-07-25T00:00:00.000Z',
+          source: 'chat',
+          summary: 'Added a lookup tool.',
+          target: { kind: 'spec' },
+        },
+      ],
+    };
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
+    vi.stubGlobal('fetch', mockFetch);
+
+    const result = await getAudit();
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/audit');
     expect(result).toEqual(body);
   });
 });

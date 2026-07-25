@@ -5,6 +5,7 @@ import type {
 } from '@agentform/studio-core';
 import { useEffect, useState } from 'react';
 import { getFormSchemas, getSpec } from './api/client';
+import { AuditPanel } from './components/AuditPanel';
 import { ChatSpecPanel } from './components/ChatSpecPanel';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
 import { ResourceEditor } from './components/ResourceEditor';
@@ -73,6 +74,7 @@ export function App() {
         />
       )}
       <DiagnosticsPanel diagnostics={state.document.diagnostics} />
+      <AuditPanel />
       {editing && state.document.application && (
         <ResourceEditor
           resourceType={editing.resourceType}

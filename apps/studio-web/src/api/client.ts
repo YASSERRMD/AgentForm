@@ -1,4 +1,5 @@
 import type {
+  AuditListResponse,
   ChatHistoryMessage,
   ChatSpecResponse,
   HealthResponse,
@@ -115,4 +116,9 @@ export function chatDesign(
   history?: readonly ChatHistoryMessage[],
 ): Promise<ChatDesignResponse> {
   return postJson<ChatDesignResponse>('/api/genai/chat/design', { agentId, message, history });
+}
+
+/** Local, append-only provenance log — newest first, capped server-side. Never empty-vs-error: no entries yet is a normal `{entries: []}`, same as every other Studio read endpoint. */
+export function getAudit(): Promise<AuditListResponse> {
+  return getJson<AuditListResponse>('/api/audit');
 }

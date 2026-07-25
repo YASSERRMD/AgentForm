@@ -175,7 +175,12 @@ describe('WorkflowCanvas', () => {
     };
 
     render(
-      <WorkflowCanvas workflowId="main" value={workflow} onChange={vi.fn()} application={application} />,
+      <WorkflowCanvas
+        workflowId="main"
+        value={workflow}
+        onChange={vi.fn()}
+        application={application}
+      />,
     );
 
     expect(await screen.findByText('⚠ ungated destructive tool')).toBeInTheDocument();
@@ -192,7 +197,12 @@ describe('WorkflowCanvas', () => {
     };
 
     render(
-      <WorkflowCanvas workflowId="main" value={workflow} onChange={vi.fn()} application={APPLICATION} />,
+      <WorkflowCanvas
+        workflowId="main"
+        value={workflow}
+        onChange={vi.fn()}
+        application={APPLICATION}
+      />,
     );
 
     expect(await screen.findByText('AGF3005', {}, { timeout: 2000 })).toBeInTheDocument();

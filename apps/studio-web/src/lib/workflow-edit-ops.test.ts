@@ -87,7 +87,11 @@ describe('deleteNode', () => {
   it('leaves edges not touching the deleted node untouched', () => {
     const workflow: Workflow = {
       entrypoint: 'a',
-      nodes: { a: { type: 'agent', agent: 'x' }, b: { type: 'terminate' }, c: { type: 'terminate' } },
+      nodes: {
+        a: { type: 'agent', agent: 'x' },
+        b: { type: 'terminate' },
+        c: { type: 'terminate' },
+      },
       edges: [
         { from: 'a', to: 'b' },
         { from: 'a', to: 'c' },

@@ -225,7 +225,9 @@ function WorkflowCanvasInner({ workflowId, value, onChange, application }: Workf
             <input
               type="text"
               value={selectedEdge.when ?? ''}
-              onChange={(e) => onChange(updateEdgeWhen(workflow, selectedEdgeIndex, e.target.value))}
+              onChange={(e) =>
+                onChange(updateEdgeWhen(workflow, selectedEdgeIndex, e.target.value))
+              }
             />
           </label>
           <button

@@ -7,6 +7,11 @@ export type {
   HealthResponse,
   PatchSpecRequest,
   PatchSpecResponse,
+  Tool,
+  Workflow,
+  WorkflowEdge,
+  WorkflowNode,
+  WorkflowNodeType,
 } from './types.js';
 export { buildSpecDocument, type BuildSpecDocumentOptions } from './spec-document.js';
 export {

@@ -39,6 +39,21 @@ describe('buildFlowNodes', () => {
     expect(assistant.data.isUnsafe).toBe(false);
     expect(lookup.data.isUnsafe).toBe(true);
   });
+
+  it('uses a saved position for a node that has one', () => {
+    const nodes = buildFlowNodes(WORKFLOW, new Set(), { assistant: { x: 111, y: 222 } });
+    const assistant = nodes.find((n) => n.id === 'assistant')!;
+    expect(assistant.position).toEqual({ x: 111, y: 222 });
+  });
+
+  it('falls back to dagre auto-layout for a node with no saved position, even when other nodes have one', () => {
+    const autoLayoutOnly = buildFlowNodes(WORKFLOW, new Set());
+    const lookupAutoPosition = autoLayoutOnly.find((n) => n.id === 'lookup')!.position;
+
+    const nodes = buildFlowNodes(WORKFLOW, new Set(), { assistant: { x: 111, y: 222 } });
+    const lookup = nodes.find((n) => n.id === 'lookup')!;
+    expect(lookup.position).toEqual(lookupAutoPosition);
+  });
 });
 
 describe('buildFlowEdges', () => {

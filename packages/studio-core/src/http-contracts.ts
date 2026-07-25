@@ -1,6 +1,15 @@
 import { agenticApplicationSchema } from '@agentform/schema';
 import { z } from 'zod';
-import type { Diagnostic, HealthResponse, SpecDocumentResponse } from './types.js';
+import type { ResourceFormSchema, ResourceType } from './form-schema.js';
+import { RESOURCE_TYPES } from './form-schema.js';
+import type { SpecPatchOperation } from './patch.js';
+import type {
+  Diagnostic,
+  HealthResponse,
+  PatchSpecRequest,
+  PatchSpecResponse,
+  SpecDocumentResponse,
+} from './types.js';
 
 const sourceLocationSchema = z.object({
   file: z.string(),
@@ -37,3 +46,35 @@ export const specDocumentResponseSchema = z.object({
   application: agenticApplicationSchema.optional(),
   diagnostics: z.array(diagnosticSchema),
 }) satisfies z.ZodType<SpecDocumentResponse>;
+
+// The request body's own shape needs real validation too — this is the
+// first endpoint that accepts client-submitted content, not just serves
+// it, so a malformed `path`/`op` must be rejected as a 400 before it
+// ever reaches `applyPatch`, not surface as an obscure runtime error.
+export const specPatchOperationSchema = z.object({
+  op: z.enum(['add', 'replace', 'remove']),
+  path: z.array(z.union([z.string(), z.number()])).min(1),
+  value: z.unknown().optional(),
+}) satisfies z.ZodType<SpecPatchOperation>;
+
+export const patchSpecRequestSchema = z.object({
+  patch: z.array(specPatchOperationSchema),
+}) satisfies z.ZodType<PatchSpecRequest>;
+
+export const patchSpecResponseSchema = z.object({
+  success: z.boolean(),
+  application: agenticApplicationSchema.optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<PatchSpecResponse>;
+
+export const resourceFormSchemaSchema = z.object({
+  resourceType: z.enum(RESOURCE_TYPES as [ResourceType, ...ResourceType[]]),
+  jsonSchema: z.record(z.string(), z.unknown()),
+}) satisfies z.ZodType<ResourceFormSchema>;
+
+export const formSchemasResponseSchema = z.object({
+  models: resourceFormSchemaSchema,
+  tools: resourceFormSchemaSchema,
+  agents: resourceFormSchemaSchema,
+  workflows: resourceFormSchemaSchema,
+});

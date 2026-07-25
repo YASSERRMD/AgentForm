@@ -1,7 +1,8 @@
 import path from 'node:path';
 import type { Diagnostic } from '@agentform/diagnostics';
 import { loadDocument, nodeFileSystem } from '@agentform/parser';
-import { validatePolicyEngineConfig, type PolicyEngineConfig } from '@agentform/policy';
+import { validatePolicyEngineConfig } from './config-schema.js';
+import type { PolicyEngineConfig } from './types.js';
 
 /** Mirrors the `environments/<name>.yaml` overlay convention: a fixed, conventional filename found by presence, not by a CLI flag. There is deliberately no way to point at a different file — see the module doc below for why. */
 export const POLICY_CONFIG_FILENAME = 'agentform.policy.yaml';
@@ -22,7 +23,10 @@ export interface LoadPolicyConfigResult {
  *
  * Deliberately not configurable via a CLI flag to a different path: §16's
  * "mandatory policies cannot be bypassed with CLI flags" is easiest to
- * keep true when there is exactly one place overrides can come from.
+ * keep true when there is exactly one place overrides can come from. Lives
+ * in @agentform/policy itself (not the CLI) because both `apps/cli` and
+ * `apps/studio-server` need it — moved here in Phase 14 when Studio's
+ * write path became the second real caller.
  */
 export function loadPolicyConfig(rootDir: string): LoadPolicyConfigResult {
   const absolutePath = path.join(rootDir, POLICY_CONFIG_FILENAME);

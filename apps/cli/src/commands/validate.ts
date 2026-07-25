@@ -1,15 +1,16 @@
 import type { Command } from 'commander';
 import type { Diagnostic } from '@agentform/diagnostics';
-import { BUILTIN_POLICIES, evaluatePolicies, type PolicyResult } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  loadPolicyConfig,
+  policyResultsToDiagnostics,
+  type PolicyResult,
+} from '@agentform/policy';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { loadPolicyConfig } from '../lib/policy-config.js';
-import {
-  formatPolicySummary,
-  policyResultsToDiagnostics,
-  summarizePolicyResults,
-} from '../lib/policy-output.js';
+import { formatPolicySummary, summarizePolicyResults } from '../lib/policy-output.js';
 import { getGlobalOptions } from '../program.js';
 
 interface ValidateCommandOptions {

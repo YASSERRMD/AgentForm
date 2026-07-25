@@ -2,12 +2,16 @@ import type { FileSystem } from '@agentform/parser';
 import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
+import type { FileWriter } from './lib/file-writer.js';
+import { registerFormSchemasRoute } from './routes/form-schemas.js';
 import { registerHealthRoute } from './routes/health.js';
+import { registerPatchSpecRoute } from './routes/patch.js';
 import { registerSpecRoute } from './routes/spec.js';
 
 export interface BuildAppOptions {
   readonly rootDir: string;
   readonly fs?: FileSystem;
+  readonly fileWriter?: FileWriter;
   /** The single allowed CORS origin. Omit to disable CORS entirely (tests never need it — `.inject()` has no browser origin). */
   readonly devOrigin?: string;
 }
@@ -32,6 +36,12 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
 
   registerHealthRoute(app, { rootDir: options.rootDir });
   registerSpecRoute(app, { rootDir: options.rootDir, fs: options.fs });
+  registerPatchSpecRoute(app, {
+    rootDir: options.rootDir,
+    fs: options.fs,
+    fileWriter: options.fileWriter,
+  });
+  registerFormSchemasRoute(app);
 
   return app;
 }

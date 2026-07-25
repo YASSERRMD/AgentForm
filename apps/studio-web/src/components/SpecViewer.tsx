@@ -1,15 +1,21 @@
-import type { AgenticApplication } from '@agentform/studio-core';
+import type { AgenticApplication, ResourceType } from '@agentform/studio-core';
+import { useState } from 'react';
 
 export interface SpecViewerProps {
   readonly application: AgenticApplication;
+  readonly onEditResource?: (resourceType: ResourceType, resourceId: string) => void;
 }
 
 interface ResourceListProps {
   readonly title: string;
+  readonly resourceType: ResourceType;
   readonly ids: readonly string[];
+  readonly onEditResource?: (resourceType: ResourceType, resourceId: string) => void;
 }
 
-function ResourceList({ title, ids }: ResourceListProps) {
+function ResourceList({ title, resourceType, ids, onEditResource }: ResourceListProps) {
+  const [newId, setNewId] = useState('');
+
   return (
     <section>
       <h3>
@@ -20,9 +26,37 @@ function ResourceList({ title, ids }: ResourceListProps) {
       ) : (
         <ul>
           {ids.map((id) => (
-            <li key={id}>{id}</li>
+            <li key={id}>
+              {onEditResource ? (
+                <button type="button" onClick={() => onEditResource(resourceType, id)}>
+                  {id}
+                </button>
+              ) : (
+                id
+              )}
+            </li>
           ))}
         </ul>
+      )}
+      {onEditResource && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (newId.trim().length > 0) {
+              onEditResource(resourceType, newId.trim());
+              setNewId('');
+            }
+          }}
+        >
+          <input
+            type="text"
+            aria-label={`New ${title.toLowerCase()} id`}
+            placeholder="new id"
+            value={newId}
+            onChange={(e) => setNewId(e.target.value)}
+          />
+          <button type="submit">Add</button>
+        </form>
       )}
     </section>
   );
@@ -30,11 +64,13 @@ function ResourceList({ title, ids }: ResourceListProps) {
 
 /**
  * Read-only rendering of a validated spec — metadata plus each resource
- * collection listed by id. Not a raw JSON dump (nothing here helps a
- * user understand their project), and not a graph/canvas either — that
- * arrives in Phase 15.
+ * collection listed by id — that becomes editable the moment a caller
+ * passes `onEditResource` (Phase 14): each id is then a real button
+ * opening ResourceEditor, and each section gets an inline "add new"
+ * form. Without it, this is exactly Phase 13's read-only viewer,
+ * unchanged.
  */
-export function SpecViewer({ application }: SpecViewerProps) {
+export function SpecViewer({ application, onEditResource }: SpecViewerProps) {
   const { metadata, spec } = application;
 
   return (
@@ -47,10 +83,30 @@ export function SpecViewer({ application }: SpecViewerProps) {
         </p>
         {metadata.description && <p>{metadata.description}</p>}
       </header>
-      <ResourceList title="Models" ids={Object.keys(spec.models)} />
-      <ResourceList title="Agents" ids={Object.keys(spec.agents)} />
-      <ResourceList title="Tools" ids={Object.keys(spec.tools ?? {})} />
-      <ResourceList title="Workflows" ids={Object.keys(spec.workflows)} />
+      <ResourceList
+        title="Models"
+        resourceType="models"
+        ids={Object.keys(spec.models)}
+        onEditResource={onEditResource}
+      />
+      <ResourceList
+        title="Agents"
+        resourceType="agents"
+        ids={Object.keys(spec.agents)}
+        onEditResource={onEditResource}
+      />
+      <ResourceList
+        title="Tools"
+        resourceType="tools"
+        ids={Object.keys(spec.tools ?? {})}
+        onEditResource={onEditResource}
+      />
+      <ResourceList
+        title="Workflows"
+        resourceType="workflows"
+        ids={Object.keys(spec.workflows)}
+        onEditResource={onEditResource}
+      />
     </article>
   );
 }

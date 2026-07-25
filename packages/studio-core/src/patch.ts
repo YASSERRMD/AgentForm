@@ -1,5 +1,3 @@
-import type { AgenticApplication } from '@agentform/schema';
-
 export type SpecPatchOperationType = 'add' | 'replace' | 'remove';
 
 export interface SpecPatchOperation {
@@ -61,15 +59,22 @@ function removeIn(value: unknown, path: readonly (string | number)[]): unknown {
 }
 
 /**
- * Applies a `SpecPatch` to a validated spec document and returns a new,
- * structurally independent document — the input is never mutated. Every
- * mutation Studio makes (form, canvas, chat, GenAI) is expressed as one
- * of these patches before it re-enters the schema/semantic/policy
- * pipeline. An empty patch is the identity operation, by construction:
- * the loop below never runs, so the original reference is returned
- * unchanged — the lossless round trip Phase 13 requires.
+ * Applies a `SpecPatch` and returns a new, structurally independent
+ * document — the input is never mutated. Every mutation Studio makes
+ * (form, canvas, chat, GenAI) is expressed as one of these patches
+ * before it re-enters the schema/semantic/policy pipeline. An empty
+ * patch is the identity operation, by construction: the loop below
+ * never runs, so the original reference is returned unchanged — the
+ * lossless round trip Phase 13 requires.
+ *
+ * Generic (not `AgenticApplication`-specific): studio-web applies
+ * patches to an already-validated document for optimistic local
+ * preview, but studio-server's write path (Phase 14) applies the same
+ * patch to the raw, not-yet-validated value it just read from disk,
+ * *before* deciding whether the result is even valid — the function
+ * itself is purely structural and has no opinion on that.
  */
-export function applyPatch(document: AgenticApplication, patch: SpecPatch): AgenticApplication {
+export function applyPatch<T>(document: T, patch: SpecPatch): T {
   let result: unknown = document;
   for (const operation of patch) {
     result =
@@ -77,5 +82,5 @@ export function applyPatch(document: AgenticApplication, patch: SpecPatch): Agen
         ? removeIn(result, operation.path)
         : setIn(result, operation.path, operation.value);
   }
-  return result as AgenticApplication;
+  return result as T;
 }

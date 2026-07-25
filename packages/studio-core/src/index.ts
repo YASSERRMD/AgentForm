@@ -5,6 +5,8 @@ export type {
   SourceLocation,
   SpecDocumentResponse,
   HealthResponse,
+  PatchSpecRequest,
+  PatchSpecResponse,
 } from './types.js';
 export { buildSpecDocument, type BuildSpecDocumentOptions } from './spec-document.js';
 export {
@@ -14,9 +16,21 @@ export {
   type SpecPatchOperationType,
 } from './patch.js';
 export {
+  generateAllResourceFormSchemas,
+  generateResourceFormSchema,
+  RESOURCE_TYPES,
+  type ResourceFormSchema,
+  type ResourceType,
+} from './form-schema.js';
+export {
   diagnosticSchema,
+  formSchemasResponseSchema,
   healthResponseSchema,
+  patchSpecRequestSchema,
+  patchSpecResponseSchema,
+  resourceFormSchemaSchema,
   specDocumentResponseSchema,
+  specPatchOperationSchema,
 } from './http-contracts.js';
 
 export const PACKAGE_NAME = '@agentform/studio-core';

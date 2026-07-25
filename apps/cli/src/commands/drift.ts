@@ -4,14 +4,17 @@ import type { Command } from 'commander';
 import type { ApplicationState } from '@agentform/state';
 import type { AgentformIR } from '@agentform/ir';
 import { comparePlan, type PlanItem } from '@agentform/planner';
-import { BUILTIN_POLICIES, evaluatePolicies } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  loadPolicyConfig,
+  policyResultsToDiagnostics,
+} from '@agentform/policy';
 import type { GeneratedManifest } from '@agentform/plugin-sdk';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY } from '../lib/generate-artifacts.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { loadPolicyConfig } from '../lib/policy-config.js';
-import { policyResultsToDiagnostics } from '../lib/policy-output.js';
 import { openStateBackend } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
 

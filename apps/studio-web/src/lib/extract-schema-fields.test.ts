@@ -13,7 +13,7 @@ describe('extractSchemaFields', () => {
     ]);
   });
 
-  it('uses a property\'s title as the label when present', () => {
+  it("uses a property's title as the label when present", () => {
     const fields = extractSchemaFields({
       properties: { name: { title: 'Full Name' } },
     });

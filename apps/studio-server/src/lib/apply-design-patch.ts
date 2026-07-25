@@ -1,5 +1,9 @@
 import type { FileSystem } from '@agentform/parser';
-import { validateDesignArtifact, type DesignDraft, type PutDesignResponse } from '@agentform/studio-design';
+import {
+  validateDesignArtifact,
+  type DesignDraft,
+  type PutDesignResponse,
+} from '@agentform/studio-design';
 import { stampDesignArtifact } from '@agentform/studio-design/server';
 import type { Diagnostic } from '@agentform/diagnostics';
 import { nodeFileWriter, type FileWriter } from './file-writer.js';

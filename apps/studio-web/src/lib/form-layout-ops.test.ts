@@ -139,7 +139,11 @@ describe('moveField', () => {
 describe('addContainer', () => {
   it('slugifies the label into an id', () => {
     const result = addContainer({ input: [], output: [] }, 'input', 'Personal Details');
-    expect(result.input?.[0]).toMatchObject({ id: 'personal-details', type: 'container', label: 'Personal Details' });
+    expect(result.input?.[0]).toMatchObject({
+      id: 'personal-details',
+      type: 'container',
+      label: 'Personal Details',
+    });
   });
 
   it('de-duplicates a colliding id', () => {

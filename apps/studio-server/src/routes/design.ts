@@ -39,7 +39,10 @@ const designParamsSchema = z.object({
  * entirely to applyDesignPatch, same "route is a thin transport wrapper,
  * never itself a trust decision" discipline as routes/patch.ts.
  */
-export function registerDesignRoute(app: FastifyInstance, options: RegisterDesignRouteOptions): void {
+export function registerDesignRoute(
+  app: FastifyInstance,
+  options: RegisterDesignRouteOptions,
+): void {
   const typedApp = app.withTypeProvider<ZodTypeProvider>();
 
   typedApp.get(

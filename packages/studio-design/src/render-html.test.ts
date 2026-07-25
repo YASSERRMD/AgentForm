@@ -58,9 +58,7 @@ describe('renderDesignToHtml', () => {
     const html = renderDesignToHtml(
       design({
         layout: {
-          input: [
-            { id: 'f1', type: 'field', label: '<script>alert(1)</script>', widget: 'text' },
-          ],
+          input: [{ id: 'f1', type: 'field', label: '<script>alert(1)</script>', widget: 'text' }],
         },
       }),
     );

@@ -14,13 +14,17 @@ function readSource(relativePath: string): string {
 // forbidden import can hide two or three files deep. Every file actually
 // reachable from index.ts is checked individually.
 describe('index.ts module graph', () => {
-  it.each(['index.ts', 'types.ts', 'codes.ts', 'validate.ts', 'render-html.ts', 'http-contracts.ts'])(
-    '%s never imports ./server.js, @agentform/ir, or node:crypto',
-    (file) => {
-      const source = readSource(file);
-      expect(source).not.toMatch(/from ['"]\.\/server\.js['"]/);
-      expect(source).not.toMatch(/from ['"]@agentform\/ir['"]/);
-      expect(source).not.toMatch(/from ['"]node:crypto['"]/);
-    },
-  );
+  it.each([
+    'index.ts',
+    'types.ts',
+    'codes.ts',
+    'validate.ts',
+    'render-html.ts',
+    'http-contracts.ts',
+  ])('%s never imports ./server.js, @agentform/ir, or node:crypto', (file) => {
+    const source = readSource(file);
+    expect(source).not.toMatch(/from ['"]\.\/server\.js['"]/);
+    expect(source).not.toMatch(/from ['"]@agentform\/ir['"]/);
+    expect(source).not.toMatch(/from ['"]node:crypto['"]/);
+  });
 });

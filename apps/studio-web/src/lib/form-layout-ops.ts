@@ -45,7 +45,9 @@ function setWidgetInNodes(
     if (node.type === 'field' && node.fieldPath === fieldPath) {
       return { ...node, widget };
     }
-    return node.children ? { ...node, children: setWidgetInNodes(node.children, fieldPath, widget) } : node;
+    return node.children
+      ? { ...node, children: setWidgetInNodes(node.children, fieldPath, widget) }
+      : node;
   });
 }
 
@@ -57,7 +59,9 @@ function moveInNodes(
   const index = nodes.findIndex((node) => node.type === 'field' && node.fieldPath === fieldPath);
   if (index === -1) {
     return nodes.map((node) =>
-      node.children ? { ...node, children: moveInNodes(node.children, fieldPath, direction) } : node,
+      node.children
+        ? { ...node, children: moveInNodes(node.children, fieldPath, direction) }
+        : node,
     );
   }
   const swapWith = direction === 'up' ? index - 1 : index + 1;
@@ -70,7 +74,12 @@ function moveInNodes(
 }
 
 function addContainerId(existing: readonly LayoutNode[], label: string): string {
-  const base = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'group';
+  const base =
+    label
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'group';
   const usedIds = new Set(existing.map((node) => node.id));
   let candidate = base;
   let suffix = 2;
@@ -98,7 +107,9 @@ function insertIntoContainer(
     if (node.id === containerId && node.type === 'container') {
       return { ...node, children: [...(node.children ?? []), field] };
     }
-    return node.children ? { ...node, children: insertIntoContainer(node.children, containerId, field) } : node;
+    return node.children
+      ? { ...node, children: insertIntoContainer(node.children, containerId, field) }
+      : node;
   });
 }
 
@@ -112,7 +123,11 @@ function updateSection(
 }
 
 /** No-ops if the field is already present anywhere in this section. */
-export function addField(layout: FormLayout, section: FormLayoutSection, field: ExtractedField): FormLayout {
+export function addField(
+  layout: FormLayout,
+  section: FormLayoutSection,
+  field: ExtractedField,
+): FormLayout {
   return updateSection(layout, section, (nodes) => {
     if (containsField(nodes, field.path)) {
       return nodes;
@@ -121,7 +136,11 @@ export function addField(layout: FormLayout, section: FormLayoutSection, field: 
   });
 }
 
-export function removeField(layout: FormLayout, section: FormLayoutSection, fieldPath: string): FormLayout {
+export function removeField(
+  layout: FormLayout,
+  section: FormLayoutSection,
+  fieldPath: string,
+): FormLayout {
   return updateSection(layout, section, (nodes) => removeFieldFromNodes(nodes, fieldPath));
 }
 
@@ -145,7 +164,11 @@ export function moveField(
 }
 
 /** Appends a new, empty container at the section's top level. Id is a slugified, de-duplicated form of the label. */
-export function addContainer(layout: FormLayout, section: FormLayoutSection, label: string): FormLayout {
+export function addContainer(
+  layout: FormLayout,
+  section: FormLayoutSection,
+  label: string,
+): FormLayout {
   return updateSection(layout, section, (nodes) => [
     ...nodes,
     { id: addContainerId(nodes, label), type: 'container', label, children: [] },

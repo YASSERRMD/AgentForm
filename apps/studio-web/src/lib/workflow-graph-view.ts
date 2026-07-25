@@ -1,4 +1,5 @@
 import type { Workflow, WorkflowNode } from '@agentform/studio-core';
+import type { CanvasPosition } from '@agentform/studio-design';
 import { MarkerType, type Edge, type Node } from '@xyflow/react';
 import { layoutWorkflowNodes } from './workflow-layout';
 
@@ -19,16 +20,23 @@ export type WorkflowFlowEdge = Edge<WorkflowEdgeData>;
 
 const DEFAULT_BOX = { width: 190, height: 70 };
 
-/** Builds React Flow nodes for every node in `workflow`, auto-laid-out via dagre — no positions are read from or written back to the spec. */
+/**
+ * Builds React Flow nodes for every node in `workflow`. `savedPositions`
+ * (loaded from a `.afdesign.json` design artifact — never the spec itself)
+ * wins per-node when present; dagre auto-layout fills in every node that
+ * hasn't been manually placed yet, e.g. one just added. Positions are
+ * presentation, not spec content — see workflow-layout.ts.
+ */
 export function buildFlowNodes(
   workflow: Workflow,
   unsafeNodeIds: ReadonlySet<string>,
+  savedPositions: Readonly<Record<string, CanvasPosition>> = {},
 ): WorkflowFlowNode[] {
   const nodeIds = Object.keys(workflow.nodes);
-  const positions = layoutWorkflowNodes(nodeIds, workflow.edges ?? [], {});
+  const autoPositions = layoutWorkflowNodes(nodeIds, workflow.edges ?? [], {});
 
   return nodeIds.map((nodeId) => {
-    const position = positions[nodeId] ?? { x: 0, y: 0 };
+    const position = savedPositions[nodeId] ?? autoPositions[nodeId] ?? { x: 0, y: 0 };
     return {
       id: nodeId,
       type: 'workflowNode',

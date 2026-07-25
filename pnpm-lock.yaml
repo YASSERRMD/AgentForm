@@ -161,6 +161,9 @@ importers:
 
   apps/studio-server:
     dependencies:
+      '@agentform/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@agentform/diagnostics':
         specifier: workspace:*
         version: link:../../packages/diagnostics
@@ -170,9 +173,15 @@ importers:
       '@agentform/policy':
         specifier: workspace:*
         version: link:../../packages/policy
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../../packages/schema
       '@agentform/studio-core':
         specifier: workspace:*
         version: link:../../packages/studio-core
+      '@agentform/studio-design':
+        specifier: workspace:*
+        version: link:../../packages/studio-design
       '@fastify/cors':
         specifier: ^11.3.0
         version: 11.3.0
@@ -204,6 +213,9 @@ importers:
       '@agentform/studio-core':
         specifier: workspace:*
         version: link:../../packages/studio-core
+      '@agentform/studio-design':
+        specifier: workspace:*
+        version: link:../../packages/studio-design
       '@dagrejs/dagre':
         specifier: ^3.0.0
         version: 3.0.0
@@ -576,6 +588,25 @@ importers:
         version: 8.20.0
 
   packages/studio-core:
+    dependencies:
+      '@agentform/diagnostics':
+        specifier: workspace:*
+        version: link:../diagnostics
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../ir
+      '@agentform/schema':
+        specifier: workspace:*
+        version: link:../schema
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.1
+        version: 26.1.1
+
+  packages/studio-design:
     dependencies:
       '@agentform/diagnostics':
         specifier: workspace:*

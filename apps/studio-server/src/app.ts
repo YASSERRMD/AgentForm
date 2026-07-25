@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import Fastify, { type FastifyInstance } from 'fastify';
 import { serializerCompiler, validatorCompiler } from 'fastify-type-provider-zod';
 import type { FileWriter } from './lib/file-writer.js';
+import { registerDesignRoute } from './routes/design.js';
 import { registerFormSchemasRoute } from './routes/form-schemas.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerPatchSpecRoute } from './routes/patch.js';
@@ -42,6 +43,11 @@ export function buildApp(options: BuildAppOptions): FastifyInstance {
     fileWriter: options.fileWriter,
   });
   registerFormSchemasRoute(app);
+  registerDesignRoute(app, {
+    rootDir: options.rootDir,
+    fs: options.fs,
+    fileWriter: options.fileWriter,
+  });
 
   return app;
 }

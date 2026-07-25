@@ -1,4 +1,5 @@
 import type {
+  AgenticApplication,
   Diagnostic,
   ResourceFormSchema,
   ResourceType,
@@ -6,8 +7,10 @@ import type {
 } from '@agentform/studio-core';
 import { useState } from 'react';
 import { patchSpec } from '../api/client';
+import { discriminatorConst, isRecord } from '../lib/json-schema-utils';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
 import { ResourceForm } from './ResourceForm';
+import { WorkflowCanvas } from './workflow/WorkflowCanvas';
 
 export interface ResourceEditorProps {
   readonly resourceType: ResourceType;
@@ -15,22 +18,10 @@ export interface ResourceEditorProps {
   readonly formSchema: ResourceFormSchema;
   /** `undefined` means this is a new resource being added, not an edit of an existing one. */
   readonly initialValue: unknown;
+  /** Only read for `resourceType === 'workflows'` — the canvas needs the surrounding application (tools, for risk warnings; the rest of the spec, for live cross-reference validation). */
+  readonly application: AgenticApplication;
   readonly onSaved: () => void;
   readonly onCancel: () => void;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
-
-function discriminatorConst(variantSchema: unknown): string | undefined {
-  if (!isRecord(variantSchema) || !isRecord(variantSchema.properties)) {
-    return undefined;
-  }
-  const discriminator = variantSchema.properties.type;
-  return isRecord(discriminator) && typeof discriminator.const === 'string'
-    ? discriminator.const
-    : undefined;
 }
 
 /**
@@ -46,6 +37,7 @@ export function ResourceEditor({
   resourceId,
   formSchema,
   initialValue,
+  application,
   onSaved,
   onCancel,
 }: ResourceEditorProps) {
@@ -111,7 +103,16 @@ export function ResourceEditor({
           </select>
         </label>
       )}
-      <ResourceForm jsonSchema={activeSchema} value={value} onChange={setValue} />
+      {resourceType === 'workflows' ? (
+        <WorkflowCanvas
+          workflowId={resourceId}
+          value={value}
+          onChange={setValue}
+          application={application}
+        />
+      ) : (
+        <ResourceForm jsonSchema={activeSchema} value={value} onChange={setValue} />
+      )}
       {diagnostics.length > 0 && <DiagnosticsPanel diagnostics={diagnostics} />}
       <button type="button" onClick={() => void handleSave()} disabled={saving}>
         {saving ? 'Saving…' : 'Save'}

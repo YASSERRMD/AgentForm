@@ -50,6 +50,7 @@ describe('buildFlowEdges', () => {
       target: 'lookup',
       label: 'needsLookup',
       markerEnd: { type: MarkerType.ArrowClosed },
+      data: { edgeIndex: 0 },
     });
   });
 

@@ -1,4 +1,5 @@
 import type {
+  Agent,
   AgenticApplication,
   Diagnostic,
   ResourceFormSchema,
@@ -9,6 +10,7 @@ import { useState } from 'react';
 import { patchSpec } from '../api/client';
 import { discriminatorConst, isRecord } from '../lib/json-schema-utils';
 import { DiagnosticsPanel } from './DiagnosticsPanel';
+import { FormLayoutEditor } from './design/FormLayoutEditor';
 import { ResourceForm } from './ResourceForm';
 import { WorkflowCanvas } from './workflow/WorkflowCanvas';
 
@@ -53,6 +55,7 @@ export function ResourceEditor({
   const [value, setValue] = useState<unknown>(initialValue ?? {});
   const [saving, setSaving] = useState(false);
   const [diagnostics, setDiagnostics] = useState<readonly Diagnostic[]>([]);
+  const [tab, setTab] = useState<'fields' | 'layout'>('fields');
 
   const activeSchema =
     variants?.find((variant) => discriminatorConst(variant) === variantType) ??
@@ -103,12 +106,37 @@ export function ResourceEditor({
           </select>
         </label>
       )}
+      {resourceType === 'agents' && (
+        <div role="tablist" aria-label="Agent editor view">
+          <button
+            type="button"
+            aria-pressed={tab === 'fields'}
+            onClick={() => setTab('fields')}
+            disabled={tab === 'fields'}
+          >
+            Fields
+          </button>
+          <button
+            type="button"
+            aria-pressed={tab === 'layout'}
+            onClick={() => setTab('layout')}
+            disabled={tab === 'layout'}
+          >
+            Layout
+          </button>
+        </div>
+      )}
       {resourceType === 'workflows' ? (
         <WorkflowCanvas
           workflowId={resourceId}
           value={value}
           onChange={setValue}
           application={application}
+        />
+      ) : resourceType === 'agents' && tab === 'layout' ? (
+        <FormLayoutEditor
+          agentId={resourceId}
+          agent={isRecord(value) ? (value as Agent) : ({} as Agent)}
         />
       ) : (
         <ResourceForm jsonSchema={activeSchema} value={value} onChange={setValue} />

@@ -1,3 +1,14 @@
+/**
+ * This barrel is imported by both `apps/studio-server` (Node) and
+ * `apps/studio-web` (browser) — verified in Phase 15 that it must stay
+ * free of anything that transitively touches a Node-only API, the hard
+ * way: `buildSpecDocument` used to live here, and the moment studio-web
+ * imported one real (non-type) value from this package, the browser
+ * tried to evaluate `@agentform/ir`'s full barrel (via
+ * `spec-document.ts`) and crashed on `node:crypto` in dev mode.
+ * `buildSpecDocument` now lives only in `./server.js`, imported by
+ * `apps/studio-server` alone. See ADR-0018.
+ */
 export type {
   AgenticApplication,
   Diagnostic,
@@ -13,7 +24,6 @@ export type {
   WorkflowNode,
   WorkflowNodeType,
 } from './types.js';
-export { buildSpecDocument, type BuildSpecDocumentOptions } from './spec-document.js';
 export {
   applyPatch,
   type SpecPatch,

@@ -11,8 +11,16 @@ export interface BuildSpecDocumentOptions {
  * exactly what Studio needs to display a spec: the validated
  * application plus its diagnostics. The compiled IR itself is Map-keyed
  * and not JSON-safe (see `@agentform/core`'s `flattenMaps`) — nothing in
- * Phase 13 needs it, so it's deliberately discarded here rather than
- * exposed and left unused; Phase 15's canvas is what will need it.
+ * Studio needs it (confirmed directly in Phase 15: the IR adds zero
+ * content to a workflow's nodes/edges beyond `Map` re-keying), so it's
+ * deliberately discarded here rather than exposed and left unused.
+ *
+ * Deliberately NOT re-exported from this package's main `index.ts` — it
+ * pulls in `@agentform/ir`'s full barrel (`buildIR`), which transitively
+ * imports `node:crypto` (`hash.ts`). `apps/studio-web` needs a browser-
+ * safe way to import everything else this package exports without also
+ * pulling that in; `server.ts` is the explicit, Node-only home for this
+ * one function instead. See ADR-0018.
  */
 export function buildSpecDocument(
   rawValue: unknown,

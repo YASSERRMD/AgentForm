@@ -160,4 +160,21 @@ describe('WorkflowCanvas', () => {
 
     expect(await screen.findByText('⚠ ungated destructive tool')).toBeInTheDocument();
   });
+
+  it('runs the real semantic validator live and shows an unreachable-node diagnostic', async () => {
+    const workflow: Workflow = {
+      entrypoint: 'assistant',
+      nodes: {
+        assistant: { type: 'agent', agent: 'assistant' },
+        // Not reachable from the entrypoint — a real AGF3005 case, not a fake one.
+        orphan: { type: 'terminate' },
+      },
+    };
+
+    render(
+      <WorkflowCanvas workflowId="main" value={workflow} onChange={vi.fn()} application={APPLICATION} />,
+    );
+
+    expect(await screen.findByText('AGF3005', {}, { timeout: 2000 })).toBeInTheDocument();
+  });
 });

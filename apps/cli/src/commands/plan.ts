@@ -8,6 +8,7 @@ import {
   evaluatePolicies,
   isProductionEnvironment,
   loadPolicyConfig,
+  policyResultsToDiagnostics,
   type PolicyResult,
 } from '@agentform/policy';
 import { testResultsPathFor } from './test.js';
@@ -16,7 +17,6 @@ import { evaluationGateStatusToDiagnostics } from '../lib/evaluation-gate-output
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { formatPlanForHumans } from '../lib/plan-output.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { policyResultsToDiagnostics } from '../lib/policy-output.js';
 import { openStateBackend } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
 

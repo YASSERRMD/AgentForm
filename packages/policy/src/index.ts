@@ -25,6 +25,7 @@ export {
   POLICY_CONFIG_FILENAME,
   type LoadPolicyConfigResult,
 } from './config-loader.js';
+export { policyResultsToDiagnostics } from './result-diagnostics.js';
 
 export const PACKAGE_NAME = '@agentform/policy';
 export const PACKAGE_VERSION = '0.1.0';

@@ -4,16 +4,13 @@ import {
   BUILTIN_POLICIES,
   evaluatePolicies,
   loadPolicyConfig,
+  policyResultsToDiagnostics,
   type PolicyResult,
 } from '@agentform/policy';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import {
-  formatPolicySummary,
-  policyResultsToDiagnostics,
-  summarizePolicyResults,
-} from '../lib/policy-output.js';
+import { formatPolicySummary, summarizePolicyResults } from '../lib/policy-output.js';
 import { getGlobalOptions } from '../program.js';
 
 interface ValidateCommandOptions {

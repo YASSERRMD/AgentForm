@@ -17,7 +17,12 @@ import {
   verifyPlanFile,
   type PlanItem,
 } from '@agentform/planner';
-import { BUILTIN_POLICIES, evaluatePolicies, loadPolicyConfig } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  loadPolicyConfig,
+  policyResultsToDiagnostics,
+} from '@agentform/policy';
 import { StateLockError } from '@agentform/state';
 import { confirmCriticalChanges } from '../lib/confirm-prompt.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
@@ -25,7 +30,6 @@ import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY, generateArtifacts } from '../lib/generate-artifacts.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { formatPlanForHumans, formatPlanSummary } from '../lib/plan-output.js';
-import { policyResultsToDiagnostics } from '../lib/policy-output.js';
 import { redactSecretsFromReport } from '../lib/report-redaction.js';
 import { openStateBackend } from '../lib/state.js';
 import { CLI_VERSION, getGlobalOptions } from '../program.js';

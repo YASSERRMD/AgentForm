@@ -2,14 +2,18 @@ import { existsSync, unlinkSync } from 'node:fs';
 import path from 'node:path';
 import type { Command } from 'commander';
 import type { Diagnostic } from '@agentform/diagnostics';
-import { BUILTIN_POLICIES, evaluatePolicies, loadPolicyConfig } from '@agentform/policy';
+import {
+  BUILTIN_POLICIES,
+  evaluatePolicies,
+  loadPolicyConfig,
+  policyResultsToDiagnostics,
+} from '@agentform/policy';
 import { StateLockError, type ApplyHistoryEntry } from '@agentform/state';
 import { confirmAction } from '../lib/confirm-prompt.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY, generateArtifacts } from '../lib/generate-artifacts.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { policyResultsToDiagnostics } from '../lib/policy-output.js';
 import { openStateBackend } from '../lib/state.js';
 import { CLI_VERSION, getGlobalOptions } from '../program.js';
 import { testResultsPathFor } from './test.js';

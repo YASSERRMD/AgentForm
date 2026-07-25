@@ -23,7 +23,9 @@ export function WorkflowNodeShape({ data, selected }: NodeProps<WorkflowFlowNode
       tabIndex={0}
       aria-label={`Workflow node ${data.nodeId}`}
       style={{
-        border: `2px solid ${selected ? '#111827' : color}`,
+        borderTop: `2px solid ${selected ? '#111827' : color}`,
+        borderRight: `2px solid ${selected ? '#111827' : color}`,
+        borderBottom: `2px solid ${selected ? '#111827' : color}`,
         borderLeft: `8px solid ${color}`,
         borderRadius: 6,
         padding: '6px 10px',

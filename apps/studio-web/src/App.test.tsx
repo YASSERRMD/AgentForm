@@ -37,6 +37,7 @@ describe('App', () => {
 
     await waitFor(() => expect(screen.getByText('support-bot')).toBeInTheDocument());
     expect(screen.getByText('No diagnostics.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Generate with AI')).toBeInTheDocument();
   });
 
   it('renders diagnostics only when the spec failed to validate', async () => {

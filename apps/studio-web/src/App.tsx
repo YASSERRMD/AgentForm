@@ -6,6 +6,7 @@ import type {
 import { useEffect, useState } from 'react';
 import { getFormSchemas, getSpec } from './api/client';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
+import { GenerateSpecPanel } from './components/GenerateSpecPanel';
 import { ResourceEditor } from './components/ResourceEditor';
 import { SpecViewer } from './components/SpecViewer';
 
@@ -64,6 +65,7 @@ export function App() {
   return (
     <main>
       <h1>Agentform Studio</h1>
+      <GenerateSpecPanel onApplied={load} />
       {state.document.application && (
         <SpecViewer
           application={state.document.application}

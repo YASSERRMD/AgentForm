@@ -71,7 +71,7 @@ export function registerDesignRoute(
     },
     async (request): Promise<PutDesignBody> => {
       const { resourceType, resourceId } = request.params;
-      const { design: draft } = request.body;
+      const { design: draft, provenance } = request.body;
       if (draft.binding.resourceType !== resourceType || draft.binding.resourceId !== resourceId) {
         return {
           success: false,
@@ -90,6 +90,7 @@ export function registerDesignRoute(
         draft,
         fs: options.fs,
         fileWriter: options.fileWriter,
+        provenance,
       });
       return result as PutDesignBody;
     },

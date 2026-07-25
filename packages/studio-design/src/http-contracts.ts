@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import type {
   CanvasPosition,
+  ChangeProvenance,
+  ChatDesignRequest,
+  ChatDesignResponse,
+  ChatHistoryMessage,
   DesignArtifact,
   DesignDraft,
   FormLayout,
@@ -89,8 +93,14 @@ export const getDesignResponseSchema = z.object({
   design: designArtifactSchema.nullable(),
 }) satisfies z.ZodType<GetDesignResponse>;
 
+export const changeProvenanceSchema = z.object({
+  source: z.enum(['manual', 'genai', 'chat']),
+  summary: z.string().optional(),
+}) satisfies z.ZodType<ChangeProvenance>;
+
 export const putDesignRequestSchema = z.object({
   design: designDraftSchema,
+  provenance: changeProvenanceSchema.optional(),
 }) satisfies z.ZodType<PutDesignRequest>;
 
 export const putDesignResponseSchema = z.object({
@@ -109,3 +119,21 @@ export const promptToDesignResponseSchema = z.object({
   design: designArtifactSchema.optional(),
   diagnostics: z.array(diagnosticSchema),
 }) satisfies z.ZodType<PromptToDesignResponse>;
+
+const chatHistoryMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+}) satisfies z.ZodType<ChatHistoryMessage>;
+
+export const chatDesignRequestSchema = z.object({
+  agentId: z.string().min(1),
+  message: z.string().min(1),
+  history: z.array(chatHistoryMessageSchema).optional(),
+}) satisfies z.ZodType<ChatDesignRequest>;
+
+export const chatDesignResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  design: designArtifactSchema.optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<ChatDesignResponse>;

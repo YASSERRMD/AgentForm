@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { loadProject, nodeFileSystem, type FileSystem } from '@agentform/parser';
-import type { PatchSpecResponse, SpecPatch } from '@agentform/studio-core';
+import type { ChangeSource, PatchSpecResponse, SpecPatch } from '@agentform/studio-core';
 import { buildSpecDocument } from '@agentform/studio-core/server';
+import { appendAuditEntry, describeSpecPatch } from './audit-log.js';
 import { nodeFileWriter, type FileWriter } from './file-writer.js';
 import { applyPatchToDocument, parseYamlDocument, stringifyYamlDocument } from './yaml-document.js';
 import { validateSpecPatch } from './validate-spec-patch.js';
@@ -11,6 +12,8 @@ export interface ApplySpecPatchOptions {
   readonly patch: SpecPatch;
   readonly fs?: FileSystem;
   readonly fileWriter?: FileWriter;
+  /** Where this patch actually came from — recorded in the local audit log (Phase 18). Defaults to `'manual'` (a plain form/canvas edit) when omitted, so no pre-Phase-18 caller needs to change. */
+  readonly provenance?: { readonly source: ChangeSource; readonly summary?: string };
 }
 
 /**
@@ -39,6 +42,12 @@ export function applySpecPatch(options: ApplySpecPatchOptions): PatchSpecRespons
   const yamlDoc = parseYamlDocument(fs.readFile(absoluteEntryPath));
   applyPatchToDocument(yamlDoc, options.patch);
   fileWriter.writeFile(absoluteEntryPath, stringifyYamlDocument(yamlDoc));
+
+  appendAuditEntry(options.rootDir, fs, fileWriter, {
+    source: options.provenance?.source ?? 'manual',
+    summary: options.provenance?.summary ?? describeSpecPatch(options.patch),
+    target: { kind: 'spec' },
+  });
 
   // Re-read from disk rather than trusting the in-memory result — the
   // response reflects what's actually on disk now, not what this

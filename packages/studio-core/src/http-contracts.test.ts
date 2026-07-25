@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { buildSpecDocument } from './spec-document.js';
 import {
+  auditEntrySchema,
+  auditListResponseSchema,
+  changeProvenanceSchema,
+  chatSpecRequestSchema,
+  chatSpecResponseSchema,
+  patchSpecRequestSchema,
   promptToSpecRequestSchema,
   promptToSpecResponseSchema,
   specDocumentResponseSchema,
@@ -86,5 +92,124 @@ describe('promptToSpecResponseSchema', () => {
     };
 
     expect(() => promptToSpecResponseSchema.parse(response)).not.toThrow();
+  });
+});
+
+describe('changeProvenanceSchema', () => {
+  it('accepts each real source value, with and without a summary', () => {
+    expect(() => changeProvenanceSchema.parse({ source: 'manual' })).not.toThrow();
+    expect(() =>
+      changeProvenanceSchema.parse({ source: 'genai', summary: 'Added a tool.' }),
+    ).not.toThrow();
+    expect(() => changeProvenanceSchema.parse({ source: 'chat' })).not.toThrow();
+  });
+
+  it('rejects an unrecognized source', () => {
+    expect(() => changeProvenanceSchema.parse({ source: 'bogus' })).toThrow();
+  });
+});
+
+describe('patchSpecRequestSchema', () => {
+  it('accepts a patch with no provenance (a plain pre-Phase-18 request)', () => {
+    expect(() =>
+      patchSpecRequestSchema.parse({
+        patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts a patch carrying provenance', () => {
+    expect(() =>
+      patchSpecRequestSchema.parse({
+        patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }],
+        provenance: { source: 'chat', summary: 'Bumped the version.' },
+      }),
+    ).not.toThrow();
+  });
+});
+
+describe('auditEntrySchema / auditListResponseSchema', () => {
+  it('accepts a spec-targeted entry', () => {
+    const entry = {
+      timestamp: '2026-07-25T00:00:00.000Z',
+      source: 'manual',
+      summary: 'Updated spec.agents.assistant.role',
+      target: { kind: 'spec' },
+    };
+    expect(() => auditEntrySchema.parse(entry)).not.toThrow();
+  });
+
+  it('accepts a design-targeted entry', () => {
+    const entry = {
+      timestamp: '2026-07-25T00:00:00.000Z',
+      source: 'genai',
+      summary: 'Updated layout for agents.assistant',
+      target: { kind: 'design', resourceType: 'agents', resourceId: 'assistant' },
+    };
+    expect(() => auditEntrySchema.parse(entry)).not.toThrow();
+  });
+
+  it('accepts a list of entries', () => {
+    expect(() =>
+      auditListResponseSchema.parse({
+        entries: [
+          {
+            timestamp: '2026-07-25T00:00:00.000Z',
+            source: 'chat',
+            summary: 'Removed the main workflow.',
+            target: { kind: 'spec' },
+          },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts an empty list', () => {
+    expect(() => auditListResponseSchema.parse({ entries: [] })).not.toThrow();
+  });
+});
+
+describe('chatSpecRequestSchema', () => {
+  it('accepts a message with no history (a first turn)', () => {
+    expect(() => chatSpecRequestSchema.parse({ message: 'add a lookup tool' })).not.toThrow();
+  });
+
+  it('accepts a message with prior turns', () => {
+    expect(() =>
+      chatSpecRequestSchema.parse({
+        message: 'thanks',
+        history: [
+          { role: 'user', content: 'add a lookup tool' },
+          { role: 'assistant', content: "I've added a lookup tool." },
+        ],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects an empty message', () => {
+    expect(() => chatSpecRequestSchema.parse({ message: '' })).toThrow();
+  });
+});
+
+describe('chatSpecResponseSchema', () => {
+  it('accepts a plain conversational reply with no patch', () => {
+    expect(() =>
+      chatSpecResponseSchema.parse({
+        success: true,
+        message: 'The assistant uses the primary model.',
+        diagnostics: [],
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts a reply carrying a proposed patch', () => {
+    expect(() =>
+      chatSpecResponseSchema.parse({
+        success: true,
+        message: "I've added a lookup tool.",
+        patch: [{ op: 'add', path: ['spec', 'tools', 'lookup'], value: { type: 'function' } }],
+        diagnostics: [],
+      }),
+    ).not.toThrow();
   });
 });

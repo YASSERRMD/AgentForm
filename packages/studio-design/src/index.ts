@@ -7,6 +7,11 @@
  */
 export type {
   CanvasPosition,
+  ChangeProvenance,
+  ChangeSource,
+  ChatDesignRequest,
+  ChatDesignResponse,
+  ChatHistoryMessage,
   DesignArtifact,
   DesignDraft,
   DesignResourceType,
@@ -32,6 +37,9 @@ export { renderDesignToHtml } from './render-html.js';
 
 export {
   canvasPositionSchema,
+  changeProvenanceSchema,
+  chatDesignRequestSchema,
+  chatDesignResponseSchema,
   designArtifactSchema,
   designDraftSchema,
   formLayoutSchema,

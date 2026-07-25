@@ -4,6 +4,13 @@ import type { ResourceFormSchema, ResourceType } from './form-schema.js';
 import { RESOURCE_TYPES } from './form-schema.js';
 import type { SpecPatchOperation } from './patch.js';
 import type {
+  AuditEntry,
+  AuditListResponse,
+  AuditTarget,
+  ChangeProvenance,
+  ChatHistoryMessage,
+  ChatSpecRequest,
+  ChatSpecResponse,
   Diagnostic,
   HealthResponse,
   PatchSpecRequest,
@@ -60,8 +67,14 @@ export const specPatchOperationSchema = z.object({
   value: z.unknown().optional(),
 }) satisfies z.ZodType<SpecPatchOperation>;
 
+export const changeProvenanceSchema = z.object({
+  source: z.enum(['manual', 'genai', 'chat']),
+  summary: z.string().optional(),
+}) satisfies z.ZodType<ChangeProvenance>;
+
 export const patchSpecRequestSchema = z.object({
   patch: z.array(specPatchOperationSchema),
+  provenance: changeProvenanceSchema.optional(),
 }) satisfies z.ZodType<PatchSpecRequest>;
 
 export const patchSpecResponseSchema = z.object({
@@ -99,3 +112,36 @@ export const formSchemasResponseSchema = z.object({
   agents: resourceFormSchemaSchema,
   workflows: resourceFormSchemaSchema,
 });
+
+const auditTargetSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('spec') }),
+  z.object({ kind: z.literal('design'), resourceType: z.string(), resourceId: z.string() }),
+]) satisfies z.ZodType<AuditTarget>;
+
+export const auditEntrySchema = z.object({
+  timestamp: z.string(),
+  source: z.enum(['manual', 'genai', 'chat']),
+  summary: z.string(),
+  target: auditTargetSchema,
+}) satisfies z.ZodType<AuditEntry>;
+
+export const auditListResponseSchema = z.object({
+  entries: z.array(auditEntrySchema),
+}) satisfies z.ZodType<AuditListResponse>;
+
+const chatHistoryMessageSchema = z.object({
+  role: z.enum(['user', 'assistant']),
+  content: z.string(),
+}) satisfies z.ZodType<ChatHistoryMessage>;
+
+export const chatSpecRequestSchema = z.object({
+  message: z.string().min(1),
+  history: z.array(chatHistoryMessageSchema).optional(),
+}) satisfies z.ZodType<ChatSpecRequest>;
+
+export const chatSpecResponseSchema = z.object({
+  success: z.boolean(),
+  message: z.string(),
+  patch: z.array(specPatchOperationSchema).optional(),
+  diagnostics: z.array(diagnosticSchema),
+}) satisfies z.ZodType<ChatSpecResponse>;

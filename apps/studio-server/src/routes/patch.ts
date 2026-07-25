@@ -35,6 +35,7 @@ export function registerPatchSpecRoute(
           fs: options.fs,
           fileWriter: options.fileWriter,
           patch: request.body.patch,
+          provenance: request.body.provenance,
         });
         // See routes/spec.ts for why this cast is safe: readonly domain
         // type vs. Zod's mutable-by-default inference, not a real gap.

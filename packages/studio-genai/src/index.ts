@@ -5,7 +5,7 @@
  * package has no browser-safe/Node-only split to worry about, because
  * `apps/studio-web` never imports it at all, not even for types.
  */
-export type { GenAIProvider, GenAIRequest } from './provider.js';
+export type { GenAIHistoryMessage, GenAIProvider, GenAIRequest } from './provider.js';
 
 export {
   createFakeProvider,
@@ -31,3 +31,19 @@ export {
   type PromptToDesignOptions,
   type PromptToDesignResult,
 } from './prompt-to-design.js';
+
+export {
+  chatEditSpec,
+  chatSpecResponseSchema,
+  type ChatSpecOptions,
+  type ChatSpecResponse,
+  type ChatSpecResult,
+} from './chat-spec.js';
+
+export {
+  chatEditDesign,
+  chatDesignResponseSchema,
+  type ChatDesignOptions,
+  type ChatDesignResponse,
+  type ChatDesignResult,
+} from './chat-design.js';

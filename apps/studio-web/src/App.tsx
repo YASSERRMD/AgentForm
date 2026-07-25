@@ -5,8 +5,9 @@ import type {
 } from '@agentform/studio-core';
 import { useEffect, useState } from 'react';
 import { getFormSchemas, getSpec } from './api/client';
+import { AuditPanel } from './components/AuditPanel';
+import { ChatSpecPanel } from './components/ChatSpecPanel';
 import { DiagnosticsPanel } from './components/DiagnosticsPanel';
-import { GenerateSpecPanel } from './components/GenerateSpecPanel';
 import { ResourceEditor } from './components/ResourceEditor';
 import { SpecViewer } from './components/SpecViewer';
 
@@ -65,7 +66,7 @@ export function App() {
   return (
     <main>
       <h1>Agentform Studio</h1>
-      <GenerateSpecPanel onApplied={load} />
+      <ChatSpecPanel application={state.document.application} onApplied={load} />
       {state.document.application && (
         <SpecViewer
           application={state.document.application}
@@ -73,6 +74,7 @@ export function App() {
         />
       )}
       <DiagnosticsPanel diagnostics={state.document.diagnostics} />
+      <AuditPanel />
       {editing && state.document.application && (
         <ResourceEditor
           resourceType={editing.resourceType}

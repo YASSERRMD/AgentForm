@@ -17,6 +17,7 @@ describe('App', () => {
 
   it('renders the spec viewer and diagnostics panel for a valid spec', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',
@@ -37,11 +38,12 @@ describe('App', () => {
 
     await waitFor(() => expect(screen.getByText('support-bot')).toBeInTheDocument());
     expect(screen.getByText('No diagnostics.')).toBeInTheDocument();
-    expect(screen.getByLabelText('Generate with AI')).toBeInTheDocument();
+    expect(screen.getByLabelText('Chat with AI')).toBeInTheDocument();
   });
 
   it('renders diagnostics only when the spec failed to validate', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       diagnostics: [{ code: 'AGF1001', severity: 'error', message: 'Missing required field.' }],
     });
@@ -54,6 +56,7 @@ describe('App', () => {
 
   it('opens a resource editor when a resource id is clicked, and closes it on save', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',
@@ -85,6 +88,7 @@ describe('App', () => {
 
   it('opens the real workflow canvas (not raw JSON) when a workflow resource is clicked', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',

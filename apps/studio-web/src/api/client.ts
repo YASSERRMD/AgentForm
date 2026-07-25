@@ -1,17 +1,19 @@
 import type {
+  AuditListResponse,
+  ChatHistoryMessage,
+  ChatSpecResponse,
   HealthResponse,
   PatchSpecResponse,
-  PromptToSpecResponse,
   ResourceFormSchema,
   ResourceType,
   SpecDocumentResponse,
   SpecPatch,
 } from '@agentform/studio-core';
 import type {
+  ChatDesignResponse,
   DesignDraft,
   DesignResourceType,
   GetDesignResponse,
-  PromptToDesignResponse,
   PutDesignResponse,
 } from '@agentform/studio-design';
 
@@ -94,16 +96,29 @@ export function putDesign(
 
 /**
  * Preview-only: never writes anything itself. `success: false` is a real
- * outcome (no provider configured, generation failed, or the proposed
+ * outcome (no provider configured, generation failed, or a proposed
  * patch failed validation) — not an HTTP error. Accepting a proposal
  * means re-submitting `patch` to the real `patchSpec` above, not calling
- * anything special here.
+ * anything special here. `history` is prior turns, oldest first; omit
+ * for the first turn of a conversation.
  */
-export function promptToSpec(prompt: string): Promise<PromptToSpecResponse> {
-  return postJson<PromptToSpecResponse>('/api/genai/prompt-to-spec', { prompt });
+export function chatSpec(
+  message: string,
+  history?: readonly ChatHistoryMessage[],
+): Promise<ChatSpecResponse> {
+  return postJson<ChatSpecResponse>('/api/genai/chat/spec', { message, history });
 }
 
-/** Preview-only, same contract as `promptToSpec`. Accepting a proposal means loading `design.layout` into the layout editor's own draft state, not calling anything special here — the editor's existing "Save layout" is still the only thing that persists it. */
-export function promptToDesign(agentId: string, prompt: string): Promise<PromptToDesignResponse> {
-  return postJson<PromptToDesignResponse>('/api/genai/prompt-to-design', { agentId, prompt });
+/** Preview-only, same contract as `chatSpec`. Accepting a proposal means loading `design.layout` into the layout editor's own draft state, not calling anything special here — the editor's existing "Save layout" is still the only thing that persists it. */
+export function chatDesign(
+  agentId: string,
+  message: string,
+  history?: readonly ChatHistoryMessage[],
+): Promise<ChatDesignResponse> {
+  return postJson<ChatDesignResponse>('/api/genai/chat/design', { agentId, message, history });
+}
+
+/** Local, append-only provenance log — newest first, capped server-side. Never empty-vs-error: no entries yet is a normal `{entries: []}`, same as every other Studio read endpoint. */
+export function getAudit(): Promise<AuditListResponse> {
+  return getJson<AuditListResponse>('/api/audit');
 }

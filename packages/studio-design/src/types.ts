@@ -67,8 +67,22 @@ export interface GetDesignResponse {
   readonly design: DesignArtifact | null;
 }
 
+/**
+ * Mirrors `@agentform/studio-core`'s `ChangeSource`/`ChangeProvenance`
+ * structurally rather than importing them — the two Studio packages
+ * never depend on each other, same as this file's own `Diagnostic`
+ * mirror in `http-contracts.ts`.
+ */
+export type ChangeSource = 'manual' | 'genai' | 'chat';
+
+export interface ChangeProvenance {
+  readonly source: ChangeSource;
+  readonly summary?: string;
+}
+
 export interface PutDesignRequest {
   readonly design: DesignDraft;
+  readonly provenance?: ChangeProvenance;
 }
 
 export interface PutDesignResponse {
@@ -92,6 +106,33 @@ export interface PromptToDesignRequest {
  */
 export interface PromptToDesignResponse {
   readonly success: boolean;
+  readonly design?: DesignArtifact;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
+/** One prior turn of a multi-turn chat conversation. Mirrors `@agentform/studio-core`'s `ChatHistoryMessage` structurally, not by import. */
+export interface ChatHistoryMessage {
+  readonly role: 'user' | 'assistant';
+  readonly content: string;
+}
+
+/** Body of `POST /api/genai/chat/design`. Scoped to a single agent's form layout, same as `PromptToDesignRequest`. */
+export interface ChatDesignRequest {
+  readonly agentId: string;
+  readonly message: string;
+  readonly history?: readonly ChatHistoryMessage[];
+}
+
+/**
+ * Unlike `PromptToDesignResponse`, `message` is always present and
+ * `design` is present only when the model actually proposed a layout
+ * this turn — a plain conversational reply carries no design at all.
+ * Same preview-only contract: accepting a proposal means re-submitting
+ * `design` to the real `PUT /api/design/:resourceType/:resourceId`.
+ */
+export interface ChatDesignResponse {
+  readonly success: boolean;
+  readonly message: string;
   readonly design?: DesignArtifact;
   readonly diagnostics: readonly Diagnostic[];
 }

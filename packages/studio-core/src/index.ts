@@ -12,6 +12,14 @@
 export type {
   Agent,
   AgenticApplication,
+  AuditEntry,
+  AuditListResponse,
+  AuditTarget,
+  ChangeProvenance,
+  ChangeSource,
+  ChatHistoryMessage,
+  ChatSpecRequest,
+  ChatSpecResponse,
   Diagnostic,
   DiagnosticSeverity,
   SourceLocation,
@@ -43,6 +51,11 @@ export {
   type ResourceType,
 } from './form-schema.js';
 export {
+  auditEntrySchema,
+  auditListResponseSchema,
+  changeProvenanceSchema,
+  chatSpecRequestSchema,
+  chatSpecResponseSchema,
   diagnosticSchema,
   formSchemasResponseSchema,
   healthResponseSchema,
@@ -55,6 +68,7 @@ export {
   specPatchOperationSchema,
 } from './http-contracts.js';
 export { findUngatedDestructiveToolNodes } from './workflow-risk.js';
+export { classifyPatchImpact, type PatchImpactLevel } from './patch-risk.js';
 
 export const PACKAGE_NAME = '@agentform/studio-core';
 export const PACKAGE_VERSION = '0.1.0';

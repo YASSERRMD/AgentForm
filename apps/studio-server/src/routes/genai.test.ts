@@ -28,6 +28,19 @@ const VALID_SPEC = {
 };
 
 describe('POST /api/genai/prompt-to-spec', () => {
+  it('rejects a prompt over 4000 characters with a 400, before it reaches the handler', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const app = buildApp({ rootDir: '/project', fs });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/genai/prompt-to-spec',
+      payload: { prompt: 'a'.repeat(4001) },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
   it('returns success:false when no provider is configured, not a 404', async () => {
     const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
     const app = buildApp({ rootDir: '/project', fs });
@@ -295,5 +308,60 @@ describe('POST /api/genai/prompt-to-design', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('rate limiting', () => {
+  // A tiny max:2 so this stays fast and deterministic — never waits a
+  // real timeWindow. Each scripted response services one of the first
+  // 2 allowed calls; the 3rd must never reach the provider at all.
+  function fakeSpecResponse() {
+    return {
+      summary: 'Added a lookup tool.',
+      resources: { tools: { lookup: { type: 'function', handler: 'tools.lookup' } } },
+    };
+  }
+
+  it('429s the 3rd call to a GenAI route within the window when genaiRateLimit is configured', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const provider = createFakeProvider({ responses: [fakeSpecResponse(), fakeSpecResponse()] });
+    const app = buildApp({
+      rootDir: '/project',
+      fs,
+      genaiProvider: provider,
+      genaiRateLimit: { max: 2, timeWindow: '1 minute' },
+    });
+    const makeRequest = () =>
+      app.inject({
+        method: 'POST',
+        url: '/api/genai/prompt-to-spec',
+        payload: { prompt: 'add a tool' },
+      });
+
+    const first = await makeRequest();
+    const second = await makeRequest();
+    const third = await makeRequest();
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(third.statusCode).toBe(429);
+    expect(provider.requests).toHaveLength(2);
+  });
+
+  it('never rate-limits a non-GenAI route, even when genaiRateLimit is configured', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const app = buildApp({
+      rootDir: '/project',
+      fs,
+      genaiRateLimit: { max: 1, timeWindow: '1 minute' },
+    });
+
+    const first = await app.inject({ method: 'GET', url: '/api/health' });
+    const second = await app.inject({ method: 'GET', url: '/api/health' });
+    const third = await app.inject({ method: 'GET', url: '/api/health' });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(third.statusCode).toBe(200);
   });
 });

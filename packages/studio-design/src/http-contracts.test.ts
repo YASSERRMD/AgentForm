@@ -106,6 +106,12 @@ describe('promptToDesignRequestSchema', () => {
   it('rejects an empty prompt', () => {
     expect(() => promptToDesignRequestSchema.parse({ agentId: 'assistant', prompt: '' })).toThrow();
   });
+
+  it('rejects a prompt over 4000 characters', () => {
+    expect(() =>
+      promptToDesignRequestSchema.parse({ agentId: 'assistant', prompt: 'a'.repeat(4001) }),
+    ).toThrow();
+  });
 });
 
 describe('promptToDesignResponseSchema', () => {
@@ -147,6 +153,29 @@ describe('chatDesignRequestSchema', () => {
 
   it('rejects an empty message', () => {
     expect(() => chatDesignRequestSchema.parse({ agentId: 'assistant', message: '' })).toThrow();
+  });
+
+  it('rejects a message over 4000 characters', () => {
+    expect(() =>
+      chatDesignRequestSchema.parse({ agentId: 'assistant', message: 'a'.repeat(4001) }),
+    ).toThrow();
+  });
+
+  it('rejects a history entry whose content is over 4000 characters', () => {
+    expect(() =>
+      chatDesignRequestSchema.parse({
+        agentId: 'assistant',
+        message: 'thanks',
+        history: [{ role: 'user', content: 'a'.repeat(4001) }],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a history array over 50 entries', () => {
+    const history = Array.from({ length: 51 }, () => ({ role: 'user' as const, content: 'hi' }));
+    expect(() =>
+      chatDesignRequestSchema.parse({ agentId: 'assistant', message: 'thanks', history }),
+    ).toThrow();
   });
 });
 

@@ -19,6 +19,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { z } from 'zod';
 import { STUDIO_DIAGNOSTIC_CODES } from '../lib/codes.js';
 import { loadSpecDocument } from '../lib/load-spec-document.js';
+import type { GenAIRateLimitConfig } from '../lib/rate-limit-config.js';
 import { validateSpecPatch } from '../lib/validate-spec-patch.js';
 
 export interface RegisterGenaiRouteOptions {
@@ -26,6 +27,8 @@ export interface RegisterGenaiRouteOptions {
   readonly fs?: FileSystem;
   /** Omit to leave GenAI unconfigured — both routes still exist and respond, just always with `success: false`, rather than 404ing. The real process entrypoint always provides one (see config.ts / lib/genai-provider.ts); only tests that don't care about GenAI omit it. */
   readonly provider?: GenAIProvider;
+  /** Omit to leave both routes unlimited — requires `@fastify/rate-limit` to already be registered on `app` (see app.ts), which only happens when this is set. */
+  readonly rateLimit?: GenAIRateLimitConfig;
 }
 
 // readonly domain types vs. Zod's mutable-by-default inference — same
@@ -71,7 +74,10 @@ export function registerGenaiRoute(app: FastifyInstance, options: RegisterGenaiR
 
   typedApp.post(
     '/api/genai/prompt-to-spec',
-    { schema: { body: promptToSpecRequestSchema, response: { 200: promptToSpecResponseSchema } } },
+    {
+      schema: { body: promptToSpecRequestSchema, response: { 200: promptToSpecResponseSchema } },
+      ...(options.rateLimit ? { config: { rateLimit: options.rateLimit } } : {}),
+    },
     async (request): Promise<PromptToSpecBody> => {
       if (!options.provider) {
         return { success: false, diagnostics: notConfiguredDiagnostics() } as PromptToSpecBody;
@@ -124,6 +130,7 @@ export function registerGenaiRoute(app: FastifyInstance, options: RegisterGenaiR
         body: promptToDesignRequestSchema,
         response: { 200: promptToDesignResponseSchema },
       },
+      ...(options.rateLimit ? { config: { rateLimit: options.rateLimit } } : {}),
     },
     async (request): Promise<PromptToDesignBody> => {
       if (!options.provider) {

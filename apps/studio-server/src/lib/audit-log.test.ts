@@ -97,6 +97,28 @@ describe('appendAuditEntry / readAuditLog', () => {
     expect(entries).toHaveLength(2);
     expect(verification).toEqual({ valid: true, verifiedEntryCount: 5, totalEntryCount: 5 });
   });
+
+  it('normalizes a pre-hardening legacy entry (no hash fields on disk) instead of returning it as-is', () => {
+    const legacyLine = JSON.stringify({
+      timestamp: '2026-01-01T00:00:00.000Z',
+      source: 'manual',
+      summary: 'written before hashing existed',
+      target: { kind: 'spec' },
+    });
+    const fs = createInMemoryFileSystem({
+      '/project/.agentform/studio-audit.jsonl': `${legacyLine}\n`,
+    });
+
+    const { entries, verification } = readAuditLog('/project', fs);
+
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toMatchObject({
+      summary: 'written before hashing existed',
+      previousEntryHash: 'legacy',
+      entryHash: 'legacy',
+    });
+    expect(verification).toEqual({ valid: true, verifiedEntryCount: 1, totalEntryCount: 1 });
+  });
 });
 
 describe('verifyAuditLog', () => {

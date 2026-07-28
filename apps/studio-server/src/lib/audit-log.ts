@@ -14,6 +14,16 @@ const AUDIT_LOG_RELATIVE_PATH = '.agentform/studio-audit.jsonl';
 /** Never `sha256:`-prefixed, so it can never be confused with a real hash. */
 const AUDIT_CHAIN_GENESIS = 'genesis';
 
+/**
+ * Stamped onto a pre-hardening entry's `previousEntryHash`/`entryHash`
+ * when reading it back — never `sha256:`-prefixed, so (like `'genesis'`)
+ * it can't be confused with a real hash. Entries written before this
+ * hardening pass have neither field on disk at all; the response schema
+ * requires both on every entry, so a legacy line has to be normalized to
+ * something before it can be serialized back to a client.
+ */
+const LEGACY_HASH_PLACEHOLDER = 'legacy';
+
 interface UnhashedEntryFields {
   readonly timestamp: string;
   readonly source: ChangeSource;
@@ -97,9 +107,26 @@ export function readAuditLog(rootDir: string, fs: FileSystem, limit?: number): R
   const entries = serialized
     .split('\n')
     .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as AuditEntry)
+    .map((line) => normalizeEntry(JSON.parse(line) as Partial<AuditEntry>))
     .reverse();
   return { entries: limit === undefined ? entries : entries.slice(0, limit), verification };
+}
+
+/**
+ * A pre-hardening entry on disk has neither hash field at all — the
+ * response schema requires both on every entry, so a legacy line is
+ * stamped with `LEGACY_HASH_PLACEHOLDER` rather than serialized as-is
+ * (which would 500 the whole endpoint the moment one old entry is read
+ * back). This only affects what's returned to a client; `verifyAuditLog`
+ * reads the raw file directly and already treats a missing hash as an
+ * unverifiable legacy line rather than tampering.
+ */
+function normalizeEntry(parsed: Partial<AuditEntry>): AuditEntry {
+  return {
+    ...parsed,
+    previousEntryHash: parsed.previousEntryHash ?? LEGACY_HASH_PLACEHOLDER,
+    entryHash: parsed.entryHash ?? LEGACY_HASH_PLACEHOLDER,
+  } as AuditEntry;
 }
 
 /**

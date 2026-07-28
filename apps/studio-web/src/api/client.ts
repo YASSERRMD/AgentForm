@@ -16,11 +16,28 @@ import type {
   GetDesignResponse,
   PutDesignResponse,
 } from '@agentform/studio-design';
+import { getStoredStudioToken } from './auth-token.js';
+
+/** Omits the header entirely when no token was ever bootstrapped — Studio's zero-config default (no `AGENTFORM_STUDIO_TOKEN` set) sends exactly the same request shape as before this existed. */
+function authHeaders(): HeadersInit {
+  const token = getStoredStudioToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+/** A 401 specifically means "missing or wrong Studio access token" (ADR-0022), distinguishable from every other failure so a caller's `.catch(...)` can surface something actionable rather than a generic "responded with 401". */
+function throwForResponse(path: string, response: Response): never {
+  if (response.status === 401) {
+    throw new Error(
+      `${path} requires a Studio access token — open Studio using the URL printed at startup, or set one via AGENTFORM_STUDIO_TOKEN.`,
+    );
+  }
+  throw new Error(`${path} responded with ${response.status}`);
+}
 
 async function getJson<T>(path: string): Promise<T> {
-  const response = await fetch(path);
+  const response = await fetch(path, { headers: authHeaders() });
   if (!response.ok) {
-    throw new Error(`${path} responded with ${response.status}`);
+    throwForResponse(path, response);
   }
   return (await response.json()) as T;
 }
@@ -28,11 +45,11 @@ async function getJson<T>(path: string): Promise<T> {
 async function postJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`${path} responded with ${response.status}`);
+    throwForResponse(path, response);
   }
   return (await response.json()) as T;
 }
@@ -40,11 +57,11 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
 async function putJson<T>(path: string, body: unknown): Promise<T> {
   const response = await fetch(path, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
-    throw new Error(`${path} responded with ${response.status}`);
+    throwForResponse(path, response);
   }
   return (await response.json()) as T;
 }

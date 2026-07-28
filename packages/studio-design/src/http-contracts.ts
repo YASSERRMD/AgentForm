@@ -111,7 +111,7 @@ export const putDesignResponseSchema = z.object({
 
 export const promptToDesignRequestSchema = z.object({
   agentId: z.string().min(1),
-  prompt: z.string().min(1),
+  prompt: z.string().min(1).max(4000),
 }) satisfies z.ZodType<PromptToDesignRequest>;
 
 export const promptToDesignResponseSchema = z.object({
@@ -122,13 +122,13 @@ export const promptToDesignResponseSchema = z.object({
 
 const chatHistoryMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
-  content: z.string(),
+  content: z.string().max(4000),
 }) satisfies z.ZodType<ChatHistoryMessage>;
 
 export const chatDesignRequestSchema = z.object({
   agentId: z.string().min(1),
-  message: z.string().min(1),
-  history: z.array(chatHistoryMessageSchema).optional(),
+  message: z.string().min(1).max(4000),
+  history: z.array(chatHistoryMessageSchema).max(50).optional(),
 }) satisfies z.ZodType<ChatDesignRequest>;
 
 export const chatDesignResponseSchema = z.object({

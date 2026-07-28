@@ -28,6 +28,19 @@ const VALID_SPEC = {
 };
 
 describe('POST /api/genai/chat/spec', () => {
+  it('rejects a message over 4000 characters with a 400, before it reaches the handler', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const app = buildApp({ rootDir: '/project', fs });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/genai/chat/spec',
+      payload: { message: 'a'.repeat(4001) },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
   it('returns success:false when no provider is configured, not a 404', async () => {
     const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
     const app = buildApp({ rootDir: '/project', fs });
@@ -330,5 +343,36 @@ describe('POST /api/genai/chat/design', () => {
     });
 
     expect(response.statusCode).toBe(400);
+  });
+});
+
+describe('rate limiting', () => {
+  // Same tiny max:2 pattern as genai.test.ts — fast, deterministic, never
+  // waits a real timeWindow.
+  it('429s the 3rd call to a chat route within the window when genaiRateLimit is configured', async () => {
+    const fs = createInMemoryFileSystem({ '/project/agentform.json': JSON.stringify(VALID_SPEC) });
+    const reply = { type: 'message', message: 'The assistant uses the primary model.' };
+    const provider = createFakeProvider({ responses: [reply, reply] });
+    const app = buildApp({
+      rootDir: '/project',
+      fs,
+      genaiProvider: provider,
+      genaiRateLimit: { max: 2, timeWindow: '1 minute' },
+    });
+    const makeRequest = () =>
+      app.inject({
+        method: 'POST',
+        url: '/api/genai/chat/spec',
+        payload: { message: 'what model does the assistant use?' },
+      });
+
+    const first = await makeRequest();
+    const second = await makeRequest();
+    const third = await makeRequest();
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(third.statusCode).toBe(429);
+    expect(provider.requests).toHaveLength(2);
   });
 });

@@ -19,6 +19,7 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod';
 import type { z } from 'zod';
 import { STUDIO_DIAGNOSTIC_CODES } from '../lib/codes.js';
 import { loadSpecDocument } from '../lib/load-spec-document.js';
+import type { GenAIRateLimitConfig } from '../lib/rate-limit-config.js';
 import { validateSpecPatch } from '../lib/validate-spec-patch.js';
 
 export interface RegisterChatRouteOptions {
@@ -26,6 +27,8 @@ export interface RegisterChatRouteOptions {
   readonly fs?: FileSystem;
   /** Omit to leave chat unconfigured — both routes still exist and respond, just always with `success: false`, rather than 404ing. */
   readonly provider?: GenAIProvider;
+  /** Omit to leave both routes unlimited — requires `@fastify/rate-limit` to already be registered on `app` (see app.ts), which only happens when this is set. */
+  readonly rateLimit?: GenAIRateLimitConfig;
 }
 
 // readonly domain types vs. Zod's mutable-by-default inference — same
@@ -69,7 +72,10 @@ export function registerChatRoute(app: FastifyInstance, options: RegisterChatRou
 
   typedApp.post(
     '/api/genai/chat/spec',
-    { schema: { body: chatSpecRequestSchema, response: { 200: chatSpecResponseSchema } } },
+    {
+      schema: { body: chatSpecRequestSchema, response: { 200: chatSpecResponseSchema } },
+      ...(options.rateLimit ? { config: { rateLimit: options.rateLimit } } : {}),
+    },
     async (request): Promise<ChatSpecBody> => {
       if (!options.provider) {
         return {
@@ -128,7 +134,10 @@ export function registerChatRoute(app: FastifyInstance, options: RegisterChatRou
 
   typedApp.post(
     '/api/genai/chat/design',
-    { schema: { body: chatDesignRequestSchema, response: { 200: chatDesignResponseSchema } } },
+    {
+      schema: { body: chatDesignRequestSchema, response: { 200: chatDesignResponseSchema } },
+      ...(options.rateLimit ? { config: { rateLimit: options.rateLimit } } : {}),
+    },
     async (request): Promise<ChatDesignBody> => {
       if (!options.provider) {
         return {

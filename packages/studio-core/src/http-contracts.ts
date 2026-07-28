@@ -64,7 +64,13 @@ export const specDocumentResponseSchema = z.object({
 // ever reaches `applyPatch`, not surface as an obscure runtime error.
 export const specPatchOperationSchema = z.object({
   op: z.enum(['add', 'replace', 'remove']),
-  path: z.array(z.union([z.string(), z.number()])).min(1),
+  path: z
+    .array(z.union([z.string(), z.number()]))
+    .min(1)
+    .max(20),
+  // Deliberately unbounded — legitimate variable-size content (a whole
+  // resource value). Fastify's bodyLimit (see app.ts) is the right
+  // backstop for this field instead.
   value: z.unknown().optional(),
 }) satisfies z.ZodType<SpecPatchOperation>;
 
@@ -74,7 +80,7 @@ export const changeProvenanceSchema = z.object({
 }) satisfies z.ZodType<ChangeProvenance>;
 
 export const patchSpecRequestSchema = z.object({
-  patch: z.array(specPatchOperationSchema),
+  patch: z.array(specPatchOperationSchema).max(200),
   provenance: changeProvenanceSchema.optional(),
 }) satisfies z.ZodType<PatchSpecRequest>;
 
@@ -85,7 +91,7 @@ export const patchSpecResponseSchema = z.object({
 }) satisfies z.ZodType<PatchSpecResponse>;
 
 export const promptToSpecRequestSchema = z.object({
-  prompt: z.string().min(1),
+  prompt: z.string().min(1).max(4000),
 }) satisfies z.ZodType<PromptToSpecRequest>;
 
 const skippedSpecResourceSchema = z.object({
@@ -142,12 +148,12 @@ export const auditListResponseSchema = z.object({
 
 const chatHistoryMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
-  content: z.string(),
+  content: z.string().max(4000),
 }) satisfies z.ZodType<ChatHistoryMessage>;
 
 export const chatSpecRequestSchema = z.object({
-  message: z.string().min(1),
-  history: z.array(chatHistoryMessageSchema).optional(),
+  message: z.string().min(1).max(4000),
+  history: z.array(chatHistoryMessageSchema).max(50).optional(),
 }) satisfies z.ZodType<ChatSpecRequest>;
 
 export const chatSpecResponseSchema = z.object({

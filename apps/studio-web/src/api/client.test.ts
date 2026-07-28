@@ -14,6 +14,7 @@ import {
 describe('client', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+    window.sessionStorage.clear();
   });
 
   it('getHealth() fetches /api/health and returns the parsed JSON', async () => {
@@ -25,7 +26,7 @@ describe('client', () => {
 
     const result = await getHealth();
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/health');
+    expect(mockFetch).toHaveBeenCalledWith('/api/health', { headers: {} });
     expect(result).toEqual({ status: 'ok', rootDir: '/project' });
   });
 
@@ -36,7 +37,7 @@ describe('client', () => {
 
     const result = await getSpec();
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/spec');
+    expect(mockFetch).toHaveBeenCalledWith('/api/spec', { headers: {} });
     expect(result).toEqual(body);
   });
 
@@ -47,6 +48,27 @@ describe('client', () => {
     await expect(getSpec()).rejects.toThrow('500');
   });
 
+  it('throws a distinguishable, actionable message on a 401 specifically', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await expect(getSpec()).rejects.toThrow(/Studio access token/);
+  });
+
+  it('attaches Authorization: Bearer <token> once a token has been bootstrapped', async () => {
+    window.sessionStorage.setItem('agentform-studio-token', 'a-real-token');
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, json: async () => ({ diagnostics: [] }) });
+    vi.stubGlobal('fetch', mockFetch);
+
+    await getSpec();
+
+    expect(mockFetch).toHaveBeenCalledWith('/api/spec', {
+      headers: { Authorization: 'Bearer a-real-token' },
+    });
+  });
+
   it('getFormSchemas() fetches /api/form-schemas and returns the parsed JSON', async () => {
     const body = { models: { resourceType: 'models', jsonSchema: {} } };
     const mockFetch = vi.fn().mockResolvedValue({ ok: true, json: async () => body });
@@ -54,7 +76,7 @@ describe('client', () => {
 
     const result = await getFormSchemas();
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/form-schemas');
+    expect(mockFetch).toHaveBeenCalledWith('/api/form-schemas', { headers: {} });
     expect(result).toEqual(body);
   });
 
@@ -88,7 +110,7 @@ describe('client', () => {
 
     const result = await getDesign('agents', 'assistant');
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/assistant');
+    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/assistant', { headers: {} });
     expect(result).toEqual(body);
   });
 
@@ -98,7 +120,7 @@ describe('client', () => {
 
     await getDesign('agents', 'a/b');
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/a%2Fb');
+    expect(mockFetch).toHaveBeenCalledWith('/api/design/agents/a%2Fb', { headers: {} });
   });
 
   it('putDesign() PUTs the draft as a JSON body and returns the parsed response', async () => {
@@ -179,7 +201,7 @@ describe('client', () => {
 
     const result = await getAudit();
 
-    expect(mockFetch).toHaveBeenCalledWith('/api/audit');
+    expect(mockFetch).toHaveBeenCalledWith('/api/audit', { headers: {} });
     expect(result).toEqual(body);
   });
 });

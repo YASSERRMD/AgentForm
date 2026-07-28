@@ -59,6 +59,10 @@ describe('promptToSpecRequestSchema', () => {
   it('rejects an empty prompt', () => {
     expect(() => promptToSpecRequestSchema.parse({ prompt: '' })).toThrow();
   });
+
+  it('rejects a prompt over 4000 characters', () => {
+    expect(() => promptToSpecRequestSchema.parse({ prompt: 'a'.repeat(4001) })).toThrow();
+  });
 });
 
 describe('promptToSpecResponseSchema', () => {
@@ -126,6 +130,23 @@ describe('patchSpecRequestSchema', () => {
         provenance: { source: 'chat', summary: 'Bumped the version.' },
       }),
     ).not.toThrow();
+  });
+
+  it('rejects a patch over 200 operations', () => {
+    const patch = Array.from({ length: 201 }, () => ({
+      op: 'replace' as const,
+      path: ['metadata', 'version'],
+      value: '2.0.0',
+    }));
+    expect(() => patchSpecRequestSchema.parse({ patch })).toThrow();
+  });
+
+  it('rejects an operation whose path is over 20 segments', () => {
+    expect(() =>
+      patchSpecRequestSchema.parse({
+        patch: [{ op: 'replace', path: Array.from({ length: 21 }, (_, i) => `seg${i}`) }],
+      }),
+    ).toThrow();
   });
 });
 
@@ -235,6 +256,24 @@ describe('chatSpecRequestSchema', () => {
 
   it('rejects an empty message', () => {
     expect(() => chatSpecRequestSchema.parse({ message: '' })).toThrow();
+  });
+
+  it('rejects a message over 4000 characters', () => {
+    expect(() => chatSpecRequestSchema.parse({ message: 'a'.repeat(4001) })).toThrow();
+  });
+
+  it('rejects a history entry whose content is over 4000 characters', () => {
+    expect(() =>
+      chatSpecRequestSchema.parse({
+        message: 'thanks',
+        history: [{ role: 'user', content: 'a'.repeat(4001) }],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a history array over 50 entries', () => {
+    const history = Array.from({ length: 51 }, () => ({ role: 'user' as const, content: 'hi' }));
+    expect(() => chatSpecRequestSchema.parse({ message: 'thanks', history })).toThrow();
   });
 });
 

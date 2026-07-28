@@ -18,12 +18,13 @@ describe('generateGuardrailsFile', () => {
     expect(generateGuardrailsFile(baseIR())).toBeUndefined();
   });
 
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid TypeScript with one stub per guardrail', () => {
     const source = generateGuardrailsFile(multiAgentIR());
     expect(source).toBeDefined();
     expect(isSyntacticallyValidTypeScript(source as string)).toBe(true);
     expect(source).toContain('export const no_pii: InputGuardrail = {');
-  });
+  }, 15000);
 
   it('never fabricates real guardrail logic — always a TODO stub', () => {
     const source = generateGuardrailsFile(multiAgentIR()) as string;

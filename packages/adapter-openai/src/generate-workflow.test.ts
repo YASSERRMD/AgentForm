@@ -4,6 +4,7 @@ import { baseIR, multiAgentIR } from './test-fixtures.js';
 import { isSyntacticallyValidTypeScript } from './test-syntax-check.js';
 
 describe('generateWorkflowFile', () => {
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid TypeScript for a simple workflow', () => {
     const ir = baseIR();
     const workflow = ir.workflows.get('main');
@@ -12,7 +13,7 @@ describe('generateWorkflowFile', () => {
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
     expect(source).toContain("import { run } from '@openai/agents';");
     expect(source).toContain('export async function run_main(input: string)');
-  });
+  }, 15000);
 
   it('imports and runs the entrypoint agent', () => {
     const ir = multiAgentIR();

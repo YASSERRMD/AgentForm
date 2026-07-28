@@ -38,6 +38,7 @@ describe('generateReadme', () => {
 });
 
 describe('generateMainFile', () => {
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('wires a synchronous build_crew().kickoff() call', () => {
     const source = generateMainFile([{ id: 'main' }]);
     expect(source).toContain('from .workflows.main import build_crew');
@@ -46,7 +47,7 @@ describe('generateMainFile', () => {
     expect(source).not.toContain('async');
     expect(source).not.toContain('asyncio');
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 
   it('sanitizes a hyphenated workflow id for the import path', () => {
     const source = generateMainFile([{ id: 'my-workflow' }]);

@@ -41,20 +41,22 @@ describe('generateReadme', () => {
 });
 
 describe('generateMainFile', () => {
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('calls run(task) directly for a single-agent workflow', () => {
     const source = generateMainFile([{ id: 'main', isSingleAgent: true }]);
     expect(source).toContain('from .workflows.main import run');
     expect(source).toContain('result = await run(task="Hello!")');
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('builds and runs a team for a multi-participant workflow', () => {
     const source = generateMainFile([{ id: 'main', isSingleAgent: false }]);
     expect(source).toContain('from .workflows.main import build_team');
     expect(source).toContain('team = build_team()');
     expect(source).toContain('result = await team.run(task="Hello!")');
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 
   it('sanitizes a hyphenated workflow id for the import path', () => {
     const source = generateMainFile([{ id: 'my-workflow', isSingleAgent: true }]);

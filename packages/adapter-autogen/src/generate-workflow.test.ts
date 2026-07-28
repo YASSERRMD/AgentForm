@@ -29,10 +29,11 @@ describe('generateWorkflowFile', () => {
       expect(source).not.toContain('RoundRobinGroupChat');
     });
 
+    // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
     it('produces syntactically valid Python', () => {
       const source = generateWorkflowFile('main', workflowFromFixture(baseIR(), 'main'));
       expect(isSyntacticallyValidPython(source)).toBe(true);
-    });
+    }, 15000);
   });
 
   describe('multi-participant workflow (team)', () => {
@@ -77,9 +78,10 @@ describe('generateWorkflowFile', () => {
       );
     });
 
+    // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
     it('produces syntactically valid Python', () => {
       const source = generateWorkflowFile('main', workflowFromFixture(multiAgentIR(), 'main'));
       expect(isSyntacticallyValidPython(source)).toBe(true);
-    });
+    }, 15000);
   });
 });

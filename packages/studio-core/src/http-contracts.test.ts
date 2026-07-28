@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildSpecDocument } from './spec-document.js';
 import {
+  auditChainVerificationSchema,
   auditEntrySchema,
   auditListResponseSchema,
   changeProvenanceSchema,
@@ -135,6 +136,8 @@ describe('auditEntrySchema / auditListResponseSchema', () => {
       source: 'manual',
       summary: 'Updated spec.agents.assistant.role',
       target: { kind: 'spec' },
+      previousEntryHash: 'genesis',
+      entryHash: 'sha256:aaaa',
     };
     expect(() => auditEntrySchema.parse(entry)).not.toThrow();
   });
@@ -145,11 +148,23 @@ describe('auditEntrySchema / auditListResponseSchema', () => {
       source: 'genai',
       summary: 'Updated layout for agents.assistant',
       target: { kind: 'design', resourceType: 'agents', resourceId: 'assistant' },
+      previousEntryHash: 'sha256:aaaa',
+      entryHash: 'sha256:bbbb',
     };
     expect(() => auditEntrySchema.parse(entry)).not.toThrow();
   });
 
-  it('accepts a list of entries', () => {
+  it('rejects an entry missing its hash-chain fields', () => {
+    const entry = {
+      timestamp: '2026-07-25T00:00:00.000Z',
+      source: 'manual',
+      summary: 'Updated spec.agents.assistant.role',
+      target: { kind: 'spec' },
+    };
+    expect(() => auditEntrySchema.parse(entry)).toThrow();
+  });
+
+  it('accepts a list of entries alongside a chain verification result', () => {
     expect(() =>
       auditListResponseSchema.parse({
         entries: [
@@ -158,14 +173,46 @@ describe('auditEntrySchema / auditListResponseSchema', () => {
             source: 'chat',
             summary: 'Removed the main workflow.',
             target: { kind: 'spec' },
+            previousEntryHash: 'genesis',
+            entryHash: 'sha256:aaaa',
           },
         ],
+        verification: { valid: true, verifiedEntryCount: 1, totalEntryCount: 1 },
       }),
     ).not.toThrow();
   });
 
-  it('accepts an empty list', () => {
-    expect(() => auditListResponseSchema.parse({ entries: [] })).not.toThrow();
+  it('accepts an empty list with a trivially valid verification result', () => {
+    expect(() =>
+      auditListResponseSchema.parse({
+        entries: [],
+        verification: { valid: true, verifiedEntryCount: 0, totalEntryCount: 0 },
+      }),
+    ).not.toThrow();
+  });
+});
+
+describe('auditChainVerificationSchema', () => {
+  it('accepts a valid result with no error', () => {
+    expect(() =>
+      auditChainVerificationSchema.parse({
+        valid: true,
+        verifiedEntryCount: 3,
+        totalEntryCount: 3,
+      }),
+    ).not.toThrow();
+  });
+
+  it('accepts an invalid result carrying an error message', () => {
+    expect(() =>
+      auditChainVerificationSchema.parse({
+        valid: false,
+        error:
+          "entry 2's content does not match its recorded hash — it may have been tampered with",
+        verifiedEntryCount: 1,
+        totalEntryCount: 3,
+      }),
+    ).not.toThrow();
   });
 });
 

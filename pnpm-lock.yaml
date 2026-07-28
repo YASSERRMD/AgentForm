@@ -167,6 +167,9 @@ importers:
       '@agentform/diagnostics':
         specifier: workspace:*
         version: link:../../packages/diagnostics
+      '@agentform/ir':
+        specifier: workspace:*
+        version: link:../../packages/ir
       '@agentform/parser':
         specifier: workspace:*
         version: link:../../packages/parser

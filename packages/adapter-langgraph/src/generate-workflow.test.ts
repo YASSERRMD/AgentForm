@@ -121,8 +121,9 @@ describe('generateWorkflowFile', () => {
     expect(source).toContain('return builder');
   });
 
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid Python for the full graph fixture (every node type)', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(graphWorkflowIR(), 'main'));
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 });

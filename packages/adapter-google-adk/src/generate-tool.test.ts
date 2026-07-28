@@ -32,8 +32,9 @@ describe('generateToolFile', () => {
     expect(source).toContain('def no_schema_tool(**kwargs: Any) -> Any:');
   });
 
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid Python', () => {
     const source = generateToolFile('search-registry', toolFromFixture('search-registry'));
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 });

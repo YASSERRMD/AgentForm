@@ -36,6 +36,7 @@ describe('generateReadme', () => {
 });
 
 describe('generateMainFile', () => {
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('wires a real Runner + InMemorySessionService around the root agent', () => {
     const source = generateMainFile([{ id: 'main' }]);
     expect(source).toContain('from .workflows.main import build_root_agent');
@@ -45,7 +46,7 @@ describe('generateMainFile', () => {
     );
     expect(source).toContain('async for event in runner.run_async(');
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 
   it('sanitizes a hyphenated workflow id for the import path', () => {
     const source = generateMainFile([{ id: 'my-workflow' }]);

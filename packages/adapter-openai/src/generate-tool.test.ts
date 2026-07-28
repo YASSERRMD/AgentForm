@@ -4,18 +4,20 @@ import { generateToolFile } from './generate-tool.js';
 import { isSyntacticallyValidTypeScript } from './test-syntax-check.js';
 
 describe('generateToolFile', () => {
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid TypeScript', () => {
     const tool: IRTool = { type: 'function', handler: 'lookup.ts#run' };
     const source = generateToolFile('lookup', tool);
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
-  });
+  }, 15000);
 
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('sanitizes a hyphenated id into a valid identifier', () => {
     const tool: IRTool = { type: 'function', handler: 'x' };
     const source = generateToolFile('search-registry', tool);
     expect(source).toContain('export const search_registry =');
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
-  });
+  }, 15000);
 
   it('sets needsApproval: true for a destructive tool', () => {
     const tool: IRTool = {

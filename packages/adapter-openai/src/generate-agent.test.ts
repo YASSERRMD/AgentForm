@@ -4,6 +4,7 @@ import { baseIR, multiAgentIR } from './test-fixtures.js';
 import { isSyntacticallyValidTypeScript } from './test-syntax-check.js';
 
 describe('generateAgentFile', () => {
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid TypeScript for a minimal agent', () => {
     const ir = baseIR();
     const agent = ir.agents.get('assistant');
@@ -12,15 +13,16 @@ describe('generateAgentFile', () => {
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
     expect(source).toContain("import { Agent } from '@openai/agents';");
     expect(source).toContain('export const assistant = new Agent({');
-  });
+  }, 15000);
 
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid TypeScript for a richly configured agent', () => {
     const ir = multiAgentIR();
     const agent = ir.agents.get('intake');
     if (!agent) throw new Error('missing fixture agent');
     const source = generateAgentFile('intake', agent, ir);
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
-  });
+  }, 15000);
 
   it('wires model settings from the referenced model', () => {
     const ir = multiAgentIR();
@@ -59,6 +61,7 @@ describe('generateAgentFile', () => {
     expect(source).toContain('"summary": z.string()');
   });
 
+  // isSyntacticallyValidTypeScript spins up a real ts.createProgram — comfortably fast locally, occasionally slow under CI contention.
   it('an agent with no tools/handoffs/guardrails/outputSchema omits those fields entirely', () => {
     const ir = multiAgentIR();
     const agent = ir.agents.get('research-specialist');
@@ -68,7 +71,7 @@ describe('generateAgentFile', () => {
     expect(source).not.toContain('handoffs:');
     expect(source).not.toContain('outputType:');
     expect(isSyntacticallyValidTypeScript(source)).toBe(true);
-  });
+  }, 15000);
 
   it('never includes a timestamp', () => {
     const ir = baseIR();

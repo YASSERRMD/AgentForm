@@ -48,8 +48,9 @@ describe('generateAgentFile', () => {
     expect(source).toContain('# Source: agent.triage');
   });
 
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid Python', () => {
     const source = generateAgentFile('triage', agentFromFixture('triage'));
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 });

@@ -25,8 +25,9 @@ describe('generateWorkflowFile', () => {
     expect(source).toContain('return build_intake_agent()');
   });
 
+  // isSyntacticallyValidPython spins up a real python3 subprocess — comfortably fast locally, occasionally slow under CI contention.
   it('produces syntactically valid Python', () => {
     const source = generateWorkflowFile('main', workflowFromFixture(multiAgentIR(), 'main'));
     expect(isSyntacticallyValidPython(source)).toBe(true);
-  });
+  }, 15000);
 });

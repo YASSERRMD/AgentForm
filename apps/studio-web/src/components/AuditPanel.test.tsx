@@ -9,7 +9,10 @@ describe('AuditPanel', () => {
   });
 
   it('shows "No changes yet." for an empty log', async () => {
-    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    vi.spyOn(client, 'getAudit').mockResolvedValue({
+      entries: [],
+      verification: { valid: true, verifiedEntryCount: 0, totalEntryCount: 0 },
+    });
 
     render(<AuditPanel />);
 
@@ -24,14 +27,19 @@ describe('AuditPanel', () => {
           source: 'chat',
           summary: 'Added a lookup tool.',
           target: { kind: 'spec' },
+          previousEntryHash: 'genesis',
+          entryHash: 'sha256:aaaa',
         },
         {
           timestamp: '2026-07-24T23:00:00.000Z',
           source: 'manual',
           summary: 'Updated layout for agents.assistant',
           target: { kind: 'design', resourceType: 'agents', resourceId: 'assistant' },
+          previousEntryHash: 'sha256:aaaa',
+          entryHash: 'sha256:bbbb',
         },
       ],
+      verification: { valid: true, verifiedEntryCount: 2, totalEntryCount: 2 },
     });
 
     render(<AuditPanel />);
@@ -45,7 +53,10 @@ describe('AuditPanel', () => {
   });
 
   it('re-fetches when Refresh is clicked', async () => {
-    const getAuditMock = vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    const getAuditMock = vi.spyOn(client, 'getAudit').mockResolvedValue({
+      entries: [],
+      verification: { valid: true, verifiedEntryCount: 0, totalEntryCount: 0 },
+    });
     render(<AuditPanel />);
     await screen.findByText('No changes yet.');
     expect(getAuditMock).toHaveBeenCalledTimes(1);

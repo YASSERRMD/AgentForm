@@ -27,10 +27,14 @@ export function registerAuditRoute(app: FastifyInstance, options: RegisterAuditR
       '/api/audit',
       { schema: { response: { 200: auditListResponseSchema } } },
       async (): Promise<AuditListBody> => {
-        const entries = readAuditLog(options.rootDir, options.fs ?? nodeFileSystem, DEFAULT_LIMIT);
+        const { entries, verification } = readAuditLog(
+          options.rootDir,
+          options.fs ?? nodeFileSystem,
+          DEFAULT_LIMIT,
+        );
         // See routes/spec.ts for why this cast is safe: readonly domain
         // type vs. Zod's mutable-by-default inference, not a real gap.
-        return { entries } as AuditListBody;
+        return { entries, verification } as AuditListBody;
       },
     );
 }

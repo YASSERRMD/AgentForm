@@ -4,6 +4,7 @@ import type { ResourceFormSchema, ResourceType } from './form-schema.js';
 import { RESOURCE_TYPES } from './form-schema.js';
 import type { SpecPatchOperation } from './patch.js';
 import type {
+  AuditChainVerification,
   AuditEntry,
   AuditListResponse,
   AuditTarget,
@@ -123,10 +124,20 @@ export const auditEntrySchema = z.object({
   source: z.enum(['manual', 'genai', 'chat']),
   summary: z.string(),
   target: auditTargetSchema,
+  previousEntryHash: z.string(),
+  entryHash: z.string(),
 }) satisfies z.ZodType<AuditEntry>;
+
+export const auditChainVerificationSchema = z.object({
+  valid: z.boolean(),
+  error: z.string().optional(),
+  verifiedEntryCount: z.number(),
+  totalEntryCount: z.number(),
+}) satisfies z.ZodType<AuditChainVerification>;
 
 export const auditListResponseSchema = z.object({
   entries: z.array(auditEntrySchema),
+  verification: auditChainVerificationSchema,
 }) satisfies z.ZodType<AuditListResponse>;
 
 const chatHistoryMessageSchema = z.object({

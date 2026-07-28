@@ -12,6 +12,7 @@
 export type {
   Agent,
   AgenticApplication,
+  AuditChainVerification,
   AuditEntry,
   AuditListResponse,
   AuditTarget,
@@ -51,6 +52,7 @@ export {
   type ResourceType,
 } from './form-schema.js';
 export {
+  auditChainVerificationSchema,
   auditEntrySchema,
   auditListResponseSchema,
   changeProvenanceSchema,

@@ -99,22 +99,39 @@ export type AuditTarget =
   | { readonly kind: 'design'; readonly resourceType: string; readonly resourceId: string };
 
 /**
- * One entry in Studio's local, append-only provenance log (Phase 18) —
- * never a security control (unlike `@agentform/planner`'s hash-verified
- * `.afplan` files), just operational visibility into what changed, from
- * where, and when. Lives under `.agentform/` on the server, never
- * committed to git or shared as a team artifact — see ADR-0021.
+ * One entry in Studio's local, append-only, hash-chained provenance log
+ * (Phase 18, hardened in ADR-0022) — `entryHash` covers every other
+ * field, including `previousEntryHash`, so altering, deleting, or
+ * reordering any historical entry breaks every hash from that point
+ * forward when re-verified (`verifyAuditLog`). This detects tampering
+ * after the fact; it does not *prevent* someone with direct file access
+ * from editing the file and regenerating a fresh, internally-consistent
+ * chain from scratch — the same honest limitation
+ * `@agentform/planner`'s `.afplan` tamper-evidence has always had. Lives
+ * under `.agentform/` on the server, never committed to git or shared as
+ * a team artifact — see ADR-0021, ADR-0022.
  */
 export interface AuditEntry {
   readonly timestamp: string;
   readonly source: ChangeSource;
   readonly summary: string;
   readonly target: AuditTarget;
+  readonly previousEntryHash: string;
+  readonly entryHash: string;
 }
 
-/** Body of `GET /api/audit`. Newest first. */
+/** Result of walking the audit log's hash chain oldest-to-newest. `verifiedEntryCount`/`totalEntryCount` let a caller report exactly how far a broken chain got before diverging. */
+export interface AuditChainVerification {
+  readonly valid: boolean;
+  readonly error?: string;
+  readonly verifiedEntryCount: number;
+  readonly totalEntryCount: number;
+}
+
+/** Body of `GET /api/audit`. `entries` is newest first; `verification` always covers every entry ever written, independent of any display limit applied to `entries`. */
 export interface AuditListResponse {
   readonly entries: readonly AuditEntry[];
+  readonly verification: AuditChainVerification;
 }
 
 /** One prior turn of a multi-turn chat conversation. Mirrors `@agentform/studio-genai`'s `GenAIHistoryMessage` structurally, not by import — studio-genai already depends on studio-core. */

@@ -56,7 +56,10 @@ describe('GET /api/audit', () => {
     const response = await app.inject({ method: 'GET', url: '/api/audit' });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ entries: [] });
+    expect(response.json()).toEqual({
+      entries: [],
+      verification: { valid: true, verifiedEntryCount: 0, totalEntryCount: 0 },
+    });
   });
 
   it('lists an entry recorded by a prior design write, newest first', async () => {
@@ -112,5 +115,53 @@ describe('GET /api/audit', () => {
       'Cleared the layout.',
       'Bumped the version.',
     ]);
+  });
+
+  it('reports an intact hash chain after two real writes', async () => {
+    const { fs, fileWriter } = createSharedInMemoryProject({
+      '/project/agentform.json': JSON.stringify(VALID_SPEC),
+    });
+    const app = buildApp({ rootDir: '/project', fs, fileWriter });
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/spec/patch',
+      payload: { patch: [{ op: 'replace', path: ['metadata', 'version'], value: '2.0.0' }] },
+    });
+    await app.inject({
+      method: 'PUT',
+      url: '/api/design/agents/assistant',
+      payload: { design: { binding: { resourceType: 'agents', resourceId: 'assistant' } } },
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/api/audit' });
+
+    const body = response.json() as { verification: unknown };
+    expect(body.verification).toEqual({
+      valid: true,
+      verifiedEntryCount: 2,
+      totalEntryCount: 2,
+    });
+  });
+
+  it('serves a pre-hardening legacy entry (written before hash-chaining existed) instead of 500ing', async () => {
+    const legacyLine = JSON.stringify({
+      timestamp: '2026-01-01T00:00:00.000Z',
+      source: 'manual',
+      summary: 'written before hashing existed',
+      target: { kind: 'spec' },
+    });
+    const fs = createInMemoryFileSystem({
+      '/project/agentform.json': JSON.stringify(VALID_SPEC),
+      '/project/.agentform/studio-audit.jsonl': `${legacyLine}\n`,
+    });
+    const app = buildApp({ rootDir: '/project', fs });
+
+    const response = await app.inject({ method: 'GET', url: '/api/audit' });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json() as { entries: readonly { summary: string }[] };
+    expect(body.entries).toHaveLength(1);
+    expect(body.entries[0]).toMatchObject({ summary: 'written before hashing existed' });
   });
 });

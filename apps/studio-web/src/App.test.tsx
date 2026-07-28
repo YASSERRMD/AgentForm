@@ -10,6 +10,11 @@ const EMPTY_FORM_SCHEMAS = {
   workflows: { resourceType: 'workflows' as const, jsonSchema: { type: 'object', properties: {} } },
 };
 
+const EMPTY_AUDIT = {
+  entries: [],
+  verification: { valid: true, verifiedEntryCount: 0, totalEntryCount: 0 },
+};
+
 describe('App', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -17,7 +22,7 @@ describe('App', () => {
 
   it('renders the spec viewer and diagnostics panel for a valid spec', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
-    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',
@@ -43,7 +48,7 @@ describe('App', () => {
 
   it('renders diagnostics only when the spec failed to validate', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
-    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       diagnostics: [{ code: 'AGF1001', severity: 'error', message: 'Missing required field.' }],
     });
@@ -56,7 +61,7 @@ describe('App', () => {
 
   it('opens a resource editor when a resource id is clicked, and closes it on save', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
-    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',
@@ -88,7 +93,7 @@ describe('App', () => {
 
   it('opens the real workflow canvas (not raw JSON) when a workflow resource is clicked', async () => {
     vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
-    vi.spyOn(client, 'getAudit').mockResolvedValue({ entries: [] });
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
     vi.spyOn(client, 'getSpec').mockResolvedValue({
       application: {
         apiVersion: 'agentform.dev/v1alpha1',

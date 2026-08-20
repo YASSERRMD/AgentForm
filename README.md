@@ -1,79 +1,81 @@
-# Agentform
+<p align="center">
+  <img src="assets/logo.png" alt="Agentform" width="140" />
+</p>
 
-[![CI](https://github.com/YASSERRMD/AgentForm/actions/workflows/ci.yml/badge.svg)](https://github.com/YASSERRMD/AgentForm/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+<h1 align="center">Agentform</h1>
 
-**Agentic Systems as Code.**
+<p align="center"><strong>Agentic Systems as Code.</strong></p>
 
-Agentform is a declarative control plane for portable agentic systems. It defines, validates, plans, compiles, tests, deploys, and governs agent applications across multiple frameworks.
+<p align="center">
+  <a href="https://github.com/YASSERRMD/AgentForm/actions/workflows/ci.yml"><img src="https://github.com/YASSERRMD/AgentForm/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="License: Apache-2.0" /></a>
+</p>
 
-Agentform is not another agent framework. It is a provider-neutral control plane, specification language, compiler, state engine, policy engine, testing framework, and lifecycle manager that operates above existing agent frameworks — giving agentic AI systems the same declarative, plan-then-apply development experience that infrastructure-as-code tools brought to cloud infrastructure.
+Agentform is a declarative control plane for portable agentic systems. It defines, validates, plans, compiles, tests, deploys, and governs agent applications across multiple frameworks — the same declarative, plan-then-apply development experience that infrastructure-as-code tools brought to cloud infrastructure, applied to agentic AI.
+
+Agentform is not another agent framework. It's a provider-neutral specification language, compiler, state engine, policy engine, and testing framework that operates _above_ existing agent frameworks, without leaking framework-specific concepts back into the source specification.
 
 > Agentform creates a deterministic control layer around probabilistic AI systems.
 
 Agentform cannot make a language model's output deterministic. What it does provide is **deterministic control around probabilistic execution** — of model identifiers and versions, prompt files, input/output schemas, tool permissions, workflow transitions, retries, timeouts, cost limits, human-approval gates, and policy enforcement.
 
+## Architecture
+
+<p align="center">
+  <img src="assets/architecture.svg" alt="Agentform architecture: a single agentform.yaml specification flows through validation (Parser, Schema, IR, Policy), then either compiles to seven target frameworks or plans and applies against tracked state, with a deterministic offline evaluation engine cross-cutting both paths. Agentform Studio is a visual editor over the same spec file." width="100%" />
+</p>
+
+One specification, validated once, driven in two directions: **compile** it into real framework code for any of seven targets, or **plan and apply** it against tracked deployed state. A deterministic, fully offline evaluation engine tests either path without ever calling a real model or provider. [Agentform Studio](docs/studio-reference.md) is a second, visual interface onto the same `agentform.yaml` — never a parallel source of truth.
+
+## Quickstart
+
+Requirements: Node.js ≥ 22, [pnpm](https://pnpm.io) 10.
+
+```bash
+pnpm install
+pnpm agentform init          # scaffold a new project from one of five starter templates
+pnpm agentform validate      # parse, schema-validate, semantically validate, and policy-check it
+pnpm agentform plan          # compare desired specification against deployed state
+pnpm agentform compile       # generate a real project for any of the seven target frameworks
+pnpm agentform test          # run evaluation datasets against the deterministic mock engine
+pnpm agentform apply         # generate artifacts, run smoke tests, persist deployed state atomically
+```
+
+The full command reference, including `status`, `drift`, `rollback`, `destroy`, `import`, and `lockfile`, lives in [`docs/cli-reference.md`](docs/cli-reference.md).
+
 ## Target frameworks
 
 Agentform compiles a single specification into implementation artifacts for:
 
-1. OpenAI Agents SDK
-2. LangGraph
-3. Microsoft Agent Framework
-4. Google Agent Development Kit
-5. AutoGen
-6. CrewAI
-7. Agno
+| Framework                    | Package                         |
+| ---------------------------- | ------------------------------- |
+| OpenAI Agents SDK            | `@agentform/adapter-openai`     |
+| LangGraph                    | `@agentform/adapter-langgraph`  |
+| Microsoft Agent Framework    | `@agentform/adapter-microsoft`  |
+| Google Agent Development Kit | `@agentform/adapter-google-adk` |
+| AutoGen                      | `@agentform/adapter-autogen`    |
+| CrewAI                       | `@agentform/adapter-crewai`     |
+| Agno                         | `@agentform/adapter-agno`       |
 
-## How it works
+No adapter supports every workflow node type — see [`docs/compiler-reference.md`](docs/compiler-reference.md) for the cross-adapter compatibility matrix.
 
-```text
-YAML or JSON
-    ↓
-Parsed source document
-    ↓
-Schema validation
-    ↓
-Semantic validation
-    ↓
-Agentform IR
-    ↓
-Policy analysis
-    ↓
-Execution plan
-    ↓
-Target adapter
-    ↓
-Generated implementation
-```
+## Documentation
 
-An Agentform specification describes an agentic application's models, tools, agents, workflows, memory, policies, evaluations, and observability in one provider-neutral document. The compiler resolves that specification into a canonical intermediate representation (the **Agentform IR**), then targets it at one or more frameworks — without leaking framework-specific concepts back into the source specification.
-
-## Project status
-
-This repository is in active, phased development. Each phase lands on its own branch and pull request; see [`temp/instruction.md`](temp/instruction.md) for the full build plan.
-
-Through Phase 12, the repository has: the monorepo/CI foundation (Phase 1); the `v1alpha1` specification schema (Phase 2); the source parser — YAML/JSON, `$ref`/variable resolution, multi-file projects (Phase 3); semantic validation and the canonical IR (Phase 4); the first five CLI commands (Phase 5); a built-in policy engine — 15 policies, configurable severity within mandatory-policy bounds, wired into `agentform validate` (Phase 6); a local state engine and planner — a SQLite-backed record of deployed state, dependency-ordered desired/current comparison, risk classification, and tamper-evident plan files, wired into `agentform plan`/`agentform status` (Phase 7); a compiler with all six target framework adapters (Phase 8 built OpenAI Agents SDK and LangGraph; Phase 9 added Microsoft Agent Framework, Google ADK, AutoGen, and CrewAI), wired into `agentform compile`; an evaluation engine — a deterministic, fully offline mock execution runtime, a 16-type structural assertion vocabulary, dataset loading, and threshold gates, wired into `agentform test` and surfaced as advisory diagnostics on `agentform plan`/`agentform status` (Phase 10); a real apply/drift/rollback/destroy/import engine — atomic, transactional state mutation with pre-mutation backups; drift detection across resource/environment/adapter-version/artifact categories; rollback that restores state without ever erasing audit history; destroy with unconditional confirmation and an honest "cannot be recovered" accounting; and limited, confidence-scored recognition of generated-Agentform/raw-OpenAI-Agents-SDK/raw-LangGraph projects for `agentform import` (Phase 11); and a PostgreSQL-backed state option (`@agentform/state-postgres`, selectable via `AGENTFORM_STATE_POSTGRES_URL`), a local module registry with optional Ed25519 signing and a lockfile (`@agentform/registry`, `agentform lockfile`), a browsable documentation site (`apps/docs-site`), and a pipeline benchmarking harness (`apps/benchmarks`) (Phase 12). Post-v1, a seventh target framework adapter was added — `@agentform/adapter-agno` (Agno) — the richest node-type coverage of any adapter after LangGraph, since Agno's own workflow primitives map unusually directly onto Agentform's node vocabulary; see `docs/compiler-reference.md`'s Agno section and ADR-0015. Also post-v1, work began on **Agentform Studio**, a local web GUI layered on top of the same spec/validation pipeline the CLI uses — never a parallel authority, always a view/editor over the same `agentform.yaml`. Phase 13 (foundation) is done: a read-only spec viewer and live diagnostics, served by `apps/studio-server` (Fastify) and rendered by `apps/studio-web` (React + Vite), sharing typed contracts from `packages/studio-core`. Phase 14 (schema-driven forms) is also done: every resource type gets a real edit form generated from its actual Zod schema, and saving now writes back through the full validate → IR → policy pipeline into a real, comment-preserving `agentform.yaml` — Studio's first write path. Phase 15 (canvas) is also done: `workflows` get a real node/edge graph editor (React Flow + dagre auto-layout) covering all 13 node types, with live client-side semantic validation (the real validator, reused via a new browser-safe `@agentform/ir` entry point) and a warning when an edit removes a destructive tool's human-approval gate — the server's validate → policy pipeline remains the sole authority on what actually saves. Phase 16 (form layout + design layer) is also done: a new `packages/studio-design` owns a presentational-only design artifact model (`.afdesign.json`) — an agent's `Fields`/`Layout` toggle lets you arrange fields already declared in its `inputSchema`/`outputSchema` (reorder, group, pick a widget), and the workflow canvas now persists dragged node positions, both saved to a design artifact that structurally cannot alter control flow, permissions, or policy (a separate write path from the spec-patch pipeline entirely). Phase 17 (GenAI) is also done: a new, server-only `packages/studio-genai` proposes new spec resources (prompt-to-spec) and one agent's form layout (prompt-to-design) from a natural-language prompt, using the Anthropic SDK's own structured-output mechanism against the real Zod schemas already used everywhere else — every proposal is preview-only and runs through the exact same validate → policy pipeline its write-path counterpart uses (`validateSpecPatch`, extracted from `applySpecPatch` for this exact purpose) before it can be shown as accepted; accepting one re-submits to the real, already-hardened write endpoints rather than writing anything new. `AGENTFORM_STUDIO_GENAI_PROVIDER` defaults to `anthropic` (needs a real `ANTHROPIC_API_KEY`, read only by the SDK itself) and can be set to `local-demo` for a key-free, network-free stand-in. Phase 18 (edit-by-chat), the sixth and closing phase of the Studio arc, is also done: multi-turn chat replaces the one-shot GenAI panels — each turn either replies conversationally or proposes a real `SpecPatch` (add, replace, _or_ remove, not just new resources) or a layout, reviewed through one unified proposal component alongside a risk/impact signal (deliberately narrower than `@agentform/planner`'s deployed-state-relative risk classification, which Studio has no access to). Every successful write, from any source, is now recorded in a new local, append-only provenance log (`.agentform/studio-audit.jsonl`) surfaced in a "Recent changes" panel. This closes the six-phase Agentform Studio arc begun post-v1. See `docs/studio-reference.md`, ADR-0016, ADR-0017, ADR-0018, ADR-0019, ADR-0020, and ADR-0021. A post-arc hardening pass (ADR-0022) hash-chained that audit log (each entry's hash covers the previous entry's, so deletion/reordering/truncation is detectable, not just single-line edits — the same tamper-evidence pattern `.afplan` already uses) and added opt-in `AGENTFORM_STUDIO_TOKEN` bearer-auth (gates every route with no exemptions, off by default), opt-in rate limiting on the 4 GenAI/chat routes, and explicit upper bounds on every previously-unbounded request field. Still not implemented: live (real-provider) evaluation, any adapter actually deploying to/tearing down a real target, multi-file project writes, or a freeform/mockup design canvas UI. See [`temp/instruction.md`](temp/instruction.md) for the full plan, [`docs/cli-reference.md`](docs/cli-reference.md) for command details, [`docs/compiler-reference.md`](docs/compiler-reference.md) for the compiler and adapters (including the cross-adapter compatibility matrix), [`docs/policy-reference.md`](docs/policy-reference.md) for the policy engine, [`docs/state-reference.md`](docs/state-reference.md)/[`docs/planner-reference.md`](docs/planner-reference.md) for the state engine and planner, [`docs/evaluation-reference.md`](docs/evaluation-reference.md) for the evaluation engine, and [`docs/registry-reference.md`](docs/registry-reference.md) for the module registry.
-
-The CLI lifecycle:
-
-```bash
-agentform init          # scaffold a new project from one of five starter templates
-agentform validate      # parse, schema-validate, semantically validate, and policy-check a project
-agentform format        # deterministically reformat a YAML/JSON source file
-agentform inspect       # print a resolved resource, or an application summary
-agentform graph         # generate a Mermaid, DOT, or JSON workflow graph
-agentform plan          # compare desired specification against deployed state, no changes made
-agentform status        # show application, deployed state, drift, and policy status
-agentform compile       # generate a project for any of the six target frameworks from the specification
-agentform test          # run evaluation datasets against the deterministic mock execution engine
-agentform apply         # generate artifacts, run smoke tests, and persist deployed state atomically
-agentform drift         # detect resource/environment/adapter-version/artifact drift, no changes made
-agentform rollback      # restore state to a previous apply or snapshot, without erasing audit history
-agentform destroy       # tear down every tracked resource, with unconditional confirmation
-agentform import        # limited, best-effort recognition of an existing project into a candidate spec
-agentform lockfile      # resolve declared modules against the registry and write agentform.lock
-```
+| Topic                                   | Doc                                                                                                            |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| How the pipeline composes end to end    | [`docs/architecture.md`](docs/architecture.md)                                                                 |
+| Specification schema                    | [`docs/schema-reference.md`](docs/schema-reference.md)                                                         |
+| Parser (YAML/JSON, refs, variables)     | [`docs/parser-reference.md`](docs/parser-reference.md)                                                         |
+| Canonical IR                            | [`docs/ir-reference.md`](docs/ir-reference.md)                                                                 |
+| Policy engine (15 built-in policies)    | [`docs/policy-reference.md`](docs/policy-reference.md)                                                         |
+| State engine + planner                  | [`docs/state-reference.md`](docs/state-reference.md), [`docs/planner-reference.md`](docs/planner-reference.md) |
+| Compiler + framework adapters           | [`docs/compiler-reference.md`](docs/compiler-reference.md)                                                     |
+| Evaluation engine                       | [`docs/evaluation-reference.md`](docs/evaluation-reference.md)                                                 |
+| Module registry                         | [`docs/registry-reference.md`](docs/registry-reference.md)                                                     |
+| Agentform Studio (local web GUI)        | [`docs/studio-reference.md`](docs/studio-reference.md)                                                         |
+| CLI command reference                   | [`docs/cli-reference.md`](docs/cli-reference.md)                                                               |
+| Security threat model                   | [`docs/security/threat-model.md`](docs/security/threat-model.md)                                               |
+| Design decisions, one file per decision | [`docs/adr/`](docs/adr/)                                                                                       |
 
 ## Repository layout
 
@@ -120,11 +122,7 @@ agentform/
 └── docs/adr/                      # architecture decision records
 ```
 
-`core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, `state-postgres`, `registry`, `planner`, `compiler`, `runtime`, `evaluator`, `plugin-sdk`, `studio-core`, `studio-design`, `studio-genai`, and all seven `adapter-*` packages have real implementations, and `apps/cli` has fifteen working commands (see [`docs/schema-reference.md`](docs/schema-reference.md), [`docs/parser-reference.md`](docs/parser-reference.md), [`docs/ir-reference.md`](docs/ir-reference.md), [`docs/policy-reference.md`](docs/policy-reference.md), [`docs/state-reference.md`](docs/state-reference.md), [`docs/planner-reference.md`](docs/planner-reference.md), [`docs/compiler-reference.md`](docs/compiler-reference.md), [`docs/evaluation-reference.md`](docs/evaluation-reference.md), [`docs/registry-reference.md`](docs/registry-reference.md), and [`docs/cli-reference.md`](docs/cli-reference.md)). `observability`, `secrets-env`, `test-utils`, and `create-agentform` are still minimal, buildable skeletons (a package identity export plus one test) — real implementations land phase by phase, following [`temp/instruction.md`](temp/instruction.md).
-
 ## Development
-
-Requirements: Node.js ≥ 22, [pnpm](https://pnpm.io) 10.
 
 ```bash
 pnpm install         # install workspace dependencies
@@ -144,6 +142,21 @@ pnpm agentform --help                 # run the CLI from the workspace root
 
 `test:integration` requires a reachable PostgreSQL instance (`AGENTFORM_TEST_POSTGRES_URL`, default `postgresql://postgres:postgres@localhost:5432/agentform_test`) — CI provides one as a service container; locally, point it at any disposable PostgreSQL 16+ database.
 
+## Project status
+
+The 12-phase core build, a seventh adapter (Agno), the six-phase Agentform Studio arc, and a post-arc security-hardening pass are all complete and merged to `main`. `core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, `state-postgres`, `registry`, `planner`, `compiler`, `runtime`, `evaluator`, `plugin-sdk`, `studio-core`, `studio-design`, `studio-genai`, and all seven `adapter-*` packages have real implementations; `apps/cli` has fifteen working commands. `v0.1.0` is release-ready but not yet published.
+
+Still not implemented: live (real-provider) evaluation, any adapter actually deploying to/tearing down a real target, multi-file project writes, or a freeform/mockup design canvas UI.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).
+
+---
+
+<p align="center">
+  <sub>
+    <img src="assets/my-mark.png" alt="" width="20" />
+    &nbsp;Mohamed Yasser&nbsp;·&nbsp;Solutions Architect
+  </sub>
+</p>

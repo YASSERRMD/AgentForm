@@ -1,0 +1,122 @@
+<svg viewBox="0 0 900 640" xmlns="http://www.w3.org/2000/svg" font-family="Georgia, 'Times New Roman', serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C5A55A" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="900" height="640" fill="#FFFFFF" />
+
+  <!-- Title -->
+  <text x="40" y="46" font-size="22" font-weight="bold" fill="#1B2A4A">Agentform Architecture</text>
+  <text x="40" y="68" font-size="12" font-style="italic" fill="#666666" font-family="Calibri, Arial, sans-serif">From a single specification to validated, deployable, testable systems</text>
+  <rect x="40" y="80" width="70" height="3" fill="#C5A55A" />
+
+  <!-- Spec node -->
+  <rect x="370" y="100" width="160" height="46" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="450" y="121" font-size="13" font-weight="bold" fill="#1B2A4A" text-anchor="middle">agentform.yaml</text>
+  <text x="450" y="137" font-size="9" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">single source of truth</text>
+
+  <!-- Spec -> Validate -->
+  <line x1="450" y1="146" x2="450" y2="176" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Validation pipeline container -->
+  <rect x="60" y="180" width="780" height="110" rx="12" fill="#F2F2F2" />
+  <text x="80" y="200" font-size="11" font-weight="bold" fill="#1B2A4A" letter-spacing="1.5">VALIDATE</text>
+  <circle cx="148" cy="196" r="2.5" fill="#C5A55A" />
+  <line x1="156" y1="196" x2="820" y2="196" stroke="#C5A55A" stroke-width="1" />
+
+  <!-- 4 validation nodes -->
+  <!-- Parser -->
+  <rect x="80" y="215" width="172" height="45" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="166" y="235" font-size="12" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Parser</text>
+  <text x="166" y="250" font-size="8" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">parse + resolve refs</text>
+  <line x1="252" y1="237" x2="265" y2="237" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Schema -->
+  <rect x="267" y="215" width="172" height="45" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="353" y="235" font-size="12" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Schema</text>
+  <text x="353" y="250" font-size="8" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">Zod shape validation</text>
+  <line x1="439" y1="237" x2="452" y2="237" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- IR -->
+  <rect x="454" y="215" width="172" height="45" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="540" y="235" font-size="12" font-weight="bold" fill="#1B2A4A" text-anchor="middle">IR</text>
+  <text x="540" y="250" font-size="8" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">semantic checks + hash</text>
+  <line x1="626" y1="237" x2="639" y2="237" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Policy -->
+  <rect x="641" y="215" width="172" height="45" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="727" y="235" font-size="12" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Policy</text>
+  <text x="727" y="250" font-size="8" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">15 built-in checks</text>
+
+  <!-- Fork -->
+  <line x1="232" y1="290" x2="232" y2="328" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="667" y1="290" x2="667" y2="328" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+
+  <!-- Compile container -->
+  <rect x="60" y="330" width="345" height="200" rx="12" fill="#F2F2F2" />
+  <text x="80" y="352" font-size="11" font-weight="bold" fill="#1B2A4A" letter-spacing="1.5">COMPILE</text>
+  <circle cx="168" cy="348" r="2.5" fill="#C5A55A" />
+  <line x1="176" y1="348" x2="385" y2="348" stroke="#C5A55A" stroke-width="1" />
+  <text x="80" y="368" font-size="8" font-style="italic" fill="#666666" font-family="Calibri, Arial, sans-serif">@agentform/compiler — 7 target frameworks</text>
+
+  <!-- 7 framework pills, 2 cols x 4 rows -->
+  <g font-family="Calibri, Arial, sans-serif">
+    <rect x="80" y="385" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="152.5" y="401" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">OpenAI</text>
+
+    <rect x="240" y="385" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="312.5" y="401" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">LangGraph</text>
+
+    <rect x="80" y="419" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="152.5" y="435" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Microsoft</text>
+
+    <rect x="240" y="419" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="312.5" y="435" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Google ADK</text>
+
+    <rect x="80" y="453" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="152.5" y="469" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">AutoGen</text>
+
+    <rect x="240" y="453" width="145" height="24" rx="12" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="312.5" y="469" font-size="10" font-weight="bold" fill="#1B2A4A" text-anchor="middle">CrewAI</text>
+
+    <rect x="80" y="487" width="145" height="24" rx="12" fill="#1B2A4A" stroke="#1B2A4A" stroke-width="1.5" />
+    <text x="152.5" y="503" font-size="10" font-weight="bold" fill="#FFFFFF" text-anchor="middle">Agno</text>
+  </g>
+
+  <!-- Plan & Apply container -->
+  <rect x="495" y="330" width="345" height="200" rx="12" fill="#F2F2F2" />
+  <text x="515" y="352" font-size="11" font-weight="bold" fill="#1B2A4A" letter-spacing="1.5">PLAN &amp; APPLY</text>
+  <circle cx="638" cy="348" r="2.5" fill="#C5A55A" />
+  <line x1="646" y1="348" x2="820" y2="348" stroke="#C5A55A" stroke-width="1" />
+  <text x="515" y="368" font-size="8" font-style="italic" fill="#666666" font-family="Calibri, Arial, sans-serif">@agentform/planner + @agentform/state</text>
+
+  <rect x="555" y="385" width="225" height="52" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" />
+  <text x="667.5" y="407" font-size="12" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Tracked State</text>
+  <text x="667.5" y="423" font-size="9" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">SQLite or PostgreSQL</text>
+
+  <text x="515" y="463" font-size="10" fill="#1B2A4A" font-family="Calibri, Arial, sans-serif">plan · apply · drift · rollback · destroy</text>
+  <text x="515" y="480" font-size="8" fill="#666666" font-family="Calibri, Arial, sans-serif">atomic, transactional, backed up before every mutation</text>
+  <text x="515" y="497" font-size="8" fill="#666666" font-family="Calibri, Arial, sans-serif">risk-classified: create · update · replace · delete</text>
+
+  <!-- Evaluate band -->
+  <line x1="232" y1="530" x2="232" y2="543" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+  <line x1="667" y1="530" x2="667" y2="543" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" />
+  <rect x="60" y="545" width="780" height="58" rx="12" fill="#F2F2F2" />
+  <text x="80" y="567" font-size="11" font-weight="bold" fill="#1B2A4A" letter-spacing="1.5">EVALUATE</text>
+  <circle cx="168" cy="563" r="2.5" fill="#C5A55A" />
+  <line x1="176" y1="563" x2="820" y2="563" stroke="#C5A55A" stroke-width="1" />
+  <text x="80" y="585" font-size="9.5" fill="#2C2C2C" font-family="Calibri, Arial, sans-serif">@agentform/runtime + @agentform/evaluator — deterministic, fully offline mock execution.</text>
+  <text x="80" y="598" font-size="9.5" fill="#2C2C2C" font-family="Calibri, Arial, sans-serif">Runs via `agentform test`, and again inside `agentform apply` before state is persisted.</text>
+
+  <!-- Studio side node -->
+  <rect x="670" y="95" width="190" height="55" rx="8" fill="#FFFFFF" stroke="#1B2A4A" stroke-width="2" stroke-dasharray="4,3" />
+  <text x="765" y="117" font-size="11" font-weight="bold" fill="#1B2A4A" text-anchor="middle">Agentform Studio</text>
+  <text x="765" y="132" font-size="8" fill="#666666" text-anchor="middle" font-family="Calibri, Arial, sans-serif">visual editor · same spec, no shortcuts</text>
+  <line x1="668" y1="122" x2="533" y2="122" stroke="#C5A55A" stroke-width="2" marker-end="url(#arrow)" marker-start="url(#arrow)" />
+
+  <!-- Footer -->
+  <line x1="40" y1="618" x2="860" y2="618" stroke="#C5A55A" stroke-width="1" />
+  <text x="40" y="634" font-size="9" fill="#666666" font-family="Calibri, Arial, sans-serif">Every stage accumulates diagnostics; parsing failures stop the pipeline, everything after runs against what came before.</text>
+</svg>

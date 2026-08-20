@@ -76,6 +76,7 @@ No adapter supports every workflow node type — see [`docs/compiler-reference.m
 | CLI command reference                   | [`docs/cli-reference.md`](docs/cli-reference.md)                                                               |
 | Security threat model                   | [`docs/security/threat-model.md`](docs/security/threat-model.md)                                               |
 | Design decisions, one file per decision | [`docs/adr/`](docs/adr/)                                                                                       |
+| Full phase-by-phase build history       | [`docs/project-history.md`](docs/project-history.md)                                                           |
 
 ## Repository layout
 
@@ -147,6 +148,8 @@ pnpm agentform --help                 # run the CLI from the workspace root
 The 12-phase core build, a seventh adapter (Agno), the six-phase Agentform Studio arc, and a post-arc security-hardening pass are all complete and merged to `main`. `core`, `diagnostics`, `schema`, `parser`, `ir`, `policy`, `state`, `state-local`, `state-postgres`, `registry`, `planner`, `compiler`, `runtime`, `evaluator`, `plugin-sdk`, `studio-core`, `studio-design`, `studio-genai`, and all seven `adapter-*` packages have real implementations; `apps/cli` has fifteen working commands. `v0.1.0` is release-ready but not yet published.
 
 Still not implemented: live (real-provider) evaluation, any adapter actually deploying to/tearing down a real target, multi-file project writes, or a freeform/mockup design canvas UI.
+
+See [`docs/project-history.md`](docs/project-history.md) for the full phase-by-phase build record, and [`temp/instruction.md`](temp/instruction.md) for the original plan.
 
 ## License
 

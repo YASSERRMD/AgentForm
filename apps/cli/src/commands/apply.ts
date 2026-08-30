@@ -31,7 +31,7 @@ import { ADAPTER_REGISTRY, generateArtifacts } from '../lib/generate-artifacts.j
 import { loadAndBuildIR } from '../lib/pipeline.js';
 import { formatPlanForHumans, formatPlanSummary } from '../lib/plan-output.js';
 import { redactSecretsFromReport } from '../lib/report-redaction.js';
-import { openStateBackend } from '../lib/state.js';
+import { openStateBackend, readPolicyStateSnapshot } from '../lib/state.js';
 import { CLI_VERSION, getGlobalOptions } from '../program.js';
 import { testResultsPathFor } from './test.js';
 
@@ -178,7 +178,7 @@ export function registerApplyCommand(program: Command): void {
         }
         const policyEvaluation = evaluatePolicies(
           BUILTIN_POLICIES,
-          { application: result.application },
+          { application: result.application, state: await readPolicyStateSnapshot(backend) },
           policyConfig.config,
         );
         const policyDiagnostics = [

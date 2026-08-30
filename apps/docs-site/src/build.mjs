@@ -105,6 +105,26 @@ const SECTIONS = [
       page('0013 — Rollback & Destroy Behavior', 'adr/0013-rollback-and-destroy-behavior.md'),
       page('0014 — Module Registry Architecture', 'adr/0014-module-registry-architecture.md'),
       page('0015 — Agno Adapter', 'adr/0015-agno-adapter.md'),
+      page('0016 — Agentform Studio Foundation', 'adr/0016-agentform-studio-foundation.md'),
+      page('0017 — Schema-Driven Form Builder', 'adr/0017-schema-driven-form-builder.md'),
+      page('0018 — Canvas Workflow Graph Editor', 'adr/0018-canvas-workflow-graph-editor.md'),
+      page('0019 — Form Layout & Design Layer', 'adr/0019-form-layout-and-design-layer.md'),
+      page(
+        '0020 — GenAI Prompt-to-Spec & Prompt-to-Design',
+        'adr/0020-genai-prompt-to-spec-and-prompt-to-design.md',
+      ),
+      page(
+        '0021 — Edit-by-Chat & Unified Proposal Pipeline',
+        'adr/0021-edit-by-chat-and-unified-proposal-pipeline.md',
+      ),
+      page(
+        '0022 — Studio Access Control & Audit Integrity',
+        'adr/0022-studio-access-control-and-audit-integrity.md',
+      ),
+      page(
+        '0023 — AF014/AF015 Placeholder Resolution',
+        'adr/0023-af014-af015-placeholder-resolution.md',
+      ),
     ],
   },
 ];

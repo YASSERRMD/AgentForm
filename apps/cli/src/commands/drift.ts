@@ -15,7 +15,7 @@ import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY } from '../lib/generate-artifacts.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { openStateBackend } from '../lib/state.js';
+import { openStateBackend, readPolicyStateSnapshot } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
 
 interface EnvironmentDrift {
@@ -161,7 +161,7 @@ export function registerDriftCommand(program: Command): void {
           ? undefined
           : evaluatePolicies(
               BUILTIN_POLICIES,
-              { application: result.application },
+              { application: result.application, state: await readPolicyStateSnapshot(backend) },
               policyConfig.config,
             );
         const policyStatus: DriftReport['policyStatus'] = !policyEvaluation

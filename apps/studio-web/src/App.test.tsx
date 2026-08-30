@@ -123,4 +123,87 @@ describe('App', () => {
     expect(await screen.findByLabelText('Workflow node assistant')).toBeInTheDocument();
     expect(screen.getByLabelText('New node id')).toBeInTheDocument();
   });
+
+  it('re-seeds the editor when switching directly from one resource to another', async () => {
+    vi.spyOn(client, 'getFormSchemas').mockResolvedValue(EMPTY_FORM_SCHEMAS);
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
+    vi.spyOn(client, 'getSpec').mockResolvedValue({
+      application: {
+        apiVersion: 'agentform.dev/v1alpha1',
+        kind: 'AgenticApplication',
+        metadata: { name: 'support-bot', version: '1.0.0' },
+        spec: {
+          runtime: { target: 'openai', environment: 'development' },
+          models: { primary: { provider: 'openai', model: 'gpt-5' } },
+          agents: { assistant: { model: 'primary', role: 'assistant' } },
+          workflows: {
+            main: {
+              entrypoint: 'assistant',
+              nodes: { assistant: { type: 'agent', agent: 'assistant' } },
+            },
+          },
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      diagnostics: [],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('primary')).toBeInTheDocument());
+
+    // Open one resource's editor, then — without cancelling or saving — switch straight
+    // to a different resource of a different type.
+    fireEvent.click(screen.getByText('primary'));
+    expect(screen.getByLabelText('Edit models.primary')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('main'));
+
+    expect(await screen.findByLabelText('Edit workflows.main')).toBeInTheDocument();
+    // The canvas must reflect the workflow, not the leftover model buffer.
+    expect(await screen.findByLabelText('Workflow node assistant')).toBeInTheDocument();
+    expect(screen.queryByText(/entrypoint "" is not a declared node/)).not.toBeInTheDocument();
+  });
+
+  it('re-seeds the editor when switching between two resources of the same type', async () => {
+    vi.spyOn(client, 'getFormSchemas').mockResolvedValue({
+      ...EMPTY_FORM_SCHEMAS,
+      models: {
+        resourceType: 'models' as const,
+        jsonSchema: {
+          type: 'object',
+          properties: { model: { type: 'string' } },
+        },
+      },
+    });
+    vi.spyOn(client, 'getAudit').mockResolvedValue(EMPTY_AUDIT);
+    vi.spyOn(client, 'getSpec').mockResolvedValue({
+      application: {
+        apiVersion: 'agentform.dev/v1alpha1',
+        kind: 'AgenticApplication',
+        metadata: { name: 'support-bot', version: '1.0.0' },
+        spec: {
+          runtime: { target: 'openai', environment: 'development' },
+          models: {
+            primary: { provider: 'openai', model: 'gpt-5' },
+            secondary: { provider: 'openai', model: 'gpt-5-mini' },
+          },
+          agents: {},
+          workflows: {},
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+      diagnostics: [],
+    });
+
+    render(<App />);
+    await waitFor(() => expect(screen.getByText('primary')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByText('primary'));
+    expect(screen.getByLabelText('model')).toHaveValue('gpt-5');
+
+    fireEvent.click(screen.getByText('secondary'));
+
+    expect(await screen.findByLabelText('Edit models.secondary')).toBeInTheDocument();
+    expect(screen.getByLabelText('model')).toHaveValue('gpt-5-mini');
+  });
 });

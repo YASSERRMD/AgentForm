@@ -77,6 +77,10 @@ export function App() {
       <AuditPanel />
       {editing && state.document.application && (
         <ResourceEditor
+          // ResourceEditor seeds its edit buffer with `useState(initialValue)`, which only
+          // runs on mount. Without a key tied to the edit target, React reuses the instance
+          // across a resource switch and the buffer keeps the previous resource's data.
+          key={`${editing.resourceType}.${editing.resourceId}`}
           resourceType={editing.resourceType}
           resourceId={editing.resourceId}
           formSchema={state.formSchemas[editing.resourceType]}

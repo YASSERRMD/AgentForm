@@ -14,7 +14,7 @@ import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { ADAPTER_REGISTRY, generateArtifacts } from '../lib/generate-artifacts.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { openStateBackend } from '../lib/state.js';
+import { openStateBackend, readPolicyStateSnapshot } from '../lib/state.js';
 import { CLI_VERSION, getGlobalOptions } from '../program.js';
 import { testResultsPathFor } from './test.js';
 
@@ -179,7 +179,7 @@ export function registerRollbackCommand(program: Command): void {
         }
         const policyEvaluation = evaluatePolicies(
           BUILTIN_POLICIES,
-          { application: result.application },
+          { application: result.application, state: await readPolicyStateSnapshot(backend) },
           policyConfig.config,
         );
         if (policyEvaluation.results.some((r) => r.status === 'fail')) {

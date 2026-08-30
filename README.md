@@ -148,6 +148,15 @@ The 12-phase core build, a seventh adapter (Agno), the six-phase Agentform Studi
 
 Still not implemented: live (real-provider) evaluation, any adapter actually deploying to/tearing down a real target, multi-file project writes, or a freeform/mockup design canvas UI.
 
+### Branching and conditions are not evaluated
+
+Agentform has no expression evaluator, anywhere. A workflow edge's `when:`, a `condition` node's `condition:`, and a `transform` node's `transform:` are parsed, structurally validated, carried through the IR, and emitted — but nothing in Agentform ever _evaluates_ them. This is a boundary of the current design, not a bug, and it shows up in both places a spec is exercised:
+
+- **`agentform test`** runs the deterministic mock interpreter in `@agentform/runtime`. Every branch is chosen by the scenario, not by the spec: a test case declares `nodes["<id>"].next` to pick which outgoing edge to follow. A node with more than one outgoing edge and no `.next` override is a test-case error, not a coin flip.
+- **`agentform compile`** never generates a decision. The two adapters that support these node types at all — Agno and LangGraph — emit the node, its edges, and its declared condition text, then a `raise NotImplementedError(...)` where the routing or transform logic would go, for you to fill in. The other five adapters declare `router`/`condition`/`transform` outright unsupported (see each adapter's `compatibility.ts`) and refuse to compile a workflow that uses them, rather than fabricating a translation.
+
+So `when: output.category == "billing"` documents intent and travels intact to the code you run — it does not make Agentform, or the generated project, route on `output.category` by itself.
+
 ## License
 
 Apache License 2.0 — see [LICENSE](LICENSE).

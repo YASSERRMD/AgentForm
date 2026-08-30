@@ -77,9 +77,25 @@ zero setup.
   supports `router`, `tool`, and `humanApproval` together
   (`packages/adapter-langgraph/src/compatibility.ts`), which is why `runtime.target` is
   `langgraph`.
+- `agentform test --cwd examples/enterprise-customer-support` — exit `0`, 4/4 scenarios pass,
+  `taskSuccess: 1` against the declared `0.88` threshold.
 
-## Uncertain / worth double-checking
+## What the test dataset can and cannot assert
 
-The `tests/tickets.jsonl` dataset is illustrative in the same way as the other two examples'
-datasets — shaped to match `packages/evaluator/src/test-case.ts`, but not run end to end through
-`agentform test` as part of this exercise.
+`agentform test` runs `tests/tickets.jsonl` through Agentform's deterministic mock interpreter
+(`packages/runtime/src/run.ts`), which has no expression evaluator. Two consequences show up
+directly in this dataset:
+
+- **Every branch is scenario-declared, not condition-driven.** The `when:` text on the `route` and
+  `refundApproval` edges is stored and structurally validated, never evaluated. Each scenario picks
+  its own path with a `nodes["<id>"].next` override — which is why the "billing refund approved"
+  scenario declares both `refundApproval.approve: true` (to clear the gate) _and_
+  `refundApproval.next: refund` (to pick which of that node's two outgoing edges to follow).
+- **A rejected `humanApproval` node terminates on the spot.** The runtime halts with the fixed
+  reason `approval-rejected` rather than following the `when: approval.status == "rejected"` edge,
+  so `refundDenied` — and its `reason: billing team lead declined the refund` — is not reached
+  under mock testing. The "billing refund rejected" scenario asserts the real behaviour
+  (`terminationReason: "approval-rejected"`, plus an explicit `nodeNotVisited: refundDenied`)
+  rather than the intent the spec expresses. The spec's own edge and terminate node still describe
+  what a real deployment should do; the mock runtime just cannot get there today. See the
+  "Branching and conditions are not evaluated" limitation in the root `README.md`.

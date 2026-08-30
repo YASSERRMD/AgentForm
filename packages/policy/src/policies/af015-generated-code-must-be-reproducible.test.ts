@@ -4,12 +4,16 @@ import { withApplication } from '../test-fixtures.js';
 import type { PolicyContext } from '../types.js';
 
 describe('AF015 generated-code-must-be-reproducible', () => {
-  it('is registered as mandatory so it cannot be silently disabled ahead of Phase 8', () => {
+  it('is registered as mandatory so it cannot be silently disabled', () => {
     expect(af015GeneratedCodeMustBeReproducible.mandatory).toBe(true);
   });
 
-  it('always passes today, since there is no compiler yet to check', () => {
+  it('always passes: no generated artifact exists at policy-evaluation time', () => {
     const context: PolicyContext = { application: withApplication(() => {}) };
     expect(af015GeneratedCodeMustBeReproducible.check(context)).toEqual([]);
+  });
+
+  it('says in its own description that it is not enforced here', () => {
+    expect(af015GeneratedCodeMustBeReproducible.description).toContain('Not enforced');
   });
 });

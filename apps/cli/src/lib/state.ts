@@ -1,4 +1,5 @@
 import path from 'node:path';
+import type { PolicyStateSnapshot } from '@agentform/policy';
 import { SqliteStateBackend } from '@agentform/state-local';
 import { PostgresStateBackend } from '@agentform/state-postgres';
 import type { StateBackend } from '@agentform/state';
@@ -32,4 +33,18 @@ export async function openStateBackend(rootDir: string): Promise<StateBackend> {
     : new SqliteStateBackend({ stateDir: stateDirFor(rootDir) });
   await backend.open();
   return backend;
+}
+
+/**
+ * Reads the deployed state a policy check can inspect (AF014). Only
+ * commands that have already opened a backend can supply this; `validate`
+ * and `plan` run before any state exists and pass `undefined` instead.
+ */
+export async function readPolicyStateSnapshot(backend: StateBackend): Promise<PolicyStateSnapshot> {
+  const [application, resources, applyHistory] = await Promise.all([
+    backend.getApplicationState(),
+    backend.listResourceStates(),
+    backend.listApplyHistory(),
+  ]);
+  return { application, resources, applyHistory };
 }

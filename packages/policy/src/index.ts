@@ -2,6 +2,7 @@ export type {
   PolicySeverity,
   PolicyResultStatus,
   PolicyContext,
+  PolicyStateSnapshot,
   PolicyFinding,
   PolicyCheck,
   PolicyDefinition,

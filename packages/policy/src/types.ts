@@ -3,8 +3,29 @@ import type { AgenticApplication } from '@agentform/schema';
 export type PolicySeverity = 'error' | 'warning';
 export type PolicyResultStatus = 'pass' | 'warn' | 'fail' | 'skip';
 
+/**
+ * The deployed-state view a policy check can inspect, structurally typed
+ * so `@agentform/policy` stays free of a dependency on `@agentform/state`
+ * (the state backends already depend on the schema/diagnostics layer this
+ * package sits beside). Callers pass whatever they read from their state
+ * backend: `@agentform/state`'s `ApplicationState`, `ResourceState[]`, and
+ * `ApplyHistoryEntry[]` all satisfy these fields structurally.
+ */
+export interface PolicyStateSnapshot {
+  readonly application?: unknown;
+  readonly resources?: readonly unknown[];
+  readonly applyHistory?: readonly unknown[];
+}
+
 export interface PolicyContext {
   readonly application: AgenticApplication;
+  /**
+   * Present only for commands that have opened a state backend (`apply`,
+   * `status`, `drift`, `rollback`). `validate`/`plan` run before any state
+   * is read, so state-scoped policies (AF014) have nothing to inspect
+   * there and report a clean pass rather than a false one.
+   */
+  readonly state?: PolicyStateSnapshot;
 }
 
 /**

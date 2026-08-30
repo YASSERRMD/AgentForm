@@ -13,7 +13,7 @@ import { testResultsPathFor } from './test.js';
 import { diagnosticToJson, formatDiagnosticsForHumans } from '../lib/diagnostics-output.js';
 import { EXIT_CODES, exitCodeForDiagnostics } from '../lib/exit-codes.js';
 import { loadAndBuildIR } from '../lib/pipeline.js';
-import { openStateBackend } from '../lib/state.js';
+import { openStateBackend, readPolicyStateSnapshot } from '../lib/state.js';
 import { getGlobalOptions } from '../program.js';
 
 /**
@@ -95,6 +95,7 @@ export function registerStatusCommand(program: Command): void {
       }
 
       const backend = await openStateBackend(globalOptions.cwd);
+      let policyState;
       let applicationState;
       let resourceStates;
       let lastApply;
@@ -102,6 +103,7 @@ export function registerStatusCommand(program: Command): void {
         applicationState = await backend.getApplicationState();
         resourceStates = await backend.listResourceStates();
         [lastApply] = await backend.listApplyHistory(1);
+        policyState = await readPolicyStateSnapshot(backend);
       } finally {
         await backend.close();
       }
@@ -111,7 +113,7 @@ export function registerStatusCommand(program: Command): void {
         ? undefined
         : evaluatePolicies(
             BUILTIN_POLICIES,
-            { application: result.application },
+            { application: result.application, state: policyState },
             policyConfig.config,
           );
       const policyStatus = !policyEvaluation
